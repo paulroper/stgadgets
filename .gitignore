@@ -1,0 +1,75 @@
+## .NET build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+publish/
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+.dotnet/
+
+## Test results / coverage
+[Tt]est[Rr]esult*/
+*.trx
+coverage/
+coverage*.json
+coverage*.xml
+*.coverage
+*.coveragexml
+
+## Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+launchSettings.local.json
+
+## JetBrains Rider
+.idea/
+*.sln.iml
+
+## VS Code (keep shared settings, ignore personal ones)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+## OS cruft
+.DS_Store
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+## Secrets / local config
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+*.local.json
+
+## Emulator / game data — never commit ROMs, BIOS or save data
+roms/
+bios/
+*.state
+*.sav
+*.srm
+*.nv
+local/
+
+## Web
+node_modules/
+web/dist/

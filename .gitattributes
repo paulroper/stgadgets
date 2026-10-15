@@ -1,0 +1,55 @@
+# Normalise line endings: LF in the repo, native on checkout
+* text=auto
+
+# Source and config
+*.cs        text diff=csharp
+*.csx       text diff=csharp
+*.xaml      text
+*.axaml     text
+*.razor     text
+*.json      text
+*.xml       text
+*.yml       text
+*.yaml      text
+*.md        text diff=markdown
+*.props     text
+*.targets   text
+*.csproj    text
+*.fsproj    text
+*.lua       text
+*.hlsl      text
+*.glsl      text
+
+# Scripts that must keep a specific line ending
+*.sh        text eol=lf
+*.ps1       text eol=crlf
+*.cmd       text eol=crlf
+*.bat       text eol=crlf
+
+# Visual Studio solution files are CRLF by convention
+*.sln       text eol=crlf
+
+# Binary assets
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.icns      binary
+*.bmp       binary
+*.webp      binary
+*.ttf       binary
+*.otf       binary
+*.woff      binary
+*.woff2     binary
+*.wav       binary
+*.ogg       binary
+*.mp3       binary
+*.mp4       binary
+*.zip       binary
+*.7z        binary
+*.dll       binary
+*.exe       binary
+*.pdb       binary
+*.snk       binary
+*.bin       binary
