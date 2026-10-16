@@ -4,7 +4,30 @@ A platform for adding M2 ShotTriggers-style gadgets to shmups (STGs) running in 
 
 stgadgets runs alongside the emulator. It reads the game's memory through the emulator's own APIs, turns it into named variables, and draws gadgets in a transparent window over the game. The game, the emulator and the ROMs are never modified.
 
-> **Status:** design. There is no code yet, only the docs below.
+> **Status:** early spike. Space Invaders' score streams from RetroArch to React gadgets, shown in the browser or in a transparent macOS overlay on top of the emulator.
+
+## Running it
+
+1. In `retroarch.cfg`, set `network_cmd_enable = "true"` (and turn off RetroAchievements hardcore mode). Load Space Invaders (`invaders`) with the FBNeo core.
+2. Build the UI: `cd src/ui && npm install && npm run build`
+3. Run the server: `dotnet run --project src/server/Stgadgets.Server`, then open http://127.0.0.1:5199
+4. Optionally, run the macOS overlay: `dotnet run --project src/host/macos/Stgadgets.Host.Mac` (see below)
+
+For gadget development with hot reload, run `npm run dev` in `src/ui/` alongside the server and open the Vite URL instead.
+
+Tests: `dotnet test src/server` (decoding is checked against a real recording in `tests/fixtures/recordings/`).
+
+| Module | Path | Build |
+|---|---|---|
+| Server (core, providers, server, tests) | `src/server/` | `dotnet build src/server` (any OS) |
+| macOS overlay | `src/host/macos/` | `dotnet build src/host/macos` (needs Xcode) |
+| UI (SDK, gadgets, layouts) | `src/ui/` | `npm run build` |
+
+### macOS overlay (in progress)
+
+For fullscreen play, **turn off Game Mode for RetroArch** (menu bar game controller icon → Turn Off Game Mode). Game Mode throttles the overlay to 5 Hz, about 100–200 ms behind the game ([docs/latency.md](docs/latency.md)). Windowed play isn't affected.
+
+The overlay host needs Xcode and the .NET macOS workload (`sudo dotnet workload install macos`). Each workload release requires one exact Xcode version: workload 27.0.10722 wants Xcode 27.0. We build with Xcode 27.1, so the host project sets `ValidateXcodeVersion=false`. Remove that once a workload supports your Xcode, or if odd build errors appear.
 
 ## A platform with three extension points
 
@@ -31,6 +54,8 @@ See [Architecture](docs/architecture.md) for the full picture.
 - [Gadgets & layouts](docs/gadgets.md): the React SDK
 - [Emulator providers](docs/providers.md): the provider interface, RetroArch, and recordings for replay
 - [Roadmap](docs/roadmap.md): from Space Invaders to DoDonPachi
+- [Latency measurements](docs/latency.md)
+- [Code conventions](docs/conventions.md): organise code by what it does, not what it is
 - [Decision records](docs/decisions/): why things are the way they are
 
 ## Targets
@@ -39,7 +64,7 @@ See [Architecture](docs/architecture.md) for the full picture.
 |---|---|
 | Runtime | .NET 10 |
 | First OS | macOS (Windows to follow) |
-| First emulator | RetroArch or MAME (decided by a spike) |
+| First emulator | RetroArch ([ADR 0009](docs/decisions/0009-first-provider-retroarch.md)); MAME next |
 | Latency | No added lag in the game; overlay at most 1–2 frames behind |
 | First game | Space Invaders (Taito, 1978) |
 | Dream game | DoDonPachi (Cave, 1997) |

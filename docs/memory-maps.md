@@ -1,6 +1,6 @@
 # Memory maps
 
-> Draft format. Nothing reads these files yet.
+> Early format. `Stgadgets.Core` loads it (`MemoryMapLoader`), but expect changes as more games arrive.
 
 A memory map does one job: **match a running game to a set of named variables.**
 
@@ -25,6 +25,8 @@ Gadgets use the variable names. Providers handle the addresses. The map is the o
 
 YAML, because maps are written by hand and need comments. One file per game: `maps/<id>.yaml`.
 
+The first real map, [`maps/invaders.yaml`](../maps/invaders.yaml), checked against a recording:
+
 ```yaml
 schema: 1
 
@@ -33,10 +35,15 @@ game:
   title: Space Invaders
   manufacturer: Taito
   year: 1978
-  screen: { width: 256, height: 224, rotation: 270 }   # native raster; rotation as listed in MAME (ROT270)
+  screen: { width: 256, height: 224, rotation: 270 }   # native raster; MAME lists ROT270
 
 match:
-  romsets: [invaders]           # MAME / FBNeo short names
+  romsets: [invaders]
+  program_crcs:                 # 8080 program ROMs (MAME 0.261 set)
+    invaders.h: 0x734f5ad8
+    invaders.g: 0x6bfaca4a
+    invaders.f: 0x0ccead96
+    invaders.e: 0x14e538b0
 
 system:
   cpu: i8080
@@ -45,27 +52,30 @@ system:
     work_ram:  { start: 0x2000, size: 0x0400 }
     video_ram: { start: 0x2400, size: 0x1C00 }
 
+# Addresses from the Computer Archeology disassembly
+# (https://www.computerarcheology.com/Arcade/SpaceInvaders/), verified against
+# tests/fixtures/recordings/invaders/play-01 (RetroArch 1.22.2, FBNeo).
 variables:
-  # Short form: "<type> @ <address>"
-  hiscore:          bcd2 @ 0x20F4
+  hiscore:          bcd2 @ 0x20F4   # updated at game over
   p1.score:         bcd2 @ 0x20F8
-  p2.score:         bcd2 @ 0x20FA
+  p2.score:         bcd2 @ 0x20FC   # each score is followed by 2 bytes of screen position
   credits:          bcd1 @ 0x20EB
-  p1.lives:         u8   @ 0x21FF
-  aliens_remaining: u8   @ 0x2082
-  player.x:         u8   @ 0x201B
+  aliens_remaining: u8   @ 0x2082   # 55 at the start of a wave; the mystery ship doesn't count
 
-  # Long form, for when you need options
-  game.running:
-    type: bool
-    address: 0x20EF
-    description: 0 during attract mode / demo
-    verified: false
+  p1.ships_reserve:
+    type: u8
+    address: 0x21FF
+    description: Spare ships, not counting the one in play. Doesn't change on the final death.
+    verified: true
+
+  player.state:
+    type: u8
+    address: 0x2015
+    description: 0xFF while alive; alternates 0/1 for the explosion animation (~0.85 s) after a hit.
+    verified: true
 ```
 
-> ⚠️ The Space Invaders addresses above come from memory of the
-> [Computer Archeology](https://www.computerarcheology.com/Arcade/SpaceInvaders/)
-> disassembly and **have not been verified**. Checking them against real memory dumps is the first task in the [roadmap](roadmap.md).
+Variables use either the **short form** `"<type> @ <address>"` or the **long form**, a mapping with `type`, `address` and options.
 
 ### Matching
 
@@ -102,6 +112,10 @@ What stays the same is **the CRC32 of each chip**:
 1. If the provider reports chip CRCs, they decide: a map matches when all its `program_crcs` are present. The name is ignored, so renamed zips and naming differences between MAME and FBNeo don't matter.
 2. Otherwise the core matches by `romsets` name.
 3. If the name matches but the CRCs don't, the map is **not** used. A different revision under the same name would give wrong values silently, which is worse than showing nothing. Tooling reports the mismatch so the map can be extended.
+
+**Merged sets:** a MAME *merged* zip (like the `invaders.zip` used in the spike) contains the parent's ROMs at the top level and every clone's ROMs in subfolders. Only the top-level files describe the parent. Clone CRCs being in the zip doesn't mean those clones are running.
+
+Currently only name matching is implemented. CRC matching comes when a provider reports chip CRCs.
 
 If several ROM sets share most of their addresses but not all, a map can **extend** another and override only what's different (added once a game needs it):
 
@@ -145,7 +159,8 @@ To make generic gadgets work with every game, maps should use these names whenev
 |---|---|
 | `hiscore` | High score |
 | `pN.score` | Player *N*'s score |
-| `pN.lives` | Player *N*'s remaining lives |
+| `pN.lives` | Player *N*'s lives, **including** the one in play |
+| `pN.ships_reserve` | Spare lives, **not** counting the one in play. Many games store this instead of `pN.lives` (Space Invaders does) |
 | `pN.bombs` | Player *N*'s bomb stock |
 | `credits` | Credits inserted |
 | `game.running` | `true` during gameplay, `false` during attract mode or menus |

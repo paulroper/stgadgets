@@ -80,27 +80,41 @@ Gadgets are often placed relative to the **game picture** (the area inside Retro
 
 The layout receives the game picture rectangle and the game's rotation, so gadgets that draw at game coordinates (like hitboxes) can be positioned correctly.
 
-## Repository layout (proposed)
+## Repository layout
+
+Each module has its own build, so you only need the toolchain for the part you're working on. In particular, the server builds on any OS without Xcode.
+
+Code is organised by what it does, not what it is: see [Code conventions](conventions.md).
 
 ```
 src/
-  Stgadgets.Core/                  # variables, map loader & decoder, provider interface
-  Stgadgets.Providers.Mame/        # receives snapshots from the Lua plugin (plugin source alongside)
-  Stgadgets.Providers.RetroArch/   # network-command provider
-  Stgadgets.Providers.Replay/      # plays back recordings
-  Stgadgets.Server/                # Kestrel: static layouts + WebSocket
-  Stgadgets.Host.Mac/              # net10.0-macos overlay + menu bar app
-  Stgadgets.Tools/                 # CLI: dump, record, inspect
-tests/
-  Stgadgets.Core.Tests/
-  fixtures/recordings/             # captured memory, e.g. invaders/
-maps/
-  invaders.yaml
-web/                               # pnpm workspace
-  packages/sdk/                    # @stgadgets/sdk (+ React bindings)
-  packages/gadgets/                # built-in gadgets
-  layouts/                         # built-in layouts
+  server/                            # Stgadgets.Server.slnx: any OS, plain .NET 10
+    Stgadgets.Core/                  # variables, map loader & decoder, recordings, provider interface
+    Stgadgets.Server/                # Kestrel: game loop, WebSocket, /api/emulator, serves src/ui/dist
+    providers/                       # one project per emulator
+      Stgadgets.Providers.RetroArch/ # network-command provider
+      (later) Stgadgets.Providers.Mame/, Stgadgets.Providers.Replay/
+    (later) Stgadgets.Tools/
+  host/
+    lib/                             # shared by every host; plain net10.0, no OS-specific code
+      Stgadgets.Host.Lib.Api/        # client for the server's HTTP API (EmulatorLocator → /api/emulator)
+    macos/                           # Stgadgets.Host.Mac.slnx (includes lib/): net10.0-macos, needs Xcode
+      Stgadgets.Host.Mac/            # overlay window + menu bar app
+    windows/                         # (later; its solution will include lib/ too)
+  ui/                                # Vite + React + TypeScript (npm)
+    src/sdk/                         # connection, store, hooks, latency (future @stgadgets/sdk)
+    src/gadgets/                     # built-in gadgets
+    src/layouts/                     # built-in layouts
+tests/                               # mirrors src/: tests for src/<module>/X live in tests/<module>/X.Tests
+  server/
+    Stgadgets.Core.Tests/            # part of the server solution
+  (later) host/lib/Stgadgets.Host.Lib.Api.Tests/, server/providers/..., ui/
+  fixtures/recordings/               # captured memory, e.g. invaders/play-01
+maps/                                # memory maps (data), loaded by the server
+docs/
 ```
+
+The modules only talk to each other over HTTP and WebSocket on `127.0.0.1`, never through project references: the hosts and the UI talk to the server, and the hosts load the UI from the server.
 
 ## Security
 

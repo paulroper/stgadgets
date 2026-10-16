@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../lib/Stgadgets.Host.Lib.Api/Stgadgets.Host.Lib.Api.csproj" />
+  <Project Path="Stgadgets.Host.Mac/Stgadgets.Host.Mac.csproj" />
+</Solution>

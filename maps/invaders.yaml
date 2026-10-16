@@ -1,0 +1,45 @@
+schema: 1
+
+game:
+  id: invaders
+  title: Space Invaders
+  manufacturer: Taito
+  year: 1978
+  screen: { width: 256, height: 224, rotation: 270 }   # native raster; MAME lists ROT270
+
+match:
+  romsets: [invaders]
+  program_crcs:                 # 8080 program ROMs (MAME 0.261 set)
+    invaders.h: 0x734f5ad8
+    invaders.g: 0x6bfaca4a
+    invaders.f: 0x0ccead96
+    invaders.e: 0x14e538b0
+
+system:
+  cpu: i8080
+  endianness: little
+  regions:
+    work_ram:  { start: 0x2000, size: 0x0400 }
+    video_ram: { start: 0x2400, size: 0x1C00 }
+
+# Addresses from the Computer Archeology disassembly
+# (https://www.computerarcheology.com/Arcade/SpaceInvaders/), verified against
+# tests/fixtures/recordings/invaders/play-01 (RetroArch 1.22.2, FBNeo).
+variables:
+  hiscore:          bcd2 @ 0x20F4   # updated at game over
+  p1.score:         bcd2 @ 0x20F8
+  p2.score:         bcd2 @ 0x20FC   # each score is followed by 2 bytes of screen position
+  credits:          bcd1 @ 0x20EB
+  aliens_remaining: u8   @ 0x2082   # 55 at the start of a wave; the mystery ship doesn't count
+
+  p1.ships_reserve:
+    type: u8
+    address: 0x21FF
+    description: Spare ships, not counting the one in play. Doesn't change on the final death.
+    verified: true
+
+  player.state:
+    type: u8
+    address: 0x2015
+    description: 0xFF while alive; alternates 0/1 for the explosion animation (~0.85 s) after a hit.
+    verified: true

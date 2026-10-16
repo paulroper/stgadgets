@@ -12,9 +12,9 @@ Space Invaders (Taito, 1978) is a good first game: it has an 8-bit CPU (Intel 80
 
 The riskiest assumption is that we can read Space Invaders' memory, at the original hardware's addresses, on macOS. Test both candidates before writing anything for real:
 
-- [ ] **RetroArch:** turn on network commands, load Space Invaders in FBNeo (then the MAME cores), and try `GET_STATUS` and `READ_CORE_MEMORY 2000 400` with `nc -u`. Is the memory exposed? At which addresses? How long does a round-trip take?
-- [ ] **MAME:** a minimal Lua plugin that reads `0x2000–0x23FF` in `register_frame_done` and writes it out every frame.
-- [ ] Write up the result as ADR 0009: the first provider.
+- [x] **RetroArch:** turn on network commands, load Space Invaders in FBNeo (then the MAME cores), and try `GET_STATUS` and `READ_CORE_MEMORY 2000 400` with `nc -u`. Is the memory exposed? At which addresses? How long does a round-trip take?
+- [ ] ~~**MAME:**~~ not needed for now. RetroArch worked ([ADR 0009](decisions/0009-first-provider-retroarch.md)). Kept as the second provider. A minimal Lua plugin that reads `0x2000–0x23FF` in `register_frame_done` and writes it out every frame.
+- [x] Write up the result as ADR 0009: the first provider.
 
 **Done when** we have bytes we trust from Space Invaders' work RAM, every frame, and a decision on the first provider.
 
@@ -22,16 +22,16 @@ The riskiest assumption is that we can read Space Invaders' memory, at the origi
 
 One game, one variable, one gadget, on screen, with latency measured.
 
-- [ ] Set up the .NET solution (`src/`, `tests/`) on .NET 10
-- [ ] The chosen provider, streaming work RAM
-- [ ] `stgadgets record`: capture recordings in the [recording format](providers.md#recording-format-draft)
-- [ ] Capture fixture recordings: attract mode, inserting a coin, scoring, losing a life, clearing a wave
-- [ ] Check the draft addresses in [memory-maps.md](memory-maps.md) against the recordings
-- [ ] Minimal decoding of `p1.score` (BCD), with the map hardcoded or very minimal
-- [ ] Kestrel WebSocket server and a bare `@stgadgets/sdk` with `useVar`
-- [ ] A score gadget in a browser
-- [ ] Spike: overlay window on macOS ([ADR 0007](decisions/0007-native-overlay-host.md)) showing the gadget over the emulator
-- [ ] Pipeline timestamps and a latency debug gadget
+- [x] Set up the .NET solution (`src/`, `tests/`) on .NET 10
+- [x] The chosen provider, streaming work RAM
+- [ ] `stgadgets record`: capture recordings (the spike used a Python script; port it to .NET) in the [recording format](providers.md#recording-format-draft)
+- [x] Capture fixture recordings (`invaders/play-01`: mystery ship, deaths, game over; still to capture: inserting a coin, clearing a wave): attract mode, inserting a coin, scoring, losing a life, clearing a wave
+- [x] Check the draft addresses in [memory-maps.md](memory-maps.md) against the recordings
+- [x] Minimal decoding of `p1.score` (BCD), with the map hardcoded or very minimal
+- [x] Kestrel WebSocket server and a bare `@stgadgets/sdk` with `useVar`
+- [x] A score gadget in a browser
+- [x] Spike: overlay window on macOS ([ADR 0007](decisions/0007-native-overlay-host.md)) showing the gadget over the emulator (works in fullscreen too)
+- [x] Pipeline timestamps and a latency debug gadget (read → paint; full per-stage timestamps still to do)
 - [ ] End-to-end latency test: screen recording, game score vs gadget score
 - [ ] Check L1: emulator latency with and without the overlay
 
@@ -41,11 +41,11 @@ One game, one variable, one gadget, on screen, with latency measured.
 
 Generalise only what milestone 1 proved:
 
-- [ ] Map loader and decoder for real (YAML, types, byte order)
+- [x] Map loader and decoder for real (YAML, types, byte order)
 - [ ] Match maps to ROM set and hash
 - [ ] Replay provider
 - [ ] `stgadgets map test`: decode a recording and print the variables
-- [ ] Unit tests for decoding against the recordings
+- [x] Unit tests for decoding against the recordings
 - [ ] SDK: `useGame`, `useConnection`, `useOnFrame`
 - [ ] Gadgets: lives, aliens remaining. Tracker: shots fired and accuracy
 - [ ] Overlay follows the emulator window; menu bar app

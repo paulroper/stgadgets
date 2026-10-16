@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="../../tests/server/Stgadgets.Core.Tests/Stgadgets.Core.Tests.csproj" />
+  <Project Path="Stgadgets.Core/Stgadgets.Core.csproj" />
+  <Project Path="providers/Stgadgets.Providers.RetroArch/Stgadgets.Providers.RetroArch.csproj" />
+  <Project Path="Stgadgets.Server/Stgadgets.Server.csproj" />
+</Solution>

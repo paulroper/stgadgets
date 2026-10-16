@@ -1,6 +1,6 @@
 # Emulator providers
 
-> Draft interface. Nothing is implemented yet.
+> Early interface. `IEmulatorProvider` and the RetroArch provider exist; the rest is planned.
 
 A provider connects stgadgets to one emulator. Its whole job is to **report what's running** and **deliver memory snapshots, using the original hardware's addresses, as close to every frame as the emulator allows**. Everything else (maps, variables, gadgets) is shared.
 
@@ -40,6 +40,10 @@ public sealed record ReadPlan(IReadOnlyList<AddressRange> Ranges);
 public sealed record Snapshot(long? EmulatedFrame, long ReceivedAtTicks, ReadOnlyMemory<byte> Data);
 ```
 
+The code (`src/server/Stgadgets.Core/Providers/IEmulatorProvider.cs`) currently implements a subset: `Process`, `GetContentAsync` and `StreamAsync(content, plan)`. Capabilities and watching for content changes get added when they're needed.
+
+**Finding the emulator's window:** the server exposes the provider's `Process` at `GET /api/emulator` (`{ provider, appName, processId }`, or 204 when not connected). The overlay host polls it every 2 s and follows that process's window, matched by process ID, falling back to the app name. Nothing in the overlay is specific to one emulator. The RetroArch provider finds its process by name, since network commands don't say which process answered.
+
 The core builds the `ReadPlan` from the active map, merging addresses into as few contiguous ranges as possible.
 
 ## Identifying the game
@@ -74,19 +78,26 @@ network_cmd_enable = "true"
 network_cmd_port = "55355"
 ```
 
-| Need | Command |
-|---|---|
-| What's running | `GET_STATUS` → state, system, content name, CRC32 |
-| Read memory | `READ_CORE_MEMORY <hex addr> <len>` → `READ_CORE_MEMORY <addr> <hex bytes…>` or an error |
+Implemented in `src/server/providers/Stgadgets.Providers.RetroArch`. What we learned in the spike (RetroArch 1.22.2 on macOS, FBNeo core, Space Invaders):
 
-Limitations:
+| Need | Command | Notes |
+|---|---|---|
+| What's running | `GET_STATUS` → `GET_STATUS PLAYING fb_alpha,invaders,crc32=be3e15a` | Also `PAUSED` or `CONTENTLESS`. The CRC is of the whole zip, so it's useless for matching (see [memory-maps.md](memory-maps.md#why-chip-crcs-not-file-hashes-for-arcade-games)) |
+| Read memory | `READ_CORE_RAM <hex offset> <len>` → `READ_CORE_RAM <offset> <hex bytes…>` | Uses RetroAchievements addressing. **This is the one that works with FBNeo** |
+| | `READ_CORE_MEMORY <hex addr> <len>` | ❌ FBNeo replies `-1 no memory map defined`. It only works with cores that publish a libretro memory map |
 
-- **Polling only.** It isn't synced to frames, so single-frame events can be missed. The provider polls faster than the frame rate and uses a map's `frame_counter` variable, if it has one, to spot missed or repeated frames.
-- **Handled once per frame (probably).** If RetroArch handles commands once per frame, each round-trip can cost up to a frame. The provider sends all reads for a tick at once without waiting for replies, and never waits on one reply before sending the next request.
-- **Needs a core memory map.** `READ_CORE_MEMORY` goes through the core's memory map (the same one RetroAchievements uses). Cores without one can't be read, and arcade cores may expose RAM at their own addresses. A small **core profile** for each core and system translates the original hardware's addresses into the core's.
-- **Reply sizes** are probably limited, so large regions need several requests.
+Measurements:
 
-> ⚠️ Whether RetroArch's arcade cores on macOS expose usable memory is **unchecked**. It's the first task in the [roadmap](roadmap.md).
+- **Round-trip ≈ one frame:** median 16.3 ms, 95th percentile 19.2 ms. This confirms RetroArch handles commands once per frame. Polling back-to-back gives about one sample per frame: in a 2-minute capture, 0.3% of intervals were over 25 ms (a missed frame) and 0.4% were under 8 ms (the same frame read twice).
+- **Reply size limit:** reads of 3,000 bytes work, but 4,096 bytes get no reply. That's probably because each byte takes 3 characters of hex and macOS limits a UDP datagram to about 9 KB. The provider splits reads into chunks of at most 2,048 bytes.
+- **Occasional stalls** of around 500 ms, probably while RetroArch's menu was open or its window was changing.
+
+How the provider works:
+
+- **Core profiles.** `READ_CORE_RAM` offsets are in the core's own layout. For FBNeo's Space Invaders, offset 0 is CPU address `0x2000` and `0x2000` bytes are readable (work RAM and video RAM). `CoreProfile` stores this for each (system, ROM set) pair. Each new pairing must be checked by hand for now.
+- **Pipelined reads.** Every chunk for a tick is sent before waiting for any reply, so a tick costs one frame, not one frame per range.
+- **Watching for changes.** Every 2 seconds the provider re-checks `GET_STATUS` and ends the stream if the content changed. After 10 timeouts in a row, it assumes RetroArch is gone.
+- **Polling only.** It isn't synced to frames, so single-frame events can still be missed. A map's `frame_counter` variable, if it has one, can be used to spot missed or repeated frames.
 
 ## Replay provider
 

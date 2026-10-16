@@ -112,7 +112,7 @@ An input display can't come from the emulator APIs, because none of them report 
 ## Development workflow
 
 1. Run stgadgets with the **replay provider** pointed at a recording (see [providers.md](providers.md#replay-provider)). You don't need an emulator.
-2. Run `pnpm dev` in `web/`. The Vite dev server proxies the WebSocket to stgadgets.
+2. Run `npm run dev` in `src/ui/`. The Vite dev server proxies the WebSocket to stgadgets.
 3. Open the layout in a browser and edit gadgets with hot reload.
 
 ## Wire protocol (internal)

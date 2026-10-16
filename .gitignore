@@ -72,4 +72,4 @@ local/
 
 ## Web
 node_modules/
-web/dist/
+src/ui/dist/

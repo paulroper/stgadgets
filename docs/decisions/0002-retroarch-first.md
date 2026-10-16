@@ -1,6 +1,6 @@
 # 0002. RetroArch is the first emulator
 
-- **Status:** Accepted, being re-checked. The milestone 0 spike compares RetroArch with MAME's Lua plugin system; ADR 0009 will confirm or replace this record.
+- **Status:** Accepted (confirmed by the milestone 0 spike, [0009](0009-first-provider-retroarch.md))
 - **Date:** 2026-10-15
 
 ## Context

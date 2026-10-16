@@ -1,0 +1,59 @@
+:root {
+  color-scheme: dark;
+  --panel: rgb(10 10 14 / 0.85);
+  --text: #f2f2f2;
+  --label: #7fe07f;
+  --dim: #8a8a96;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+body {
+  margin: 0;
+  background: #000;
+  color: var(--text);
+}
+
+.overlay body {
+  background: transparent;
+}
+
+.panel {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 16px;
+  padding: 16px 20px;
+  background: var(--panel);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 8px;
+  min-width: 180px;
+}
+
+.gadget .label {
+  color: var(--label);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+}
+
+.gadget .value {
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gadget .value.small {
+  font-size: 14px;
+}
+
+.gadget.debug {
+  border-top: 1px solid rgb(255 255 255 / 0.12);
+  padding-top: 10px;
+}
+
+.dim {
+  color: var(--dim);
+}
+
+.status {
+  margin: 16px;
+  color: var(--dim);
+}
