@@ -10,6 +10,7 @@ The first pack is [`packs/invaders/`](../packs/invaders/).
 packs/<parent-romset>/
   pack.yaml                  # id, title, manufacturer, year, screen, match rules
   map.yaml                   # memory map: system, regions, variables
+  derived.js                 # values computed from the map's variables each tick (optional)
   providers/
     retroarch.yaml           # settings for one provider, e.g. per-core address translation
   ui/
@@ -17,7 +18,7 @@ packs/<parent-romset>/
     gadgets/                 # the pack's own React components (optional)
   recordings/
     <name>/                  # a recording (docs/providers.md#recording-format-draft), plus:
-      expected.yaml          # values the map must decode from it
+      expected.yaml          # values the map (and derived.js) must produce from it
 ```
 
 Only `pack.yaml` and `map.yaml` are required.
@@ -117,7 +118,8 @@ sequences:                                  # every distinct value, in order, ov
   p1.ships_reserve: [2, 1, 0]
 ```
 
-- Values are numbers (decimal or `0x` hex), `true`, `false` or `null` (bytes that don't decode, such as bad BCD).
+- Values are numbers (decimal or `0x` hex), `true`, `false` or `null` (bytes that don't decode, such as bad BCD). [Derived values](memory-maps.md#derived-values) can also be fractions or strings.
+- Derived values are checked like any other variable. A derived value that fails on any tick is reported too.
 - To check a value just before an event, use the marker's tick minus one.
 - A recording without `expected.yaml` is still checked: every tick must decode, so the map's variables have to fall inside the recorded regions.
 
@@ -128,5 +130,6 @@ sequences:                                  # every distinct value, in order, ov
 1. Create `packs/<parent romset>/` with `pack.yaml` and `map.yaml`. Start from published addresses where they exist ([finding addresses](memory-maps.md#finding-addresses)).
 2. Add provider settings for the emulators and cores you've checked, e.g. `providers/retroarch.yaml`.
 3. Record a session with markers at the events you care about, find or confirm addresses, and write its `expected.yaml`. The `game-recording` skill walks through this.
-4. Optionally, add `ui/layout.tsx`. Until then the generic layout is used.
-5. Run `dotnet test src/server` and, if you added a UI, `npm run build` in `src/ui`.
+4. Optionally, add `derived.js` for values that follow from memory plus knowledge of the game, so the layout only has to display them.
+5. Optionally, add `ui/layout.tsx`. Until then the generic layout is used.
+6. Run `dotnet test src/server` and, if you added a UI, `npm run build` in `src/ui`.

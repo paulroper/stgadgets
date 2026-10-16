@@ -1,3 +1,4 @@
+using Stgadgets.Core.Derived;
 using Stgadgets.Core.Packs;
 using Stgadgets.Core.Providers;
 
@@ -53,6 +54,23 @@ public sealed class PackLoaderTests : IDisposable
         Directory.Move(Path.Combine(_packs.Path, "test"), Path.Combine(_packs.Path, "renamed"));
         var ex = Assert.Throws<FormatException>(() => PackLoader.Load(Path.Combine(_packs.Path, "renamed")));
         Assert.Contains("folder name", ex.Message);
+    }
+
+    [Fact]
+    public void Loads_derived_js_when_present()
+    {
+        Assert.Null(PackLoader.Load(Path.Combine(_packs.Path, "test")).Derived);
+
+        _packs.Write("test/derived.js", "export default { 'p1.ships_reserve': v => v['p1.lives'] - 1 };");
+        Assert.Equal([new DerivedValue("p1.ships_reserve")], PackLoader.Load(Path.Combine(_packs.Path, "test")).Derived?.Values);
+    }
+
+    [Fact]
+    public void Derived_values_cant_reuse_a_map_variables_name()
+    {
+        _packs.Write("test/derived.js", "export default { 'p1.lives': v => 3 };");
+        var ex = Assert.Throws<FormatException>(() => PackLoader.Load(Path.Combine(_packs.Path, "test")));
+        Assert.Contains("already a variable", ex.Message);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using Stgadgets.Core.Derived;
 using Stgadgets.Core.Maps;
 using Stgadgets.Core.Recordings;
 
@@ -84,4 +85,29 @@ public sealed class ExpectedValuesTests : IDisposable
                   start: { y: 1 }
                 sequences: { y: [1] }
                 """));
+
+    [Fact]
+    public void Checks_derived_values_and_reports_their_first_failure_only()
+    {
+        using var scripts = new TempDirectory();
+        var derived = DerivedScript.Load(scripts.Write("derived.js", """
+            export default {
+              trend: (v, prev) => prev === null || v.x === prev.x ? 'flat' : 'up',
+              broken: v => v.x.nope.nope,
+            };
+            """));
+
+        Assert.Equal(
+            [
+                "tick 0: derived 'broken' failed: Cannot read properties of undefined (reading 'nope')",
+                "sequences: trend is ['flat', 'up'], expected ['flat']",
+            ],
+            ExpectedValues.Parse("""
+                at:
+                  "x goes up": { trend: up }
+                sequences:
+                  trend: [flat]
+                  broken: [~]
+                """).Check(Recording.Load(_recording.Path), _decoder, derived));
+    }
 }

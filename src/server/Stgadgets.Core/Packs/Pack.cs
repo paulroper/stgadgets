@@ -1,3 +1,4 @@
+using Stgadgets.Core.Derived;
 using Stgadgets.Core.Maps;
 using Stgadgets.Core.Providers;
 
@@ -10,6 +11,7 @@ public sealed record GameInfo(string Title, string? Manufacturer, int? Year, Scr
 /// <summary>Everything stgadgets knows about one game: a folder under packs/. See docs/packs.md.</summary>
 /// <param name="Id">The MAME parent ROM set, which is also the folder's name.</param>
 /// <param name="DirectoryPath">The pack's folder.</param>
+/// <param name="Derived">The pack's derived.js, if it has one.</param>
 /// <param name="ProviderSettings">The pack's settings for each provider, by provider ID (providers/&lt;id&gt;.yaml).</param>
 public sealed record Pack(
     string Id,
@@ -18,6 +20,7 @@ public sealed record Pack(
     IReadOnlyList<string> Romsets,
     IReadOnlyDictionary<string, uint> ProgramCrcs,
     MemoryMap Map,
+    DerivedScript? Derived,
     IReadOnlyDictionary<string, ProviderSettings> ProviderSettings)
 {
     // TODO: match on ProgramCrcs first once providers report chip CRCs (docs/memory-maps.md#precedence).

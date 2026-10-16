@@ -40,7 +40,10 @@ public sealed class VariableBroadcaster(ILogger<VariableBroadcaster> logger)
         {
             _pack = pack.Id;
             _game = new { pack.Game.Title, pack.Game.Manufacturer, pack.Game.Year, romset, pack.Game.Screen };
-            _variables = pack.Map.Variables.ToDictionary(v => v.Name, v => new { type = v.Type.ToString(), v.Description });
+            _variables = pack.Map.Variables
+                .Select(v => (v.Name, Info: new { type = v.Type.ToString(), v.Description }))
+                .Concat((pack.Derived?.Values ?? []).Select(d => (d.Name, Info: new { type = "derived", d.Description })))
+                .ToDictionary(v => v.Name, v => v.Info);
             _values = [];
             Broadcast(Hello());
         }

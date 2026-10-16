@@ -56,6 +56,13 @@ variables:
     address: 0x2015
     description: 0xFF while alive; alternates 0/1 for the explosion animation (~0.85 s) after a hit.
     verified: true
+  fleet.sound_delay:
+    type: u8
+    address: 0x2097
+    description: >-
+      fleetSndReload: frames between march notes, from the table at 0x1A21. Updated on the next note after a kill,
+      not while the player is dead. derived.js predicts it from aliens_remaining without the lag.
+    verified: true
 ```
 
 Variables use either the **short form** `"<type> @ <address>"` or the **long form**, a mapping with `type`, `address` and options.
@@ -153,6 +160,38 @@ To make generic gadgets work with every game, maps should use these names whenev
 | `frame_counter` | Something that goes up by 1 each frame, used to detect missed frames (see [architecture](architecture.md#polling-isnt-frame-synced)) |
 
 The list will grow as we add games.
+
+## Derived values
+
+Some values follow from memory plus knowledge of the game: a table in ROM, a rule from the disassembly, or what happened on earlier frames. The map stays raw data, and these values go in the pack's `derived.js`. The server computes them each tick, straight after decoding, and publishes them like any other variable. Layouts just display them, and recordings check them in `expected.yaml` ([ADR 0012](decisions/0012-derived-values-in-javascript.md)).
+
+`derived.js` default-exports an object. Each entry is a function `(v, prev) => value`, or `{ description, value }` when it's worth explaining (the description is shown in tooling, like a map variable's):
+
+```js
+// based on packs/invaders/derived.js
+const ALIENS = [50, 43, 36, 28, 22, 17, 13, 10, 8, 7, 6, 5, 4, 3, 2, 1];   // ROM table at 0x1A11
+
+export default {
+  'fleet.speedup_in': {
+    description: 'Kills until the march speeds up again',
+    value: v => {
+      const i = ALIENS.findIndex(t => t <= v.aliens_remaining);
+      return i < 0 || i === ALIENS.length - 1 ? null : v.aliens_remaining - ALIENS[i] + 1;
+    },
+  },
+  // State across ticks, via the previous tick's values.
+  frames_since_kill: (v, prev) =>
+    prev === null || v.aliens_remaining < prev.aliens_remaining ? 0 : prev.frames_since_kill + 1,
+};
+```
+
+- **`v`** holds this tick's values: the map's variables, plus derived values declared earlier in the object. Names with dots need brackets: `v['p1.score']`.
+- **`prev`** holds the previous tick's values, derived ones included, or `null` on the first tick (including after the game restarts).
+- **Return** a number, boolean, string or `null` (no value). Whole numbers are sent as integers.
+- **A function that fails** gives `null` for that tick. Failing means it throws, returns `undefined` (usually a misspelt name), returns `NaN` or `Infinity`, or returns anything else. The server logs it once and recordings report it.
+- **Keep functions pure and quick.** Scripts run in a sandbox: strict mode, no I/O, no .NET, and at most one frame of time per tick. A typical tick takes microseconds.
+- **Names** can't repeat a variable from `map.yaml`. Use the [standard names](#standard-variable-names) when a derived value is one of those concepts, such as `pN.lives` computed from `pN.ships_reserve`.
+- **Number traps:** values are JavaScript numbers. They're exact for anything a map decodes, but bitwise operators work on signed 32 bits, so pick out bits with `mask`/`shift` in the map instead.
 
 ## Finding addresses
 

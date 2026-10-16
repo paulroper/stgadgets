@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 namespace Stgadgets.Core.Tests;
 
 /// <summary>
-/// Replays every recording found under packs/*/recordings through its pack's map and checks its expected.yaml.
+/// Replays every recording found under packs/*/recordings through its pack's map and derived.js, and checks its expected.yaml.
 /// Recordings are local and git-ignored (docs/decisions/0011-recordings-are-local.md), so a fresh clone has none
 /// and this passes trivially; with recordings present it checks all of them.
 /// </summary>
@@ -22,7 +22,7 @@ public class PackRecordingTests(ITestOutputHelper output)
             {
                 // Without expected.yaml this still checks that every tick decodes (docs/packs.md#testing).
                 var name = $"{pack.Id}/{Path.GetFileName(directory)}";
-                var problems = ExpectedValues.Load(directory).Check(Recording.Load(directory), new MapDecoder(pack.Map));
+                var problems = ExpectedValues.Load(directory).Check(Recording.Load(directory), new MapDecoder(pack.Map), pack.Derived);
                 output.WriteLine($"{name}: {(problems.Count == 0 ? "ok" : $"{problems.Count} failure(s)")}");
                 failures.AddRange(problems.Select(p => $"{name}: {p}"));
             }

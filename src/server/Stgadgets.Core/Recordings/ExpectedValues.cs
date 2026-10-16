@@ -1,4 +1,5 @@
 using System.Globalization;
+using Stgadgets.Core.Derived;
 using Stgadgets.Core.Maps;
 using Stgadgets.Core.Packs;
 
@@ -37,11 +38,27 @@ public sealed record ExpectedValues(
                 IReadOnlyList<object?> (sequence) => sequence.Value.Select(ParseValue).ToList()));
     }
 
-    /// <summary>Replays <paramref name="recording"/> through <paramref name="decoder"/> and describes every mismatch.</summary>
-    public IReadOnlyList<string> Check(Recording recording, MapDecoder decoder)
+    /// <summary>
+    /// Replays <paramref name="recording"/> through <paramref name="decoder"/>, and <paramref name="derived"/> if given,
+    /// and describes every mismatch and every derived value that failed.
+    /// </summary>
+    public IReadOnlyList<string> Check(Recording recording, MapDecoder decoder, DerivedScript? derived = null)
     {
-        var ticks = recording.Snapshots.Select(decoder.Decode).ToList();
         var failures = new List<string>();
+        var ticks = recording.Snapshots.Select(decoder.Decode).ToList();
+        if (derived is not null)
+        {
+            using var evaluator = derived.CreateEvaluator(decoder.Map);
+            var failed = new HashSet<string>();
+            for (var tick = 0; tick < ticks.Count; tick++)
+            {
+                foreach (var error in evaluator.Evaluate(ticks[tick]))
+                {
+                    if (failed.Add(error.Name))   // report each value's first failure only
+                        failures.Add($"tick {tick}: derived '{error.Name}' failed: {error.Message}");
+                }
+            }
+        }
 
         foreach (var (point, values) in At)
         {
@@ -95,20 +112,28 @@ public sealed record ExpectedValues(
         return distinct;
     }
 
-    /// <summary>Values as the decoder produces them: <see cref="long"/>, <see cref="bool"/> or null.</summary>
+    /// <summary>Values as the decoder produces them: <see cref="long"/>, <see cref="bool"/> or null. Derived values can also be strings or fractions.</summary>
     private static object? ParseValue(string? text) => text switch
     {
         null or "null" or "~" => null,
         "true" => true,
         "false" => false,
-        _ when text.StartsWith('-') => -(long)PackYaml.ParseNumber(text[1..]),
-        _ => (long)PackYaml.ParseNumber(text),
+        _ when text.StartsWith('-') && IsNumber(text[1..]) => -(long)PackYaml.ParseNumber(text[1..]),
+        _ when IsNumber(text) => (long)PackYaml.ParseNumber(text),
+        _ when double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) => d,
+        _ => text,
     };
+
+    private static bool IsNumber(string text) =>
+        text.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+            ? uint.TryParse(text.AsSpan(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out _)
+            : uint.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out _);
 
     private static string Format(object? value) => value switch
     {
         null => "null",
         bool b => b ? "true" : "false",
+        string s => $"'{s}'",
         _ => Convert.ToString(value, CultureInfo.InvariantCulture)!,
     };
 

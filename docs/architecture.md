@@ -28,7 +28,7 @@ stgadgets is one .NET app that runs alongside the emulator. Inside it:
 | Part | Job | Knows about | Doesn't know about |
 |---|---|---|---|
 | **Provider** | Connects to an emulator and reads memory using the original hardware's addresses | One emulator's API | Games, gadgets |
-| **Core** | Loads game packs, picks the pack for the running ROM set, asks for reads, decodes variables with its map | Packs and memory maps (as data) | Emulators, UI |
+| **Core** | Loads game packs, picks the pack for the running ROM set, asks for reads, decodes variables with its map, computes derived values | Packs: memory maps (as data) and derived values (as sandboxed JavaScript) | Emulators, UI |
 | **Server** | Serves layout bundles and streams variables over WebSocket | Variables | Addresses, emulators |
 | **Overlay host** | Transparent, click-through window that follows the emulator and shows a layout | Windows, the OS | Game memory |
 | **Gadgets & layouts** | React components that draw variables. Game-specific layouts come from packs | Variable names | Addresses, emulators, .NET |
@@ -42,11 +42,11 @@ Lag is the top requirement (see [requirements](requirements.md#latency-highest-p
 
 1. When a game is detected, the **core** finds its pack and works out which address ranges the pack's map needs, merges them into as few ranges as possible, and hands the provider a read plan.
 2. The **provider** pushes a snapshot of those ranges: once per emulated frame where the emulator supports it, otherwise as often as it can poll ([ADR 0008](decisions/0008-providers-push-frame-snapshots.md)).
-3. The **core** decodes each snapshot into variables the moment it arrives, for example `p1.score = 1530`.
+3. The **core** decodes each snapshot into variables the moment it arrives, for example `p1.score = 1530`. Then it computes the pack's [derived values](memory-maps.md#derived-values) from them, such as `fleet.speedup_in = 3`.
 4. The **server** immediately sends the variables that changed to every connected layout over WebSocket.
 5. The **gadgets** re-render.
 
-The core sends every tick in order and doesn't drop or merge any. That way, logic in the layout that watches for changes (such as counting shots fired) sees everything the core saw.
+The core sends every tick in order and doesn't drop or merge any, so a layout sees every value the core saw. Logic that watches for changes, such as counting shots fired, belongs in the pack's `derived.js`, not the layout. Layouts display state; they don't compute it ([ADR 0012](decisions/0012-derived-values-in-javascript.md)).
 
 ### Polling isn't frame-synced
 
@@ -92,7 +92,7 @@ Code is organised by what it does, not what it is: see [Code conventions](conven
 ```
 src/
   server/                            # Stgadgets.Server.slnx: any OS, plain .NET 10
-    Stgadgets.Core/                  # packs, map loader & decoder, recordings & expected values, provider interface
+    Stgadgets.Core/                  # packs, map loader & decoder, derived values (Jint), recordings & expected values, provider interface
     Stgadgets.Server/                # Kestrel: game loop, WebSocket, /api/emulator, serves src/ui/dist
     providers/                       # one project per emulator
       Stgadgets.Providers.RetroArch/ # network-command provider

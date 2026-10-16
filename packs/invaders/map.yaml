@@ -28,3 +28,11 @@ variables:
     address: 0x2015
     description: 0xFF while alive; alternates 0/1 for the explosion animation (~0.85 s) after a hit.
     verified: true
+
+  fleet.sound_delay:
+    type: u8
+    address: 0x2097
+    description: >-
+      fleetSndReload: frames between march notes, from the table at 0x1A21. Updated on the next note after a kill,
+      not while the player is dead. derived.js predicts it from aliens_remaining without the lag.
+    verified: true

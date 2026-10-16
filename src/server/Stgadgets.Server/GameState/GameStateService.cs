@@ -1,3 +1,4 @@
+using Stgadgets.Core.Derived;
 using Stgadgets.Core.Maps;
 using Stgadgets.Core.Packs;
 using Stgadgets.Core.Providers;
@@ -5,8 +6,8 @@ using Stgadgets.Core.Providers;
 namespace Stgadgets.Server.GameState;
 
 /// <summary>
-/// The main loop: find what's running, pick its pack, then decode and publish every snapshot the provider pushes
-/// (docs/architecture.md#the-loop).
+/// The main loop: find what's running, pick its pack, then decode, derive and publish every snapshot the provider
+/// pushes (docs/architecture.md#the-loop).
 /// </summary>
 public sealed class GameStateService(
     IEmulatorProvider provider,
@@ -68,13 +69,36 @@ public sealed class GameStateService(
         broadcaster.SetGame(pack, content.Romset);
         broadcaster.SetStatus("connected");
 
+        using var derived = pack.Derived?.CreateEvaluator(pack.Map);
+        var failing = new HashSet<string>();
         var settings = pack.ProviderSettings.GetValueOrDefault(provider.Id);
         await foreach (var snapshot in provider.StreamAsync(content, decoder.Plan, settings, cancellationToken))
         {
             var readAt = VariableBroadcaster.UnixMs();
-            broadcaster.PublishTick(decoder.Decode(snapshot), readAt);
+            var values = decoder.Decode(snapshot);
+            if (derived is not null)
+                LogDerivedErrors(derived.Evaluate(values), failing);
+            broadcaster.PublishTick(values, readAt);
         }
 
         logger.LogInformation("Content changed or emulator went away");
+    }
+
+    /// <summary>Logs when a derived value starts failing, and when it recovers, rather than on every tick.</summary>
+    private void LogDerivedErrors(IReadOnlyList<DerivedError> errors, HashSet<string> failing)
+    {
+        foreach (var error in errors)
+        {
+            if (failing.Add(error.Name))
+                logger.LogWarning("Derived value '{Name}' failed (null until it recovers): {Message}", error.Name, error.Message);
+        }
+        if (failing.Count > errors.Count)
+        {
+            foreach (var name in failing.Where(name => errors.All(e => e.Name != name)).ToList())
+            {
+                failing.Remove(name);
+                logger.LogInformation("Derived value '{Name}' recovered", name);
+            }
+        }
     }
 }

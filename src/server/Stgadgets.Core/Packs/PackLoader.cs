@@ -1,9 +1,10 @@
+using Stgadgets.Core.Derived;
 using Stgadgets.Core.Maps;
 using Stgadgets.Core.Providers;
 
 namespace Stgadgets.Core.Packs;
 
-/// <summary>Loads a pack folder: pack.yaml, map.yaml and providers/*.yaml.</summary>
+/// <summary>Loads a pack folder: pack.yaml, map.yaml, derived.js and providers/*.yaml.</summary>
 public static class PackLoader
 {
     public static Pack Load(string directory)
@@ -13,13 +14,20 @@ public static class PackLoader
         if (info.Id != Path.GetFileName(Path.TrimEndingDirectorySeparator(directory)))
             throw new FormatException($"{directory}: pack id '{info.Id}' must match the folder name");
 
+        var map = MemoryMapLoader.LoadFile(Path.Combine(directory, "map.yaml"));
+        var derivedPath = Path.Combine(directory, DerivedScript.FileName);
+        var derived = File.Exists(derivedPath) ? DerivedScript.Load(derivedPath) : null;
+        if (derived?.Values.FirstOrDefault(d => map.Variables.Any(v => v.Name == d.Name))?.Name is { } clash)
+            throw new FormatException($"{derivedPath}: '{clash}' is already a variable in map.yaml");
+
         return new Pack(
             info.Id,
             directory,
             info.Game,
             info.Romsets,
             info.ProgramCrcs,
-            MemoryMapLoader.LoadFile(Path.Combine(directory, "map.yaml")),
+            map,
+            derived,
             LoadProviderSettings(Path.Combine(directory, "providers")));
     }
 
