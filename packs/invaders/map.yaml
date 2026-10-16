@@ -89,3 +89,11 @@ variables:
       suspendPlay. False while the game holds everything still: the game-over sequence, and the "PLAY PLAYER<1>"
       screen at the start, when aliens_remaining reads 255. Stays true through deaths.
     verified: true
+
+  shots.count:
+    type: u8
+    address: 0x208F
+    description: >-
+      shotCountLSB: goes up by 1 each time a player shot is removed (hit or miss), wrapping at 256. Reset to 0 at
+      the start screen; bit 0 picks the saucer's direction.
+    verified: true

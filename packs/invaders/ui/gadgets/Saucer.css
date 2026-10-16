@@ -1,5 +1,5 @@
 .saucer-unit {
-  font-size: 14px;
+  font-size: var(--value-small-size);
   color: var(--dim);
 }
 
@@ -32,7 +32,7 @@
 
 .saucer-note {
   margin-top: 4px;
-  font-size: 11px;
+  font-size: var(--label-size);
 }
 
 .saucer-shots {

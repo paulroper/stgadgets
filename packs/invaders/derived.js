@@ -13,6 +13,12 @@ const RACK_START_Y = 0x78;
 
 const saucerIndex = ptr => ptr >= 0x54 && ptr < 0x54 + SAUCER_SCORES.length ? ptr - 0x54 : null;
 
+// Changes between this tick and the last are player 1's doing only if both ticks are player 1 playing.
+const p1Playing = (v, prev) =>
+  prev !== null && v['game.running'] && prev['game.running'] && v['player.data'] === 0x21 && prev['player.data'] === 0x21;
+
+const POPUP_TICKS = 60;
+
 const tempoIndex = aliens => aliens > 0 && aliens <= 55 ? ALIENS.findIndex(threshold => threshold <= aliens) : -1;
 
 export default {
@@ -29,9 +35,59 @@ export default {
     description: "Standard: player 1's ship is in play and not exploding.",
     value: v => v['game.running'] && v['player.data'] === 0x21 ? v['player.state'] === 0xFF : null,
   },
+  // Player 1's shots this game, from the global shot counter.
+  'p1.shots': {
+    description: 'Shots player 1 has fired this game (counted as they leave the screen, hit or miss); null in attract mode.',
+    value: (v, prev) => {
+      if (!v['game.mode']) return null;
+      if (prev === null || prev['p1.shots'] === null) return 0;
+      return prev['p1.shots'] + (p1Playing(v, prev) ? (v['shots.count'] - prev['shots.count'] + 256) % 256 : 0);
+    },
+  },
+
+  'p1.kills': {
+    description: "Aliens player 1 has shot this game (the saucer isn't an alien). Counts from when stgadgets joined if a game was already under way; null in attract mode.",
+    value: (v, prev) => {
+      if (!v['game.mode']) return null;
+      if (prev === null || prev['p1.kills'] === null) return 0;
+      // The start screen's 255 -> 55 isn't between two ticks of play, so it doesn't count.
+      return prev['p1.kills'] + (p1Playing(v, prev) ? Math.max(prev.aliens_remaining - v.aliens_remaining, 0) : 0);
+    },
+  },
+
+  'p1.accuracy': {
+    description: 'Aliens hit per shot this game, from 0 to 1; null before the first shot. Saucer hits and shots that hit bombs count as misses.',
+    value: v => v['p1.shots'] ? v['p1.kills'] / v['p1.shots'] : null,
+  },
+
+  // The latest score increase, for the "+N" popup by the score.
+  'p1.last_gain': {
+    description: "Points from player 1's most recent score increase this game; null until the first.",
+    value: (v, prev) => {
+      if (!v['game.mode'] || prev === null) return null;
+      return p1Playing(v, prev) && v['p1.score'] > prev['p1.score'] ? v['p1.score'] - prev['p1.score'] : prev['p1.last_gain'];
+    },
+  },
+  'p1.last_gain_age': {
+    description: 'Ticks (about frames) since p1.last_gain.',
+    value: (v, prev) => {
+      if (v['p1.last_gain'] === null) return null;
+      const gained = p1Playing(v, prev) && v['p1.score'] > prev['p1.score'];
+      return gained || prev['p1.last_gain_age'] === null ? 0 : prev['p1.last_gain_age'] + 1;
+    },
+  },
+  'p1.score_popup': {
+    description: 'p1.last_gain for about a second after it happens, else null.',
+    value: v => v['p1.last_gain_age'] !== null && v['p1.last_gain_age'] < POPUP_TICKS ? v['p1.last_gain'] : null,
+  },
   'p1.lives': {
     description: "Standard: player 1's ships including the one in play; a ship that's exploding no longer counts.",
     value: v => v['p1.alive'] === null ? null : v['p1.ships_reserve'] + (v['p1.alive'] ? 1 : 0),
+  },
+
+  'fleet.aliens': {
+    description: 'aliens_remaining, or null outside play (it reads 255 on the start screen).',
+    value: v => v['game.running'] ? v.aliens_remaining : null,
   },
 
   'fleet.tempo': {

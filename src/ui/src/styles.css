@@ -4,6 +4,10 @@
   --text: #f2f2f2;
   --label: #7fe07f;
   --dim: #8a8a96;
+  /* Text sizes. A layout can set these on its root element to resize every gadget inside it. */
+  --label-size: 12px;
+  --value-size: 28px;
+  --value-small-size: 14px;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
 }
 
@@ -31,17 +35,17 @@ body {
 
 .gadget .label {
   color: var(--label);
-  font-size: 12px;
+  font-size: var(--label-size);
   letter-spacing: 0.12em;
 }
 
 .gadget .value {
-  font-size: 28px;
+  font-size: var(--value-size);
   font-variant-numeric: tabular-nums;
 }
 
 .gadget .value.small {
-  font-size: 14px;
+  font-size: var(--value-small-size);
 }
 
 .gadget.debug {
@@ -56,4 +60,16 @@ body {
 .status {
   margin: 16px;
   color: var(--dim);
+}
+
+.score-gain {
+  margin-left: 0.35em;
+  font-size: 0.57em;
+  color: #ffd24a;
+  vertical-align: middle;
+  animation: score-gain-in 150ms ease-out;
+}
+
+@keyframes score-gain-in {
+  from { opacity: 0; transform: translateY(4px); }
 }

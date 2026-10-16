@@ -1,0 +1,15 @@
+.lives {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lives-count {
+  min-width: 1ch;
+}
+
+.lives-ship {
+  width: 26px;
+  height: 16px;
+  fill: var(--label);
+}
