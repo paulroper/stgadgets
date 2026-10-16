@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text.Json;
 using System.Threading.Channels;
-using Stgadgets.Core.Maps;
+using Stgadgets.Core.Packs;
 
 namespace Stgadgets.Server.GameState;
 
@@ -19,6 +19,7 @@ public sealed class VariableBroadcaster(ILogger<VariableBroadcaster> logger)
 
     // Current state, so new clients start with a full picture.
     private object _status = new { type = "status", state = "starting" };
+    private string? _pack;
     private object? _game;
     private object? _variables;
     private Dictionary<string, object?> _values = [];
@@ -33,12 +34,13 @@ public sealed class VariableBroadcaster(ILogger<VariableBroadcaster> logger)
         }
     }
 
-    public void SetGame(MemoryMap map, string? romset)
+    public void SetGame(Pack pack, string? romset)
     {
         lock (_gate)
         {
-            _game = new { map.Game.Id, map.Game.Title, romset, map.Game.Screen };
-            _variables = map.Variables.ToDictionary(v => v.Name, v => new { type = v.Type.ToString(), v.Description });
+            _pack = pack.Id;
+            _game = new { pack.Game.Title, pack.Game.Manufacturer, pack.Game.Year, romset, pack.Game.Screen };
+            _variables = pack.Map.Variables.ToDictionary(v => v.Name, v => new { type = v.Type.ToString(), v.Description });
             _values = [];
             Broadcast(Hello());
         }
@@ -87,7 +89,7 @@ public sealed class VariableBroadcaster(ILogger<VariableBroadcaster> logger)
 
     public static double UnixMs() => (DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds;
 
-    private object Hello() => new { type = "hello", game = _game, variables = _variables, values = _values };
+    private object Hello() => new { type = "hello", pack = _pack, game = _game, variables = _variables, values = _values };
 
     private void Broadcast(object message)
     {

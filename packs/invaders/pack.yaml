@@ -1,0 +1,15 @@
+schema: 1
+
+id: invaders                    # the MAME parent ROM set; must match the folder name
+title: Space Invaders
+manufacturer: Taito
+year: 1978
+screen: { width: 256, height: 224, rotation: 270 }   # native raster; MAME lists ROT270
+
+match:
+  romsets: [invaders]
+  program_crcs:                 # 8080 program ROMs (MAME 0.261 set)
+    invaders.h: 0x734f5ad8
+    invaders.g: 0x6bfaca4a
+    invaders.f: 0x0ccead96
+    invaders.e: 0x14e538b0

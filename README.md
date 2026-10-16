@@ -15,13 +15,14 @@ stgadgets runs alongside the emulator. It reads the game's memory through the em
 
 For gadget development with hot reload, run `npm run dev` in `src/ui/` alongside the server and open the Vite URL instead.
 
-Tests: `dotnet test src/server` (decoding is checked against a real recording in `tests/fixtures/recordings/`).
+Tests: `dotnet test src/server`. Each pack's map is also checked against any local recordings in `packs/<id>/recordings/`; these are git-ignored and made with the `game-recording` Claude skill.
 
 | Module | Path | Build |
 |---|---|---|
 | Server (core, providers, server, tests) | `src/server/` | `dotnet build src/server` (any OS) |
 | macOS overlay | `src/host/macos/` | `dotnet build src/host/macos` (needs Xcode) |
-| UI (SDK, gadgets, layouts) | `src/ui/` | `npm run build` |
+| UI (SDK, gadgets, layouts; builds pack UIs too) | `src/ui/` | `npm run build` |
+| Game packs | `packs/` | Data, plus UI built with `src/ui` |
 
 ### macOS overlay (in progress)
 
@@ -33,11 +34,11 @@ The overlay host needs Xcode and the .NET macOS workload (`sudo dotnet workload 
 
 | Extension point | What it is | Written in |
 |---|---|---|
-| **[Memory maps](docs/memory-maps.md)** | Match a ROM set (`ddonpach`) to named variables (`hiscore: bcd4 @ 0x...`) | YAML |
+| **[Game packs](docs/packs.md)** | Everything about one game: match a ROM set (`ddonpach`) to named variables (`hiscore: bcd4 @ 0x...`), plus provider settings, an optional layout and test recordings | YAML (+ React for a layout) |
 | **[Gadgets & layouts](docs/gadgets.md)** | UI components that draw those variables | React + TypeScript |
 | **[Emulator providers](docs/providers.md)** | Connect to an emulator and read memory | C# / .NET |
 
-Adding a game should only need a map file. Adding a gadget should only need some React. Adding an emulator should only need a provider. None of them should need changes to the others.
+Adding a game only needs a pack folder: no platform code and no C#. Adding a gadget should only need some React. Adding an emulator should only need a provider. None of them should need changes to the others, and the platform contains no game-specific logic.
 
 ```
  Emulator ──official API──▶ Provider ──bytes──▶ Core ──variables──▶ Gadgets (React)
@@ -50,6 +51,7 @@ See [Architecture](docs/architecture.md) for the full picture.
 
 - [Requirements](docs/requirements.md): latency first. STG players feel every frame
 - [Architecture](docs/architecture.md): the parts of the system and how they fit together
+- [Game packs](docs/packs.md): how to add a game
 - [Memory maps](docs/memory-maps.md): the per-game map format
 - [Gadgets & layouts](docs/gadgets.md): the React SDK
 - [Emulator providers](docs/providers.md): the provider interface, RetroArch, and recordings for replay

@@ -28,16 +28,19 @@ stgadgets is one .NET app that runs alongside the emulator. Inside it:
 | Part | Job | Knows about | Doesn't know about |
 |---|---|---|---|
 | **Provider** | Connects to an emulator and reads memory using the original hardware's addresses | One emulator's API | Games, gadgets |
-| **Core** | Picks the memory map for the running ROM set, asks for reads, decodes variables | Memory maps | Emulators, UI |
+| **Core** | Loads game packs, picks the pack for the running ROM set, asks for reads, decodes variables with its map | Packs and memory maps (as data) | Emulators, UI |
 | **Server** | Serves layout bundles and streams variables over WebSocket | Variables | Addresses, emulators |
 | **Overlay host** | Transparent, click-through window that follows the emulator and shows a layout | Windows, the OS | Game memory |
-| **Gadgets & layouts** | React components that draw variables | Variable names | Addresses, emulators, .NET |
+| **Gadgets & layouts** | React components that draw variables. Game-specific layouts come from packs | Variable names | Addresses, emulators, .NET |
+| **[Game packs](packs.md)** | Everything about one game: match rules, memory map, provider settings, optional UI, recordings | One game | The platform's internals |
+
+No part of the platform contains game-specific logic: it all lives in packs ([ADR 0010](decisions/0010-game-packs.md)).
 
 ## The loop
 
 Lag is the top requirement (see [requirements](requirements.md#latency-highest-priority)), so the loop is **driven by the provider pushing data**, with no timers in the core:
 
-1. When a game is detected, the **core** works out which address ranges the active map needs, merges them into as few ranges as possible, and hands the provider a read plan.
+1. When a game is detected, the **core** finds its pack and works out which address ranges the pack's map needs, merges them into as few ranges as possible, and hands the provider a read plan.
 2. The **provider** pushes a snapshot of those ranges: once per emulated frame where the emulator supports it, otherwise as often as it can poll ([ADR 0008](decisions/0008-providers-push-frame-snapshots.md)).
 3. The **core** decodes each snapshot into variables the moment it arrives, for example `p1.score = 1530`.
 4. The **server** immediately sends the variables that changed to every connected layout over WebSocket.
@@ -89,7 +92,7 @@ Code is organised by what it does, not what it is: see [Code conventions](conven
 ```
 src/
   server/                            # Stgadgets.Server.slnx: any OS, plain .NET 10
-    Stgadgets.Core/                  # variables, map loader & decoder, recordings, provider interface
+    Stgadgets.Core/                  # packs, map loader & decoder, recordings & expected values, provider interface
     Stgadgets.Server/                # Kestrel: game loop, WebSocket, /api/emulator, serves src/ui/dist
     providers/                       # one project per emulator
       Stgadgets.Providers.RetroArch/ # network-command provider
@@ -102,19 +105,21 @@ src/
       Stgadgets.Host.Mac/            # overlay window + menu bar app
     windows/                         # (later; its solution will include lib/ too)
   ui/                                # Vite + React + TypeScript (npm)
-    src/sdk/                         # connection, store, hooks, latency (future @stgadgets/sdk)
-    src/gadgets/                     # built-in gadgets
-    src/layouts/                     # built-in layouts
+    src/sdk/                         # connection, store, hooks, latency (@stgadgets/sdk)
+    src/gadgets/                     # standard gadgets (@stgadgets/gadgets)
+    src/layouts/                     # generic layout, and loading pack layouts
 tests/                               # mirrors src/: tests for src/<module>/X live in tests/<module>/X.Tests
   server/
     Stgadgets.Core.Tests/            # part of the server solution
   (later) host/lib/Stgadgets.Host.Lib.Api.Tests/, server/providers/..., ui/
-  fixtures/recordings/               # captured memory, e.g. invaders/play-01
-maps/                                # memory maps (data), loaded by the server
+packs/                               # game packs: everything game-specific (docs/packs.md)
+  invaders/                          # pack.yaml, map.yaml, providers/, ui/, recordings/
 docs/
 ```
 
 The modules only talk to each other over HTTP and WebSocket on `127.0.0.1`, never through project references: the hosts and the UI talk to the server, and the hosts load the UI from the server.
+
+Packs are data plus optional UI code. The server loads them from `packs/` (config `Stgadgets:PacksPath`), and the UI build compiles their `ui/` folders, which may import only `@stgadgets/sdk`, `@stgadgets/gadgets` and `react`.
 
 ## Security
 

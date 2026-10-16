@@ -1,23 +1,24 @@
 # Gadgets & layouts
 
-> Draft API. Nothing is implemented yet.
+> Draft API. The SDK (`src/ui/src/sdk`), a few gadgets, the generic layout and pack layouts exist; the rest is planned.
 
-Gadgets are React components. Layouts are pages that arrange gadgets for a game. Both are written in TypeScript, built with Vite into static bundles, and served by stgadgets to the overlay's webview, or to OBS, or to a normal browser while you develop.
+Gadgets are React components. Layouts are pages that arrange gadgets for a game. The platform's own gadgets and the generic layout live in `src/ui`. A game's own layout and gadgets live in its [game pack](packs.md#ui). Both are written in TypeScript, built with Vite into static bundles, and served by stgadgets to the overlay's webview, or to OBS, or to a normal browser while you develop.
 
 ## Concepts
 
 | | What | Example |
 |---|---|---|
 | **Gadget** | A component that draws one or more variables | `<Score player={1} />`, `<RankMeter />` |
-| **Layout** | A page that arranges gadgets, for one game or for any game | `invaders-classic`, `generic-score-panel` |
+| **Layout** | A page that arranges gadgets, for one game (in its pack) or for any game | `packs/invaders/ui/layout.tsx`, `GenericLayout` |
 | **SDK** | `@stgadgets/sdk`: the connection to stgadgets, hooks, and layout helpers | `useVar('p1.score')` |
+| **Standard gadgets** | `@stgadgets/gadgets`: the platform's gadgets, for any layout | `<Score name="p1.score" label="1UP" />` |
 
 ## Reading variables
 
 Variables come from the active [memory map](memory-maps.md). The SDK holds them in a store and re-renders components when the variables they use change.
 
 ```tsx
-import { useVar } from '@stgadgets/sdk/react';
+import { useVar } from '@stgadgets/sdk';
 
 export function Score({ player = 1 }: { player?: 1 | 2 }) {
   const score = useVar<number>(`p${player}.score`);
@@ -31,8 +32,9 @@ Hooks:
 | Hook | Returns |
 |---|---|
 | `useVar<T>(name)` | The current value, or `undefined` if the map doesn't define it |
-| `useGame()` | `{ id, title, romset, screen: { width, height, rotation } }`, or `null` when nothing is running |
-| `useConnection()` | `'connected' \| 'no-emulator' \| 'no-map' \| 'disconnected'` |
+| `useGame()` | `{ title, manufacturer, year, romset, screen: { width, height, rotation } }`, or `null` when nothing is running |
+| `usePack()` | The matched pack's ID, e.g. `'invaders'`, or `null` |
+| `useConnection()` | `{ state, detail }`; `state` is `'connected' \| 'no-emulator' \| 'no-content' \| 'no-pack' \| 'disconnected'` and a few more |
 | `useOnFrame(fn)` | Calls `fn(vars, prev, info)` for **every** tick, in order. This is the building block for trackers |
 | `useGameRect()` | Where the game picture sits in the overlay, plus helpers to convert game coordinates into overlay coordinates |
 
@@ -70,13 +72,17 @@ If a tracker turns out to be expensive or widely shared, it can move into the co
 
 ## Layouts
 
+Today a layout is a React component. When the server matches a [game pack](packs.md), the UI shows the pack's `ui/layout.tsx` (its default export), or the **generic layout** if the pack has none. The generic layout (`src/ui/src/layouts/GenericLayout.tsx`) shows standard gadgets for the [standard variable names](memory-maps.md#standard-variable-names). Gadgets render nothing for variables the map doesn't define.
+
+Pack layouts are built with the UI: Vite finds every `packs/*/ui/layout.tsx` and builds each into its own lazily loaded chunk. Pack UI code may import only `@stgadgets/sdk`, `@stgadgets/gadgets`, `react` and its own files, and the build fails otherwise ([packs.md](packs.md#what-pack-uis-may-import)), so packs can be built and distributed separately later.
+
+Planned layout helpers, as a sketch:
+
 ```tsx
 import { defineLayout, Panel, GameSpace } from '@stgadgets/sdk/react';
 import { Score, Lives, Accuracy } from '@stgadgets/gadgets';
 
 export default defineLayout({
-  id: 'invaders-classic',
-  match: { romsets: ['invaders'] },     // omit to work with any game
   render: () => (
     <>
       <Panel anchor="left">
@@ -121,7 +127,8 @@ The SDK handles this, but for reference:
 
 ```jsonc
 // server → client, on connect and whenever the game changes
-{ "type": "hello", "game": { "id": "invaders", "romset": "invaders", "screen": { … } },
+{ "type": "hello", "pack": "invaders",
+  "game": { "title": "Space Invaders", "manufacturer": "Taito", "year": 1978, "romset": "invaders", "screen": { … } },
   "variables": { "p1.score": { "type": "bcd2" }, … }, "values": { "p1.score": 0, … } }
 
 // server → client, every tick (changed values only)
@@ -133,6 +140,6 @@ The SDK handles this, but for reference:
 
 ## Open questions
 
-- **Packaging third-party layouts:** a folder containing a built bundle and a manifest, dropped into a user directory?
+- **Packaging third-party packs:** separately built pack UIs loaded at runtime as ES modules, with the SDK, gadgets and React shared through an import map. Needs its own decision on SDK versioning and trust ([ADR 0010](decisions/0010-game-packs.md)).
 - **Styling:** each layout styles itself freely, or the SDK provides shared design tokens so gadgets look consistent?
 - **Configuration:** user-tweakable settings for each layout, such as colours, which gadgets to show, and scale.

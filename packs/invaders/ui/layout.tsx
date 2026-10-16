@@ -1,9 +1,7 @@
-import { Counter } from "../gadgets/Counter";
-import { LatencyMeter } from "../gadgets/LatencyMeter";
-import { Score } from "../gadgets/Score";
+import { Counter, LatencyMeter, Score } from "@stgadgets/gadgets";
 
-/** First layout: a side panel for Space Invaders. */
-export function InvadersClassic() {
+/** A side panel for Space Invaders. */
+export default function InvadersClassic() {
   return (
     <div className="panel">
       <Score name="p1.score" label="SCORE<1>" />

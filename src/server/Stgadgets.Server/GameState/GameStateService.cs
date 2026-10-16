@@ -1,15 +1,16 @@
 using Stgadgets.Core.Maps;
+using Stgadgets.Core.Packs;
 using Stgadgets.Core.Providers;
 
 namespace Stgadgets.Server.GameState;
 
 /// <summary>
-/// The main loop: find what's running, pick its map, then decode and publish every snapshot the provider pushes
+/// The main loop: find what's running, pick its pack, then decode and publish every snapshot the provider pushes
 /// (docs/architecture.md#the-loop).
 /// </summary>
 public sealed class GameStateService(
     IEmulatorProvider provider,
-    MapCatalog maps,
+    PackCatalog packs,
     VariableBroadcaster broadcaster,
     ILogger<GameStateService> logger) : BackgroundService
 {
@@ -17,7 +18,7 @@ public sealed class GameStateService(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("Loaded {Count} memory map(s): {Ids}", maps.Maps.Count, string.Join(", ", maps.Maps.Select(m => m.Game.Id)));
+        logger.LogInformation("Loaded {Count} pack(s): {Ids}", packs.Packs.Count, string.Join(", ", packs.Packs.Select(p => p.Id)));
 
         string? lastWarning = null;
         while (!stoppingToken.IsCancellationRequested)
@@ -54,20 +55,21 @@ public sealed class GameStateService(
             return;
         }
 
-        var map = maps.Find(content);
-        if (map is null)
+        var pack = packs.Find(content);
+        if (pack is null)
         {
-            broadcaster.SetStatus("no-map", $"No memory map for '{content.Romset}'");
+            broadcaster.SetStatus("no-pack", $"No pack for '{content.Romset}'");
             return;
         }
 
-        var decoder = new MapDecoder(map);
-        logger.LogInformation("Playing {Game} ({Romset} on {System}); reading {Ranges}",
-            map.Game.Title, content.Romset, content.System, string.Join(", ", decoder.Plan.Ranges));
-        broadcaster.SetGame(map, content.Romset);
+        var decoder = new MapDecoder(pack.Map);
+        logger.LogInformation("Playing {Game} (pack {Pack}, {Romset} on {System}); reading {Ranges}",
+            pack.Game.Title, pack.Id, content.Romset, content.System, string.Join(", ", decoder.Plan.Ranges));
+        broadcaster.SetGame(pack, content.Romset);
         broadcaster.SetStatus("connected");
 
-        await foreach (var snapshot in provider.StreamAsync(content, decoder.Plan, cancellationToken))
+        var settings = pack.ProviderSettings.GetValueOrDefault(provider.Id);
+        await foreach (var snapshot in provider.StreamAsync(content, decoder.Plan, settings, cancellationToken))
         {
             var readAt = VariableBroadcaster.UnixMs();
             broadcaster.PublishTick(decoder.Decode(snapshot), readAt);

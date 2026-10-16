@@ -5,6 +5,7 @@ Emulator overlay that shows M2 ShotTriggers-style gadgets for shmups. A .NET ser
 ## Key rules
 
 - **Latency comes first** (`docs/requirements.md`): never add lag to the emulator, and keep the overlay within 1–2 frames of the game.
+- No game-specific logic in the platform. Everything about a game lives in its pack under `packs/<parent romset>/` (`docs/packs.md`).
 - Read emulators only through their official APIs. Never write to game memory.
 - Memory maps use the original hardware's addresses. Emulator-specific address translation belongs in providers.
 - Modules (`src/server`, `src/host/*`, `src/ui`) talk over HTTP/WebSocket on 127.0.0.1, never through project references.

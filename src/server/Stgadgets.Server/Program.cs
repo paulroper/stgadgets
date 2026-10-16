@@ -1,5 +1,5 @@
 using Microsoft.Extensions.FileProviders;
-using Stgadgets.Core.Maps;
+using Stgadgets.Core.Packs;
 using Stgadgets.Core.Providers;
 using Stgadgets.Providers.RetroArch;
 using Stgadgets.Server.GameState;
@@ -11,7 +11,7 @@ builder.WebHost.UseUrls("http://127.0.0.1:5199");
 
 string RepoPath(string key) => Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, builder.Configuration[key]!));
 
-builder.Services.AddSingleton(MapCatalog.LoadDirectory(RepoPath("Stgadgets:MapsPath")));
+builder.Services.AddSingleton(PackCatalog.LoadDirectory(RepoPath("Stgadgets:PacksPath")));
 builder.Services.AddSingleton<IEmulatorProvider, RetroArchProvider>();
 builder.Services.AddSingleton<VariableBroadcaster>();
 builder.Services.AddHostedService<GameStateService>();

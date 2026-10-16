@@ -4,6 +4,8 @@
 
 A provider connects stgadgets to one emulator. Its whole job is to **report what's running** and **deliver memory snapshots, using the original hardware's addresses, as close to every frame as the emulator allows**. Everything else (maps, variables, gadgets) is shared.
 
+Providers contain no game-specific data. Anything a provider needs to know about a game, such as where a core puts its RAM, comes from the matched [game pack](packs.md#provider-settings): `packs/<id>/providers/<provider id>.yaml`.
+
 ## Being a good citizen
 
 Providers use each emulator's **official, supported interfaces**: network commands, scripting APIs, plugin systems. Not injection, and not reading another process's memory. That keeps stgadgets stable across emulator updates and avoids needing extra OS permissions. It also means we never interfere with the emulator, which is essential for [latency requirement L1](requirements.md#l1-no-added-lag-in-the-game). See [ADR 0004](decisions/0004-providers-use-official-emulator-apis.md).
@@ -40,18 +42,18 @@ public sealed record ReadPlan(IReadOnlyList<AddressRange> Ranges);
 public sealed record Snapshot(long? EmulatedFrame, long ReceivedAtTicks, ReadOnlyMemory<byte> Data);
 ```
 
-The code (`src/server/Stgadgets.Core/Providers/IEmulatorProvider.cs`) currently implements a subset: `Process`, `GetContentAsync` and `StreamAsync(content, plan)`. Capabilities and watching for content changes get added when they're needed.
+The code (`src/server/Stgadgets.Core/Providers/IEmulatorProvider.cs`) currently implements a subset: `Process`, `GetContentAsync` and `StreamAsync(content, plan, settings)`, where `settings` is the matched pack's file for this provider (`ProviderSettings`, or null if the pack has none). Only the provider knows the file's shape; `settings.Read<T>()` deserializes it. Capabilities and watching for content changes get added when they're needed.
 
 **Finding the emulator's window:** the server exposes the provider's `Process` at `GET /api/emulator` (`{ provider, appName, processId }`, or 204 when not connected). The overlay host polls it every 2 s and follows that process's window, matched by process ID, falling back to the app name. Nothing in the overlay is specific to one emulator. The RetroArch provider finds its process by name, since network commands don't say which process answered.
 
-The core builds the `ReadPlan` from the active map, merging addresses into as few contiguous ranges as possible.
+The core builds the `ReadPlan` from the matched pack's map, merging addresses into as few contiguous ranges as possible.
 
 ## Identifying the game
 
-The core matches maps on ROM set name, with ROM hash as a fallback (see [memory-maps.md](memory-maps.md#matching)). Providers report whatever they can:
+The server matches [packs](packs.md) on ROM set name, with ROM hash as a fallback (see [memory-maps.md](memory-maps.md#matching)). Providers report whatever they can:
 
 - **ROM set name:** usually the content's file name for arcade games (`invaders.zip` → `invaders`). This breaks if the user renames files. MAME and FBNeo also sometimes use different names, and MAME occasionally renames sets between versions.
-- **Chip CRCs (arcade):** survive renames and naming differences, and are what map matching prefers (see [memory-maps.md](memory-maps.md#why-chip-crcs-not-file-hashes-for-arcade-games)).
+- **Chip CRCs (arcade):** survive renames and naming differences, and are what pack matching prefers (see [memory-maps.md](memory-maps.md#why-chip-crcs-not-file-hashes-for-arcade-games)).
   - *MAME:* the Lua API can list the loaded ROMs and their hashes.
   - *RetroArch:* `GET_STATUS` probably gives a CRC of the whole file, which is useless for zips. Instead, the provider finds the content's zip and reads the chip CRCs from its file listing. How we find the path (`GET_STATUS`, RetroArch's content history playlist, or the user's ROM folder) is to be decided in the spike.
 - **Whole-file hashes (consoles):** SHA-1 or CRC32 of the ROM file.
@@ -94,7 +96,7 @@ Measurements:
 
 How the provider works:
 
-- **Core profiles.** `READ_CORE_RAM` offsets are in the core's own layout. For FBNeo's Space Invaders, offset 0 is CPU address `0x2000` and `0x2000` bytes are readable (work RAM and video RAM). `CoreProfile` stores this for each (system, ROM set) pair. Each new pairing must be checked by hand for now.
+- **Core profiles.** `READ_CORE_RAM` offsets are in the core's own layout. For FBNeo's Space Invaders, offset 0 is CPU address `0x2000` and `0x2000` bytes are readable (work RAM and video RAM). Each pack lists this for the cores it supports, keyed by RetroArch's system ID, in `providers/retroarch.yaml` ([packs.md](packs.md#provider-settings)), and `CoreProfile` reads it from the matched pack. Each new game and core pairing must be checked by hand for now.
 - **Pipelined reads.** Every chunk for a tick is sent before waiting for any reply, so a tick costs one frame, not one frame per range.
 - **Watching for changes.** Every 2 seconds the provider re-checks `GET_STATUS` and ends the stream if the content changed. After 10 timeouts in a row, it assumes RetroArch is gone.
 - **Polling only.** It isn't synced to frames, so single-frame events can still be missed. A map's `frame_counter` variable, if it has one, can be used to spot missed or repeated frames.
@@ -103,7 +105,7 @@ How the provider works:
 
 Plays back a **recording** instead of talking to an emulator. It's used for:
 
-- **Tests:** fixed input for checking map decoding and trackers
+- **Tests:** fixed input for checking map decoding and trackers. Packs keep theirs in `recordings/`, with an `expected.yaml` ([packs.md](packs.md#testing))
 - **Gadget development:** work on layouts without running an emulator
 - **Map authoring:** RAM search works on recordings (see [memory-maps.md](memory-maps.md#finding-addresses))
 - **Bug reports:** "here's the recording where the accuracy counter goes wrong"
@@ -115,10 +117,11 @@ Playback follows the original timestamps by default, and can also step through f
 A recording is a directory:
 
 ```
-tests/fixtures/recordings/invaders/attract-01/
+packs/invaders/recordings/attract-01/
   manifest.json
   work_ram.bin       # one snapshot per tick, concatenated (ticks × region size)
   ticks.bin          # per tick: int64 microseconds since start, int64 emulated frame (-1 if unknown)
+  expected.yaml      # in a pack: values the map must decode (docs/packs.md#testing)
 ```
 
 ```jsonc
@@ -136,7 +139,7 @@ tests/fixtures/recordings/invaders/attract-01/
 }
 ```
 
-Raw region files are simple to write, read and compare. Space Invaders' 1 KB of work RAM comes to about 3.6 MB per minute, which is fine to keep in git. Larger systems will need compression, Git LFS, or recording only the ranges a map uses. We'll decide that when we get there.
+Raw region files are simple to write, read and compare, but large: about 3.6 MB per minute for each KB recorded. Recordings are therefore local and git-ignored ([ADR 0011](decisions/0011-recordings-are-local.md)). They're made and analysed with the `game-recording` skill (`.claude/skills/game-recording/`). Record only the ranges you need, and trim afterwards.
 
 ## Future providers
 

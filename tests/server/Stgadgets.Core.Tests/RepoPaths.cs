@@ -4,9 +4,7 @@ internal static class RepoPaths
 {
     public static string Root { get; } = FindRoot();
 
-    public static string Maps => Path.Combine(Root, "maps");
-
-    public static string Recording(string game, string name) => Path.Combine(Root, "tests", "fixtures", "recordings", game, name);
+    public static string Packs => Path.Combine(Root, "packs");
 
     private static string FindRoot()
     {

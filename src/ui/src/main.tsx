@@ -1,8 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { InvadersClassic } from "./layouts/InvadersClassic";
+import { PackLayout } from "./layouts/PackLayout";
 import { client, source } from "./sdk/client";
-import { useConnection, useGame } from "./sdk/react";
+import { useConnection, useGame, usePack } from "./sdk/react";
 import "./styles.css";
 
 client.connect(`ws://${location.host}/ws`);
@@ -15,11 +15,12 @@ if (source === "overlay") {
 function App() {
   const { state, detail } = useConnection();
   const game = useGame();
+  const pack = usePack();
 
   if (state !== "connected" || !game) {
     return <div className="status">{detail ?? state}</div>;
   }
-  return <InvadersClassic />;
+  return <PackLayout pack={pack} />;
 }
 
 createRoot(document.getElementById("root")!).render(

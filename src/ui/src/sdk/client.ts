@@ -11,12 +11,13 @@ export type ConnectionState =
   | "connected"
   | "no-emulator"
   | "no-content"
-  | "no-map"
+  | "no-pack"
   | "disconnected";
 
 export interface GameInfo {
-  id: string;
   title: string;
+  manufacturer: string | null;
+  year: number | null;
   romset: string | null;
   screen: { width: number; height: number; rotation: number } | null;
 }
@@ -34,13 +35,15 @@ export type FrameListener = (vars: Vars, prev: Vars, info: TickInfo) => void;
 
 type Message =
   | { type: "status"; state: ConnectionState; detail?: string | null }
-  | { type: "hello"; game: GameInfo; values: Record<string, Value> }
+  | { type: "hello"; pack: string; game: GameInfo; values: Record<string, Value> }
   | { type: "tick"; seq: number; readAt: number; changed: Record<string, Value> };
 
 const RECONNECT_DELAY_MS = 1000;
 
 export class StgadgetsClient {
   vars: Vars = {};
+  /** The ID of the game pack the server matched, e.g. "invaders". */
+  pack: string | null = null;
   game: GameInfo | null = null;
   state: ConnectionState = "connecting";
   detail: string | null = null;
@@ -59,7 +62,7 @@ export class StgadgetsClient {
     };
   }
 
-  /** Called after any change to vars, game or state. */
+  /** Called after any change to vars, pack, game or state. */
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => void this.listeners.delete(listener);
@@ -82,7 +85,7 @@ export class StgadgetsClient {
         this.update({ state: message.state, detail: message.detail ?? null });
         break;
       case "hello":
-        this.update({ game: message.game, vars: message.values });
+        this.update({ pack: message.pack, game: message.game, vars: message.values });
         break;
       case "tick": {
         const prev = this.vars;
@@ -96,7 +99,7 @@ export class StgadgetsClient {
     }
   }
 
-  private update(changes: Partial<Pick<StgadgetsClient, "vars" | "game" | "state" | "detail">>) {
+  private update(changes: Partial<Pick<StgadgetsClient, "vars" | "pack" | "game" | "state" | "detail">>) {
     Object.assign(this, changes);
     this.notify();
   }

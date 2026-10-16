@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.Text.Json;
 using Stgadgets.Core.Memory;
+using Stgadgets.Core.Packs;
 
 namespace Stgadgets.Core.Recordings;
 
@@ -46,7 +47,7 @@ public sealed class Recording
 
         var regions = manifest.Regions.Select(r =>
         {
-            var range = new AddressRange(Maps.MemoryMapLoader.ParseNumber(r.Start), (int)Maps.MemoryMapLoader.ParseNumber(r.Size));
+            var range = new AddressRange(PackYaml.ParseNumber(r.Start), (int)PackYaml.ParseNumber(r.Size));
             var data = File.ReadAllBytes(Path.Combine(directory, r.File));
             if (data.Length != range.Length * manifest.Ticks)
                 throw new FormatException($"{r.File}: expected {range.Length * manifest.Ticks} bytes, found {data.Length}");

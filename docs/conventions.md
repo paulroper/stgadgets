@@ -31,15 +31,15 @@ The principle applies at every scale, from the repository down to the file:
 
 | Level | Grouped by | Example |
 |---|---|---|
-| **Repository** | Module: what part of the system it is | `src/server/`, `src/host/`, `src/ui/`, `maps/`, `docs/` |
+| **Repository** | Module: what part of the system it is | `src/server/`, `src/host/`, `src/ui/`, `packs/`, `docs/` |
 | **Module** | Area of responsibility | `server/providers/` (one project per emulator), `host/lib/` (shared by every host), `host/macos/` |
-| **Project** | Feature | `Stgadgets.Core/{Maps,Memory,Providers,Recordings}`, `Stgadgets.Server/GameState` |
+| **Project** | Feature | `Stgadgets.Core/{Maps,Memory,Packs,Providers,Recordings}`, `Stgadgets.Server/GameState` |
 | **Tests** | Mirror of `src/` | `tests/server/Stgadgets.Core.Tests` tests `src/server/Stgadgets.Core` |
 
 A few more rules for modules:
 
 - **Each module builds on its own.** It has its own solution or package, so you only need its toolchain. The server builds on any OS without Xcode.
 - **Modules talk over HTTP and WebSocket on `127.0.0.1`, never through project references.** The hosts and the UI depend on the server's API, not on its code. Shared code within a module goes in that module's `lib/`, as in `host/lib/`.
-- **Tests mirror `src/`.** Tests for `src/<module>/X` live in `tests/<module>/X.Tests`. Shared test data, such as recordings, lives in `tests/fixtures/`.
+- **Tests mirror `src/`.** Tests for `src/<module>/X` live in `tests/<module>/X.Tests`. Game recordings and their expected values live in each pack's `recordings/` folder, which is local and git-ignored (`docs/packs.md#testing`).
 
 See [Architecture → Repository layout](architecture.md#repository-layout) for the current tree.

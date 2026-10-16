@@ -69,10 +69,10 @@ public sealed class RetroArchProvider(IPEndPoint endpoint) : IEmulatorProvider
     }
 
     public async IAsyncEnumerable<Snapshot> StreamAsync(
-        ContentInfo content, ReadPlan plan, [EnumeratorCancellation] CancellationToken cancellationToken)
+        ContentInfo content, ReadPlan plan, ProviderSettings? settings, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var profile = CoreProfile.Find(content.System, content.Romset)
-            ?? throw new NotSupportedException($"No RetroArch core profile for {content.System}/{content.Romset} yet");
+        var profile = CoreProfile.Find(settings, content.System)
+            ?? throw new NotSupportedException($"The pack for '{content.Romset}' has no RetroArch core profile for '{content.System}' yet");
 
         // One buffer per range, split into chunks RetroArch can reply to in a single datagram.
         var buffers = plan.Ranges.Select(r => new byte[r.Length]).ToArray();

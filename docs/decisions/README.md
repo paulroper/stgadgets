@@ -13,6 +13,8 @@ Short records of significant decisions: what we chose, why, and what we gave up.
 | [0007](0007-native-overlay-host.md) | The overlay host is a native window with the system webview | Proposed |
 | [0008](0008-providers-push-frame-snapshots.md) | Providers push frame snapshots | Accepted |
 | [0009](0009-first-provider-retroarch.md) | RetroArch (via READ_CORE_RAM) is the first provider | Accepted |
+| [0010](0010-game-packs.md) | Everything game-specific lives in game packs | Accepted (recordings amended by 0011) |
+| [0011](0011-recordings-are-local.md) | Recordings are local; recording tools live in a skill | Accepted |
 
 ## Template
 

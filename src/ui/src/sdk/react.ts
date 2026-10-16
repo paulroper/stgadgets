@@ -6,6 +6,11 @@ export function useVar<T extends Value = Value>(name: string): T | undefined {
   return useSyncExternalStore(client.subscribe, () => client.vars[name] as T | undefined);
 }
 
+/** The ID of the matched game pack, e.g. "invaders", or null before the server has matched one. */
+export function usePack() {
+  return useSyncExternalStore(client.subscribe, () => client.pack);
+}
+
 export function useGame() {
   return useSyncExternalStore(client.subscribe, () => client.game);
 }

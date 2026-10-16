@@ -24,7 +24,7 @@ One game, one variable, one gadget, on screen, with latency measured.
 
 - [x] Set up the .NET solution (`src/`, `tests/`) on .NET 10
 - [x] The chosen provider, streaming work RAM
-- [ ] `stgadgets record`: capture recordings (the spike used a Python script; port it to .NET) in the [recording format](providers.md#recording-format-draft)
+- [x] Capture recordings: `record.py` in the `game-recording` skill ([ADR 0011](decisions/0011-recordings-are-local.md)) in the [recording format](providers.md#recording-format-draft)
 - [x] Capture fixture recordings (`invaders/play-01`: mystery ship, deaths, game over; still to capture: inserting a coin, clearing a wave): attract mode, inserting a coin, scoring, losing a life, clearing a wave
 - [x] Check the draft addresses in [memory-maps.md](memory-maps.md) against the recordings
 - [x] Minimal decoding of `p1.score` (BCD), with the map hardcoded or very minimal
@@ -56,7 +56,7 @@ Generalise only what milestone 1 proved:
 
 Before tackling harder games, build tools to find addresses (see [memory-maps.md](memory-maps.md#finding-addresses)):
 
-- [ ] `stgadgets ram search`: snapshot filtering on recordings (changed, unchanged, went up, went down, equals a value)
+- [x] RAM search on recordings (changed, unchanged, went up, went down, equals a value): `recording.py search` in the `game-recording` skill
 - [ ] Watch view: show chosen addresses live while playing
 - [ ] Import helpers for MAME cheat files
 

@@ -2,11 +2,9 @@
 
 > Early format. `Stgadgets.Core` loads it (`MemoryMapLoader`), but expect changes as more games arrive.
 
-A memory map does one job: **match a running game to a set of named variables.**
+A memory map does one job: **give a game's memory named variables.** Each [game pack](packs.md) has one, `map.yaml`, and the pack's `pack.yaml` says which ROM sets it applies to.
 
 ```yaml
-match:
-  romsets: [invaders]
 variables:
   hiscore: bcd2 @ 0x20F4
 ```
@@ -16,34 +14,19 @@ Gadgets use the variable names. Providers handle the addresses. The map is the o
 ## Principles
 
 - **Use the original hardware's addresses.** Write addresses the way a disassembly of the original game would (`0x20F8`), not as an offset inside an emulator's buffer. Providers translate them (see [providers.md](providers.md)).
-- **Match exactly.** A map lists the ROM sets (MAME/FBNeo short names) it has been checked against. Different revisions often store values at different addresses.
+- **Match exactly.** A pack lists the ROM sets (MAME/FBNeo short names) its map has been checked against. Different revisions often store values at different addresses.
 - **Be explicit about encoding.** Every variable has a type, and the system declares its byte order: the 8080 is little-endian and the 68000 is big-endian.
 - **Use standard names where they fit.** Using shared names (see below) means generic gadgets work with every game.
 - **Mark what's verified.** Maps record whether each variable has been checked against a running game.
 
 ## Format
 
-YAML, because maps are written by hand and need comments. One file per game: `maps/<id>.yaml`.
+YAML, because maps are written by hand and need comments. One file per game: `packs/<id>/map.yaml`.
 
-The first real map, [`maps/invaders.yaml`](../maps/invaders.yaml), checked against a recording:
+The first real map, [`packs/invaders/map.yaml`](../packs/invaders/map.yaml), checked against a recording:
 
 ```yaml
 schema: 1
-
-game:
-  id: invaders
-  title: Space Invaders
-  manufacturer: Taito
-  year: 1978
-  screen: { width: 256, height: 224, rotation: 270 }   # native raster; MAME lists ROT270
-
-match:
-  romsets: [invaders]
-  program_crcs:                 # 8080 program ROMs (MAME 0.261 set)
-    invaders.h: 0x734f5ad8
-    invaders.g: 0x6bfaca4a
-    invaders.f: 0x0ccead96
-    invaders.e: 0x14e538b0
 
 system:
   cpu: i8080
@@ -54,7 +37,7 @@ system:
 
 # Addresses from the Computer Archeology disassembly
 # (https://www.computerarcheology.com/Arcade/SpaceInvaders/), verified against
-# tests/fixtures/recordings/invaders/play-01 (RetroArch 1.22.2, FBNeo).
+# recordings/play-01 (RetroArch 1.22.2, FBNeo).
 variables:
   hiscore:          bcd2 @ 0x20F4   # updated at game over
   p1.score:         bcd2 @ 0x20F8
@@ -79,7 +62,7 @@ Variables use either the **short form** `"<type> @ <address>"` or the **long for
 
 ### Matching
 
-`match` decides when a map applies. Providers report what's running (see [providers.md](providers.md#identifying-the-game)), and the core picks the first map that matches.
+`match`, in the pack's [`pack.yaml`](packs.md#packyaml), decides when a pack and its map apply. Providers report what's running (see [providers.md](providers.md#identifying-the-game)), and the server picks the first pack that matches.
 
 | Key | Use |
 |---|---|
@@ -88,13 +71,14 @@ Variables use either the **short form** `"<type> @ <address>"` or the **long for
 | `sha1` / `crc32` | Console games, by hashing the whole ROM file (planned) |
 
 ```yaml
+# pack.yaml
 match:
   romsets: [invaders]
-  program_crcs:                 # the 8080 program ROMs (CRC values come from the spike dump)
-    invaders.h: 0x00000000
-    invaders.g: 0x00000000
-    invaders.f: 0x00000000
-    invaders.e: 0x00000000
+  program_crcs:                 # the 8080 program ROMs
+    invaders.h: 0x734f5ad8
+    invaders.g: 0x6bfaca4a
+    invaders.f: 0x0ccead96
+    invaders.e: 0x14e538b0
 ```
 
 #### Why chip CRCs, not file hashes, for arcade games
@@ -109,19 +93,19 @@ What stays the same is **the CRC32 of each chip**:
 
 #### Precedence
 
-1. If the provider reports chip CRCs, they decide: a map matches when all its `program_crcs` are present. The name is ignored, so renamed zips and naming differences between MAME and FBNeo don't matter.
+1. If the provider reports chip CRCs, they decide: a pack matches when all its `program_crcs` are present. The name is ignored, so renamed zips and naming differences between MAME and FBNeo don't matter.
 2. Otherwise the core matches by `romsets` name.
-3. If the name matches but the CRCs don't, the map is **not** used. A different revision under the same name would give wrong values silently, which is worse than showing nothing. Tooling reports the mismatch so the map can be extended.
+3. If the name matches but the CRCs don't, the pack is **not** used. A different revision under the same name would give wrong values silently, which is worse than showing nothing. Tooling reports the mismatch so the map can be extended.
 
 **Merged sets:** a MAME *merged* zip (like the `invaders.zip` used in the spike) contains the parent's ROMs at the top level and every clone's ROMs in subfolders. Only the top-level files describe the parent. Clone CRCs being in the zip doesn't mean those clones are running.
 
 Currently only name matching is implemented. CRC matching comes when a provider reports chip CRCs.
 
-If several ROM sets share most of their addresses but not all, a map can **extend** another and override only what's different (added once a game needs it):
+Clones and revisions belong to their parent's pack. If one shares most of its addresses with the parent but not all, its map will be able to **extend** the parent's and override only what's different (added once a game needs it; the exact shape is still open):
 
 ```yaml
 extends: ddonpach
-match: { romsets: [ddonpacha] }
+romsets: [ddonpacha]
 variables:
   rank: u16 @ 0x...           # the only address that differs
 ```
@@ -186,17 +170,17 @@ Credit the source in the map's comments.
 
 ### Finding them ourselves
 
-1. **Record** a session with a marker at each event of interest ("bomb used", "life lost") using `stgadgets record`.
+1. **Record** a session with a marker at each event of interest ("bomb used", "life lost").
 2. **RAM search** over the recording, the way cheat finders work: keep addresses whose value changed / didn't change / went up / went down / equals *N* between markers. Repeat until only a few candidates are left.
 3. **Watch** the candidates live while playing to confirm them.
 4. **MAME debugger** for the hard cases: set a watchpoint on an address to find the code that writes it, and work out what it means from there.
 
-The RAM search and watch tools are milestone 3 in the [roadmap](roadmap.md).
+Steps 1–3 are packaged as the `game-recording` Claude skill (`.claude/skills/game-recording/`): `record.py` records with live markers and watched addresses, and `recording.py search` / `history` do the filtering and confirming. Recordings are local and git-ignored ([ADR 0011](decisions/0011-recordings-are-local.md)).
 
 ## Tooling (planned)
 
-- `stgadgets map check maps/invaders.yaml`: check the map against the schema
-- `stgadgets map test maps/invaders.yaml tests/fixtures/recordings/invaders/...`: decode a recording and print the variables
+- `stgadgets pack check packs/invaders`: check the pack against the schema
+- `stgadgets pack test packs/invaders`: replay the pack's recordings and check their `expected.yaml` (the same harness `dotnet test src/server` runs today; see [packs.md](packs.md#testing))
 - A JSON Schema for editor autocomplete
 - Generating TypeScript types from a map, so gadgets get typed `useVar` names
 

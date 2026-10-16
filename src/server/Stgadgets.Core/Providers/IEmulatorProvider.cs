@@ -1,4 +1,5 @@
 using Stgadgets.Core.Memory;
+using Stgadgets.Core.Packs;
 
 namespace Stgadgets.Core.Providers;
 
@@ -11,6 +12,16 @@ public sealed record ContentInfo(string? Romset, string? System);
 /// <param name="AppName">The app's name as the OS shows it, e.g. "RetroArch".</param>
 /// <param name="ProcessId">The process ID when known; the most reliable way to find the window.</param>
 public sealed record EmulatorProcessInfo(string AppName, int? ProcessId);
+
+/// <summary>
+/// A pack's settings for one provider (packs/&lt;id&gt;/providers/&lt;provider&gt;.yaml), such as per-core address
+/// translation. Only the provider knows their shape.
+/// </summary>
+public sealed record ProviderSettings(string Path, string Yaml)
+{
+    /// <summary>Deserializes the settings with the usual pack conventions (<see cref="PackYaml"/>).</summary>
+    public T Read<T>() => PackYaml.LoadFile(Path, _ => PackYaml.Deserialize<T>(Yaml));
+}
 
 /// <summary>Connects stgadgets to one emulator. See docs/providers.md.</summary>
 public interface IEmulatorProvider : IAsyncDisposable
@@ -27,5 +38,7 @@ public interface IEmulatorProvider : IAsyncDisposable
     /// Streams snapshots of <paramref name="plan"/>, using the original hardware's addresses, as close to every frame as the
     /// emulator allows. Ends when the content changes or the emulator goes away.
     /// </summary>
-    IAsyncEnumerable<Snapshot> StreamAsync(ContentInfo content, ReadPlan plan, CancellationToken cancellationToken);
+    /// <param name="settings">The matched pack's settings for this provider, if it has any.</param>
+    IAsyncEnumerable<Snapshot> StreamAsync(
+        ContentInfo content, ReadPlan plan, ProviderSettings? settings, CancellationToken cancellationToken);
 }

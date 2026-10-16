@@ -1,0 +1,8 @@
+schema: 1
+
+# Where each core's READ_CORE_RAM offset 0 lands in the original hardware's address space, and how many bytes it
+# exposes from there. Keyed by RetroArch's system id for the core. See "core profiles" in docs/providers.md.
+cores:
+  fb_alpha:                     # FBNeo; found by hand during the spike: work RAM and video RAM
+    ram_base: 0x2000
+    ram_size: 0x2000
