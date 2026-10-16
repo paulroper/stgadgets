@@ -14,7 +14,7 @@ Emulator overlay that shows M2 ShotTriggers-style gadgets for shmups. A .NET ser
 
 - Server, core and tests (any OS): `dotnet test src/server`
 - macOS overlay (needs Xcode + `macos` workload): `dotnet build src/host/macos`
-- UI: `cd src/ui && npm run build`
+- UI: `cd src/ui && npm run build`; tests (in `tests/ui`): `cd src/ui && npm test`
 
 ## Code conventions
 

@@ -11,13 +11,15 @@
     "skipLibCheck": true,
     "types": ["vite/client", "node"],
     // What game packs (../../packs/*/ui) may import; keep in sync with vite.config.ts. React is mapped too,
-    // because packs live outside this folder and wouldn't find node_modules otherwise.
+    // because packs and tests (../../tests/ui) live outside this folder and wouldn't find node_modules otherwise.
     "paths": {
       "@stgadgets/sdk": ["./src/sdk/index.ts"],
       "@stgadgets/gadgets": ["./src/gadgets/index.ts"],
       "react": ["./node_modules/@types/react"],
-      "react/*": ["./node_modules/@types/react/*"]
+      "react/*": ["./node_modules/@types/react/*"],
+      "vitest": ["./node_modules/vitest"],
+      "@testing-library/react": ["./node_modules/@testing-library/react"]
     }
   },
-  "include": ["src", "../../packs/*/ui", "vite.config.ts"]
+  "include": ["src", "../../packs/*/ui", "../../tests/ui", "vite.config.ts"]
 }

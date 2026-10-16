@@ -15,7 +15,7 @@ stgadgets runs alongside the emulator. It reads the game's memory through the em
 
 For gadget development with hot reload, run `npm run dev` in `src/ui/` alongside the server and open the Vite URL instead.
 
-Tests: `dotnet test src/server`. Each pack's map is also checked against any local recordings in `packs/<id>/recordings/`; these are git-ignored and made with the `game-recording` Claude skill.
+Tests: `dotnet test src/server`, and `npm test` in `src/ui/` for the UI (tests in `tests/ui/`). Each pack's map is also checked against any local recordings in `packs/<id>/recordings/`; these are git-ignored and made with the `game-recording` Claude skill.
 
 | Module | Path | Build |
 |---|---|---|

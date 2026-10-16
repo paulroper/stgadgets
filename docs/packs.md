@@ -132,4 +132,4 @@ sequences:                                  # every distinct value, in order, ov
 3. Record a session with markers at the events you care about, find or confirm addresses, and write its `expected.yaml`. The `game-recording` skill walks through this.
 4. Optionally, add `derived.js` for values that follow from memory plus knowledge of the game, so the layout only has to display them.
 5. Optionally, add `ui/layout.tsx`. Until then the generic layout is used.
-6. Run `dotnet test src/server` and, if you added a UI, `npm run build` in `src/ui`.
+6. Run `dotnet test src/server` and, if you added a UI, `npm run build` and `npm test` in `src/ui`.

@@ -1,8 +1,10 @@
+/// <reference types="vitest/config" />
 import path from "node:path";
 import { defineConfig, searchForWorkspaceRoot, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 
 const packsDir = path.resolve(import.meta.dirname, "../../packs");
+const testsDir = path.resolve(import.meta.dirname, "../../tests/ui");
 
 // What a pack's UI may import besides its own files (docs/packs.md). Keep in sync with tsconfig.json.
 const packApi = {
@@ -48,11 +50,17 @@ export default defineConfig({
   plugins: [packImportRule(), react()],
   resolve: {
     alias: packApi,
-    dedupe: ["react", "react-dom"],   // packs live outside this folder; give them our React
+    // Packs and tests live outside this folder; give them our copies.
+    dedupe: ["react", "react-dom", "vitest", "@testing-library/react", "@testing-library/dom"],
   },
   server: {
     host: "127.0.0.1",
     proxy: { "/ws": { target: "ws://127.0.0.1:5199", ws: true } },
-    fs: { allow: [searchForWorkspaceRoot(process.cwd()), packsDir] },
+    fs: { allow: [searchForWorkspaceRoot(process.cwd()), packsDir, testsDir] },
+  },
+  // UI tests live in tests/ui, mirroring src/ (docs/conventions.md).
+  test: {
+    dir: testsDir,
+    environment: "jsdom",
   },
 });
