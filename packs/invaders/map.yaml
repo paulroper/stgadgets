@@ -15,7 +15,7 @@ variables:
   p1.score:         bcd2 @ 0x20F8
   p2.score:         bcd2 @ 0x20FC   # each score is followed by 2 bytes of screen position
   credits:          bcd1 @ 0x20EB
-  aliens_remaining: u8   @ 0x2082   # 55 at the start of a wave; the mystery ship doesn't count
+  aliens_remaining: u8   @ 0x2082   # 55 at the start of a wave (255 before the first); the mystery ship doesn't count
 
   p1.ships_reserve:
     type: u8
@@ -26,7 +26,14 @@ variables:
   player.state:
     type: u8
     address: 0x2015
-    description: 0xFF while alive; alternates 0/1 for the explosion animation (~0.85 s) after a hit.
+    description: >-
+      The current player's ship: 0xFF while alive; alternates 0/1 for the explosion animation (~0.85 s) after a
+      hit. Also 0xFF outside play.
+    verified: true
+  player.data:
+    type: u8
+    address: 0x2067
+    description: playerDataMSB, the current player's data block (0x21xx or 0x22xx), so 0x21 while player 1 is up.
     verified: true
 
   fleet.sound_delay:
@@ -35,4 +42,50 @@ variables:
     description: >-
       fleetSndReload: frames between march notes, from the table at 0x1A21. Updated on the next note after a kill,
       not while the player is dead. derived.js predicts it from aliens_remaining without the lag.
+    verified: true
+
+  rack.y:
+    type: u8
+    address: 0x2009
+    description: refAlienYr, the bottom-left alien's Y. Drops by 8 each time the rack steps down; 0x78 is the first rack's.
+    verified: true
+
+  saucer.timer:
+    type: u16
+    address: 0x2091
+    description: >-
+      tillSaucer: frames until a saucer is due. Counts down every frame once the rack is below its starting
+      height (rack.y < 0x78), then reloads to 0x600 (25.6 s) and sets saucer.due.
+    verified: true
+  saucer.due:
+    type: bool
+    address: 0x2083
+    description: saucerStart. The saucer launches once no squiggly shot is in flight and at least 8 aliens remain.
+    verified: true
+  saucer.active:
+    type: bool
+    address: 0x2084
+    description: The saucer is on screen, including while it explodes.
+    verified: true
+  saucer.score_ptr:
+    type: u8
+    address: 0x208D
+    description: >-
+      sauScoreLSB: pointer into the saucer score table at 0x1D54 (0x54-0x62, wrapping after 15 entries). It steps
+      on every player shot removal, and a hit scores the entry it steps to.
+    verified: true
+
+  game.mode:
+    type: bool
+    address: 0x20EF
+    description: >-
+      gameMode. False in attract mode (including the demo game) and on the splash screens. True from the start
+      screen on, so it isn't the standard game.running: derived.js combines it with game.moving.
+    verified: true
+  game.moving:
+    type: bool
+    address: 0x20E9
+    description: >-
+      suspendPlay. False while the game holds everything still: the game-over sequence, and the "PLAY PLAYER<1>"
+      screen at the start, when aliens_remaining reads 255. Stays true through deaths.
     verified: true

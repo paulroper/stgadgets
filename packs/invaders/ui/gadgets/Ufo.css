@@ -1,0 +1,19 @@
+.ufo {
+  display: block;
+  width: 64px;
+  height: 28px;
+  margin: 0 auto 2px;
+  fill: #ff5a4a;
+  opacity: 0.75;
+}
+
+.ufo.flying {
+  opacity: 1;
+  filter: drop-shadow(0 0 6px #ff5a4a);
+  animation: ufo-hover 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes ufo-hover {
+  from { transform: translateY(-2px); }
+  to { transform: translateY(2px); }
+}

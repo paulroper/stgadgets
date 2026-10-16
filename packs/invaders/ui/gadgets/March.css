@@ -1,0 +1,40 @@
+.march-unit {
+  font-size: 14px;
+  color: var(--dim);
+}
+
+.march-bar {
+  margin-top: 6px;
+  height: 6px;
+  background: rgb(255 255 255 / 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.march-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--label), #ffd24a 70%, #ff5a4a);
+  transition: width 120ms linear;
+}
+
+.march-catching-up {
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+.march-pips {
+  display: flex;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.march-pip {
+  width: 12px;
+  height: 8px;
+  background: var(--label);
+  clip-path: polygon(15% 0, 85% 0, 100% 50%, 85% 100%, 15% 100%, 0 50%);
+}
+
+.march-pip.next {
+  background: #ffd24a;
+}

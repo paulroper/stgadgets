@@ -2,7 +2,7 @@
 
 import { LatencyTracker } from "./latency";
 
-export type Value = number | boolean | null;
+export type Value = number | boolean | string | null; // strings come from derived values
 export type Vars = Readonly<Record<string, Value>>;
 
 export type ConnectionState =

@@ -23,7 +23,7 @@ Gadgets use the variable names. Providers handle the addresses. The map is the o
 
 YAML, because maps are written by hand and need comments. One file per game: `packs/<id>/map.yaml`.
 
-The first real map, [`packs/invaders/map.yaml`](../packs/invaders/map.yaml), checked against a recording:
+An excerpt from the first real map, [`packs/invaders/map.yaml`](../packs/invaders/map.yaml), checked against recordings:
 
 ```yaml
 schema: 1
@@ -55,13 +55,6 @@ variables:
     type: u8
     address: 0x2015
     description: 0xFF while alive; alternates 0/1 for the explosion animation (~0.85 s) after a hit.
-    verified: true
-  fleet.sound_delay:
-    type: u8
-    address: 0x2097
-    description: >-
-      fleetSndReload: frames between march notes, from the table at 0x1A21. Updated on the next note after a kill,
-      not while the player is dead. derived.js predicts it from aliens_remaining without the lag.
     verified: true
 ```
 
@@ -144,17 +137,20 @@ Expected later, once a game needs them:
 
 ### Standard variable names
 
-To make generic gadgets work with every game, maps should use these names whenever the game has the concept. Game-specific variables can use any name.
+To make generic gadgets work with every game, packs should provide these names whenever the game has the concept. Game-specific variables can use any name.
+
+A standard name can come from `map.yaml` or from [`derived.js`](#derived-values), and gadgets can't tell the difference. Games store things in their own ways, and `derived.js` is where a pack adapts them to the standard meaning. For example, Space Invaders stores spare ships, and computes `p1.lives` from them. If the game's own byte doesn't mean exactly what the standard name means, give the raw byte a game-specific name and derive the standard one. Invaders' `gameMode` is `game.mode`, because it's also true on the start screen.
 
 | Name | Meaning |
 |---|---|
+| `game.running` | `true` while a game is being played, `false` in attract mode (including demo play), menus, and screens that hold play still, such as "get ready" and game over. **This is the gate.** Outside play, memory holds leftovers (Invaders' alien count reads 255 on its start screen), so derived values and gadgets should treat other variables as meaningless while this is `false`, and derived values should return `null` |
 | `hiscore` | High score |
 | `pN.score` | Player *N*'s score |
-| `pN.lives` | Player *N*'s lives, **including** the one in play |
+| `pN.lives` | Player *N*'s lives, **including** the one in play. A ship that's exploding no longer counts. `null` when it isn't known, such as outside play |
 | `pN.ships_reserve` | Spare lives, **not** counting the one in play. Many games store this instead of `pN.lives` (Space Invaders does) |
+| `pN.alive` | `true` while player *N*'s ship is in play, `false` while it's exploding or respawning. `null` outside play, or while another player is up |
 | `pN.bombs` | Player *N*'s bomb stock |
 | `credits` | Credits inserted |
-| `game.running` | `true` during gameplay, `false` during attract mode or menus |
 | `stage` | Current stage or loop |
 | `rank` | Internal difficulty rank, as the raw value |
 | `frame_counter` | Something that goes up by 1 each frame, used to detect missed frames (see [architecture](architecture.md#polling-isnt-frame-synced)) |
@@ -191,6 +187,7 @@ export default {
 - **A function that fails** gives `null` for that tick. Failing means it throws, returns `undefined` (usually a misspelt name), returns `NaN` or `Infinity`, or returns anything else. The server logs it once and recordings report it.
 - **Keep functions pure and quick.** Scripts run in a sandbox: strict mode, no I/O, no .NET, and at most one frame of time per tick. A typical tick takes microseconds.
 - **Names** can't repeat a variable from `map.yaml`. Use the [standard names](#standard-variable-names) when a derived value is one of those concepts, such as `pN.lives` computed from `pN.ships_reserve`.
+- **Gate on `game.running`.** Declare it first, and return `null` from other values while it's `false`, because memory outside play holds leftovers.
 - **Number traps:** values are JavaScript numbers. They're exact for anything a map decodes, but bitwise operators work on signed 32 bits, so pick out bits with `mask`/`shift` in the map instead.
 
 ## Finding addresses
@@ -222,6 +219,7 @@ Steps 1–3 are packaged as the `game-recording` Claude skill (`.claude/skills/g
 - `stgadgets pack test packs/invaders`: replay the pack's recordings and check their `expected.yaml` (the same harness `dotnet test src/server` runs today; see [packs.md](packs.md#testing))
 - A JSON Schema for editor autocomplete
 - Generating TypeScript types from a map, so gadgets get typed `useVar` names
+- Reporting standard-name coverage, such as "provides 7 of 12 standard names", so gaps in the generic layout are visible. Standard names stay optional
 
 ## Open questions
 
