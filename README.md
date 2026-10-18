@@ -26,6 +26,8 @@ Tests: `dotnet test src/server`, and `npm test` in `src/ui/` for the UI (tests i
 
 ### macOS overlay (in progress)
 
+**Snapshots for development:** start the overlay with `STGADGETS_SNAPSHOT_PORT=5198` and `GET http://127.0.0.1:5198/snapshot` returns a PNG of the layout as the overlay draws it, at the emulator window's size, on a transparent background (the game isn't included). It works while the overlay is hidden too, by drawing it invisibly for half a second; the `X-Overlay-Visible` header says which. Off unless the variable is set.
+
 For fullscreen play, **turn off Game Mode for RetroArch** (menu bar game controller icon → Turn Off Game Mode). Game Mode throttles the overlay to 5 Hz, about 100–200 ms behind the game ([docs/latency.md](docs/latency.md)). Windowed play isn't affected.
 
 The overlay host needs Xcode and the .NET macOS workload (`sudo dotnet workload install macos`). Each workload release requires one exact Xcode version: workload 27.0.10722 wants Xcode 27.0. We build with Xcode 27.1, so the host project sets `ValidateXcodeVersion=false`. Remove that once a workload supports your Xcode, or if odd build errors appear.

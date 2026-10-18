@@ -45,6 +45,74 @@ public sealed class OverlayWindow : NSWindow
 
     public void Reload() => _webView.Reload();
 
+    // WebKit doesn't draw a window that isn't on screen, so a hidden overlay is shown fully transparent for this long
+    // before its snapshot: enough to lay out at the new size and paint.
+    private static readonly TimeSpan HiddenSnapshotDelay = TimeSpan.FromMilliseconds(500);
+
+    /// <summary>
+    /// A PNG of what the webview is drawing, and whether the overlay was on screen. For SnapshotServer. A hidden
+    /// overlay (the emulator isn't the active app) is drawn invisibly at <paramref name="hiddenFrame"/>, the
+    /// emulator's content area, so the snapshot shows the layout at the size it would have.
+    /// </summary>
+    /// <param name="width">Width in pixels; null for one pixel per point (half a Retina screen's pixels).</param>
+    /// <param name="restored">Called on the main thread once a hidden overlay is hidden again, so its owner can
+    /// re-check whether it should be showing (the emulator may have become active meanwhile).</param>
+    public async Task<(NSData? Png, bool Visible)> SnapshotAsync(CGRect? hiddenFrame, int? width, Action restored)
+    {
+        var visible = await OnMainThread(() => IsVisible);
+        if (!visible)
+        {
+            await OnMainThread(() =>
+            {
+                if (hiddenFrame is { } frame)
+                    SetFrame(frame, display: true);
+                AlphaValue = 0;
+                OrderFrontRegardless();
+                return true;
+            });
+            await Task.Delay(HiddenSnapshotDelay);
+        }
+
+        var done = new TaskCompletionSource<NSData?>();
+        BeginInvokeOnMainThread(() => _webView.TakeSnapshot(new WKSnapshotConfiguration(), (image, _) =>
+            done.TrySetResult(image is null ? null : ToPng(image, width ?? (int)image.Size.Width))));
+        var png = await done.Task;
+
+        if (!visible)
+        {
+            await OnMainThread(() =>
+            {
+                OrderOut(null);
+                AlphaValue = 1;
+                restored();
+                return true;
+            });
+        }
+        return (png, visible);
+    }
+
+    /// <summary>Draws <paramref name="image"/> into a bitmap <paramref name="width"/> pixels wide, keeping its aspect.</summary>
+    private static NSData? ToPng(NSImage image, int width)
+    {
+        var height = (int)Math.Round(width * image.Size.Height / image.Size.Width);
+        if (width <= 0 || height <= 0)
+            return null;
+
+        var bitmap = new NSBitmapImageRep(IntPtr.Zero, width, height, 8, 4, true, false, NSColorSpace.DeviceRGB, width * 4, 32);
+        NSGraphicsContext.GlobalSaveGraphicsState();
+        NSGraphicsContext.CurrentContext = NSGraphicsContext.FromBitmap(bitmap);
+        image.Draw(new CGRect(0, 0, width, height), CGRect.Empty, NSCompositingOperation.Copy, 1);
+        NSGraphicsContext.GlobalRestoreGraphicsState();
+        return bitmap.RepresentationUsingTypeProperties(NSBitmapImageFileType.Png);
+    }
+
+    private Task<T> OnMainThread<T>(Func<T> action)
+    {
+        var done = new TaskCompletionSource<T>();
+        BeginInvokeOnMainThread(() => done.TrySetResult(action()));
+        return done.Task;
+    }
+
     /// <summary>Draws a red outline around the overlay, to check it lines up with the emulator.</summary>
     public bool ShowBounds
     {
