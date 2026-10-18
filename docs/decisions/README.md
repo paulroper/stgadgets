@@ -16,6 +16,7 @@ Short records of significant decisions: what we chose, why, and what we gave up.
 | [0010](0010-game-packs.md) | Everything game-specific lives in game packs | Accepted (recordings amended by 0011) |
 | [0011](0011-recordings-are-local.md) | Recordings are local; recording tools live in a skill | Accepted |
 | [0012](0012-derived-values-in-javascript.md) | Derived values are JavaScript, run by the server | Accepted |
+| [0013](0013-no-game-assets-in-gadgets.md) | Gadgets draw their own icons and don't ship game assets | Accepted |
 
 ## Template
 

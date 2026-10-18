@@ -105,7 +105,7 @@ checked by recordings like the map is:
 ### Then the layout and gadgets
 
 Write the pack's `ui/layout.tsx` and its gadgets in `ui/gadgets/`, then `npm run build` and `npm test` in `src/ui`.
-See [gadgets & layouts](gadgets.md).
+See [gadgets & layouts](gadgets.md), and follow the [gadget design](gadget-design.md) language.
 
 ### The build-and-look loop
 
@@ -120,7 +120,15 @@ Then each change goes:
 
 1. Edit `derived.js`, the layout or a gadget.
 2. Rebuild the UI (`npm run build` in `src/ui`), and restart the server if `map.yaml` or `derived.js` changed (it
-   loads packs at startup). Use **Reload layout** in the overlay's menu, or restart it.
+   loads packs at startup). Then use **Reload layout** in the overlay's menu, or restart the overlay, which needs
+   nobody at the screen:
+
+   ```sh
+   pkill -f Stgadgets.Host.Mac.app
+   STGADGETS_SNAPSHOT_PORT=5198 dotnet run --project src/host/macos/Stgadgets.Host.Mac
+   ```
+
+   `dotnet run` opens the app and returns. Snapshots work a few seconds later, once the port answers.
 3. Fetch `http://127.0.0.1:5198/snapshot` (add `?width=1000` for a smaller image) and look at it.
 
 The snapshot is the layout as the overlay draws it, at the emulator window's size, with live values from the running
