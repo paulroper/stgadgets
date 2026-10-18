@@ -75,8 +75,9 @@ public sealed class RetroArchProvider(IPEndPoint endpoint) : IEmulatorProvider
             ?? throw new NotSupportedException($"The pack for '{content.Romset}' has no RetroArch core profile for '{content.System}' yet");
 
         // One buffer per range, split into chunks RetroArch can reply to in a single datagram.
-        var buffers = plan.Ranges.Select(r => new byte[r.Length]).ToArray();
-        var reads = plan.Ranges
+        var readRanges = plan.Ranges.Select(profile.ToReadRange).ToArray();
+        var buffers = readRanges.Select(r => new byte[r.Length]).ToArray();
+        var reads = readRanges
             .SelectMany((range, i) => Chunks(range.Length).Select(c =>
                 (Offset: profile.ToOffset(range) + (uint)c.Start, Destination: buffers[i].AsMemory(c.Start, c.Length))))
             .ToList();
@@ -105,7 +106,12 @@ public sealed class RetroArchProvider(IPEndPoint endpoint) : IEmulatorProvider
             }
 
             // Copy, since the buffers are reused for the next read.
-            var blocks = plan.Ranges.Select((range, i) => new MemoryBlock(range, buffers[i].ToArray())).ToList();
+            var blocks = plan.Ranges.Select((range, i) =>
+            {
+                profile.Unswap(buffers[i]);
+                var skip = (int)(range.Start - readRanges[i].Start);
+                return new MemoryBlock(range, buffers[i].AsSpan(skip, range.Length).ToArray());
+            }).ToList();
             yield return new Snapshot(EmulatedFrame: null, clock.Elapsed, blocks);
         }
     }

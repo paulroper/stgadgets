@@ -185,7 +185,7 @@ export default {
 - **`prev`** holds the previous tick's values, derived ones included, or `null` on the first tick (including after the game restarts).
 - **Return** a number, boolean, string or `null` (no value). Whole numbers are sent as integers.
 - **A function that fails** gives `null` for that tick. Failing means it throws, returns `undefined` (usually a misspelt name), returns `NaN` or `Infinity`, or returns anything else. The server logs it once and recordings report it.
-- **Keep functions pure and quick.** Scripts run in a sandbox: strict mode, no I/O, no .NET, and at most one frame of time per tick. A typical tick takes microseconds.
+- **Keep functions pure and quick.** Scripts run in a sandbox: strict mode, no I/O, no .NET, and at most one frame of time per tick. Loading the script, once at game start, may take longer (up to 2 s), since the first script in the process is slow to start. A typical tick takes microseconds.
 - **Names** can't repeat a variable from `map.yaml`. Use the [standard names](#standard-variable-names) when a derived value is one of those concepts, such as `pN.lives` computed from `pN.ships_reserve`.
 - **Gate on `game.running`.** Declare it first, and return `null` from other values while it's `false`, because memory outside play holds leftovers.
 - **Number traps:** values are JavaScript numbers. They're exact for anything a map decodes, but bitwise operators work on signed 32 bits, so pick out bits with `mask`/`shift` in the map instead.
