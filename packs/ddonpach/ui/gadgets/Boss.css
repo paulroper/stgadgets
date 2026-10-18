@@ -1,0 +1,30 @@
+.boss-here .value {
+  color: #ff5a4a;
+}
+
+.boss-bar {
+  position: relative;
+  margin-top: 6px;
+  height: 8px;
+  background: rgb(255 255 255 / 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.boss-bar-fill {
+  height: 100%;
+  background: #ff8a3d;
+}
+
+.boss-here .boss-bar-fill {
+  background: #ff5a4a;
+}
+
+.boss-marker {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 3px;
+  height: 100%;
+  background: #ff5a4a;
+}

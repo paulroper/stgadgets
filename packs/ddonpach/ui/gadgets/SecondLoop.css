@@ -1,0 +1,44 @@
+.loop2-headline {
+  font-size: calc(var(--value-size) * 0.75);
+}
+
+.loop2-on .loop2-headline {
+  color: #6be08a;
+}
+
+.loop2-off .loop2-headline {
+  color: var(--dim);
+}
+
+.loop2-note {
+  margin-top: 4px;
+  font-size: var(--label-size);
+}
+
+.loop2-conditions {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  font-size: var(--label-size);
+  color: var(--dim);
+}
+
+.loop2-conditions li {
+  display: flex;
+  gap: 6px;
+  line-height: 1.7;
+}
+
+.loop2-check {
+  width: 1ch;
+}
+
+.loop2-met {
+  color: #6be08a;
+}
+
+.loop2-progress {
+  margin-left: auto;
+  padding-left: 12px;
+  font-variant-numeric: tabular-nums;
+}
