@@ -3,21 +3,16 @@
 }
 
 .loop2-on .loop2-headline {
-  color: #6be08a;
+  color: var(--good);
 }
 
 .loop2-off .loop2-headline {
   color: var(--dim);
 }
 
-.loop2-note {
-  margin-top: 4px;
-  font-size: var(--label-size);
-}
-
 .loop2-conditions {
   list-style: none;
-  margin: 6px 0 0;
+  margin: 0;
   padding: 0;
   font-size: var(--label-size);
   color: var(--dim);
@@ -25,7 +20,7 @@
 
 .loop2-conditions li {
   display: flex;
-  gap: 6px;
+  gap: 0.375rem;
   line-height: 1.7;
 }
 
@@ -34,11 +29,11 @@
 }
 
 .loop2-met {
-  color: #6be08a;
+  color: var(--good);
 }
 
 .loop2-progress {
   margin-left: auto;
-  padding-left: 12px;
+  padding-left: 0.75rem;
   font-variant-numeric: tabular-nums;
 }

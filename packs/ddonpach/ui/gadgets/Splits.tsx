@@ -81,7 +81,7 @@ export function Splits() {
           {current && <Row split={current} current />}
         </tbody>
       </table>
-      {!current && finished.length === 0 && <div className="splits-note dim">starts with stage 1</div>}
+      {!current && finished.length === 0 && <div className="note">starts with stage 1</div>}
     </div>
   );
 }

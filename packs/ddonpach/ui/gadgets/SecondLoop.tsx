@@ -39,7 +39,7 @@ export function SecondLoop() {
     <div className={`gadget loop2 ${possible ? "loop2-on" : eligible === false ? "loop2-off" : ""}`}>
       <div className="label">2ND LOOP</div>
       <div className="value loop2-headline">{headline}</div>
-      {eligible === false && <div className="loop2-note dim">needs one credit, solo</div>}
+      {eligible === false && <div className="note">needs one credit, solo</div>}
       {eligible && (
         <ul className="loop2-conditions">
           <Condition met={byDeaths} label="deaths" progress={`${deaths ?? "-"} / ${DEATHS_ALLOWED}`} />

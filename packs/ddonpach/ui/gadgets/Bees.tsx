@@ -33,15 +33,15 @@ export function Bees() {
       <div className="label"><span className="bees-icon" aria-hidden="true">🐝</span> BEES</div>
       <div className={collected !== null && collected >= of ? "value bees-perfect" : "value"}>
         {collected ?? "-"}
-        <span className="bees-unit"> / {of}</span>
+        <span className="unit"> / {of}</span>
       </div>
-      <div className="bees-pips">
+      <div className="pips">
         {Array.from({ length: of }, (_, i) => (
           <span key={i} className={collected !== null && i < collected ? "bee on" : "bee"} />
         ))}
       </div>
       {collected !== null && (
-        <div className="bees-note dim">
+        <div className="note">
           {collected >= of ? "PERFECT!" : possible === false ? "no perfect this stage" : next != null ? `next +${next.toLocaleString("en")}` : ""}
         </div>
       )}
@@ -61,7 +61,7 @@ export function Bees() {
           );
         })}
       </div>
-      {perfect != null && <div className="bees-note dim">perfect stages {perfect}</div>}
+      {perfect != null && <div className="note">perfect stages {perfect}</div>}
     </div>
   );
 }

@@ -1,75 +1,198 @@
-:root {
-  color-scheme: dark;
-  --panel: rgb(10 10 14 / 0.85);
-  --text: #f2f2f2;
-  --label: #7fe07f;
-  --dim: #8a8a96;
-  /* Text sizes. A layout can set these on its root element to resize every gadget inside it. */
-  --label-size: 12px;
-  --value-size: 28px;
-  --value-small-size: 14px;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-}
+/*
+ * The platform's look: design tokens, the page layout and the parts every gadget is built from (docs/gadget-design.md).
+ * It's all in the "platform" layer, so a pack's own CSS, which is unlayered, always wins over it.
+ */
+@layer platform {
+  :root {
+    color-scheme: dark;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
 
-body {
-  margin: 0;
-  background: #000;
-  color: var(--text);
-}
+    /*
+     * The layout's scale. Everything is sized in rem, so the whole layout grows and shrinks with the window's height,
+     * which is what sizes a vertical game's picture. 1rem is 16px in a 917px-tall window, and stays readable when small.
+     */
+    font-size: clamp(12px, 1.75vh, 24px);
 
-.overlay body {
-  background: transparent;
-}
+    /* Colours. Gadgets use these, never raw values, so colour means the same thing everywhere. */
+    --text: #f2f2f2;
+    --label: #7fe07f;
+    --dim: #8a8a96;
+    --panel: rgb(10 10 14 / 0.85);
+    --panel-border: rgb(255 255 255 / 0.12);
+    --track: rgb(255 255 255 / 0.1); /* the empty part of a bar or pip */
+    --live: #ffd24a; /* live, gaining, the current one */
+    --good: #6be08a; /* good, met, safe */
+    --bad: #ff5a4a; /* danger, arriving, bad */
+    /* Categories with no good or bad meaning, e.g. power types or the parts of rank. */
+    --orange: #ff8a3d;
+    --blue: #4ab8ff;
+    --purple: #b05aff;
+    --pink: #ff5a7a;
 
-.panel {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 14px;
-  margin: 16px;
-  padding: 16px 20px;
-  background: var(--panel);
-  border: 1px solid rgb(255 255 255 / 0.12);
-  border-radius: 8px;
-  min-width: 180px;
-}
+    /* Text sizes. Every layout uses these; a pack's layout can override them on its root element if it must. */
+    --label-size: 0.6875rem;
+    --value-size: 1.375rem;
+    --value-small-size: 0.75rem;
 
-.gadget .label {
-  color: var(--label);
-  font-size: var(--label-size);
-  letter-spacing: 0.12em;
-}
+    /* Spacing, from the page down to the inside of a gadget. */
+    --layout-padding: 0.5rem;
+    --layout-gap: 0.5rem;
+    --left-min-width: 17.1875rem;
+    --right-min-width: 17.1875rem;
+    --panel-padding: 0.625rem 0.875rem;
+    --panel-gap: 0.625rem;
+    --gadget-gap: 0.25rem;
+    --pip-gap: 0.1875rem;
 
-.gadget .value {
-  font-size: var(--value-size);
-  font-variant-numeric: tabular-nums;
-}
+    /* Shapes and motion. */
+    --radius: 0.5rem;
+    --radius-small: 0.1875rem;
+    --bar-height: 0.375rem;
+    --motion: 150ms ease-out; /* entrance animations for changes */
+  }
 
-.gadget .value.small {
-  font-size: var(--value-small-size);
-}
+  body {
+    margin: 0;
+    background: #000;
+    color: var(--text);
+  }
 
-.gadget.debug {
-  border-top: 1px solid rgb(255 255 255 / 0.12);
-  padding-top: 10px;
-}
+  .overlay body {
+    background: transparent;
+  }
 
-.dim {
-  color: var(--dim);
-}
+  /*
+   * A layout: a column of panels down each side of the game picture, which stays clear in the middle.
+   * Panels on the same side share its width. A side's .layout-bottom group sits at the bottom of the screen.
+   */
+  .layout {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "left game right";
+    gap: var(--layout-gap);
+    box-sizing: border-box;
+    height: 100vh;
+    padding: var(--layout-padding);
+  }
 
-.status {
-  margin: 16px;
-  color: var(--dim);
-}
+  .layout-left { grid-area: left; }
+  .layout-right { grid-area: right; }
 
-.score-gain {
-  margin-left: 0.35em;
-  font-size: 0.57em;
-  color: #ffd24a;
-  vertical-align: middle;
-  animation: score-gain-in 150ms ease-out;
-}
+  .layout-left,
+  .layout-right,
+  .layout-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: var(--layout-gap);
+  }
 
-@keyframes score-gain-in {
-  from { opacity: 0; transform: translateY(4px); }
+  .layout-left,
+  .layout-right {
+    min-height: 0;
+  }
+
+  .layout-left { min-width: var(--left-min-width); }
+  .layout-right { min-width: var(--right-min-width); }
+
+  .layout-bottom {
+    margin-top: auto;
+  }
+
+  .panel {
+    display: grid;
+    align-content: start;
+    gap: var(--panel-gap);
+    padding: var(--panel-padding);
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+  }
+
+  /* A gadget: a label, its value, then any bar, pips or notes, evenly spaced. */
+  .gadget {
+    display: grid;
+    align-content: start;
+    gap: var(--gadget-gap);
+  }
+
+  .gadget .label {
+    color: var(--label);
+    font-size: var(--label-size);
+    letter-spacing: 0.12em;
+  }
+
+  /* A label sits right on top of its value. */
+  .gadget > .label + .value {
+    margin-top: calc(-1 * var(--gadget-gap));
+  }
+
+  .gadget .value {
+    font-size: var(--value-size);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .gadget .value.small {
+    font-size: var(--value-small-size);
+  }
+
+  /* What a value counts, beside it: "/ 13", "HIT", "s". */
+  .unit {
+    font-size: var(--value-small-size);
+    color: var(--dim);
+  }
+
+  /* A line of detail under a value. */
+  .note {
+    font-size: var(--label-size);
+    color: var(--dim);
+  }
+
+  /* A bar: a track with one fill, or several fills side by side. A gadget colours its fills. */
+  .bar {
+    position: relative;
+    display: flex;
+    height: var(--bar-height);
+    background: var(--track);
+    border-radius: var(--radius-small);
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: var(--label);
+  }
+
+  /* A row of pips. A gadget draws its own pip shape: bees, power levels, shots. */
+  .pips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--pip-gap);
+  }
+
+  .gadget.debug {
+    border-top: 1px solid var(--panel-border);
+    padding-top: 0.625rem;
+  }
+
+  .dim {
+    color: var(--dim);
+  }
+
+  .status {
+    margin: 1rem;
+    color: var(--dim);
+  }
+
+  .score-gain {
+    margin-left: 0.35em;
+    font-size: 0.57em;
+    color: var(--live);
+    vertical-align: middle;
+    animation: rise-in var(--motion);
+  }
+
+  /* The standard entrance for a change: fade in from just below. */
+  @keyframes rise-in {
+    from { opacity: 0; transform: translateY(0.25rem); }
+  }
 }

@@ -1,43 +1,24 @@
-.rank-unit {
-  font-size: var(--value-small-size);
-  color: var(--dim);
-}
-
 .rank-pending {
   font-size: var(--value-small-size);
-  color: #ffd24a;
-}
-
-.rank-bar {
-  display: flex;
-  margin-top: 6px;
-  height: 8px;
-  background: rgb(255 255 255 / 0.1);
-  border-radius: 3px;
-  overflow: hidden;
+  color: var(--live);
 }
 
 .rank-change {
-  margin-top: 6px;
   font-size: var(--value-small-size);
-  animation: rank-change-in 150ms ease-out;
+  animation: rise-in var(--motion);
 }
 
 .rank-change.up {
-  color: #ff6b5a;
+  color: var(--bad);
 }
 
 .rank-change.down {
-  color: #6be08a;
-}
-
-@keyframes rank-change-in {
-  from { opacity: 0; transform: translateY(4px); }
+  color: var(--good);
 }
 
 .rank-parts {
   list-style: none;
-  margin: 6px 0 0;
+  margin: 0;
   padding: 0;
   font-size: var(--label-size);
   color: var(--dim);
@@ -46,7 +27,7 @@
 .rank-parts li {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
   line-height: 1.6;
 }
 
@@ -57,24 +38,19 @@
 }
 
 .rank-key {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 0.125rem;
 }
 
-.rank-from_stage { background: #8a8a96; }
-.rank-from_loop { background: #b05aff; }
-.rank-from_ships { background: #ff8a3d; }
-.rank-from_lives { background: #ff5a7a; }
-.rank-from_bees { background: #ffd24a; }
-.rank-from_time { background: #4ab8ff; }
-
-.rank-timer {
-  margin-top: 4px;
-  font-size: var(--label-size);
-}
+.rank-from_stage { background: var(--dim); }
+.rank-from_loop { background: var(--purple); }
+.rank-from_ships { background: var(--orange); }
+.rank-from_lives { background: var(--pink); }
+.rank-from_bees { background: var(--live); }
+.rank-from_time { background: var(--blue); }
 
 .rank-timer-value {
-  color: #4ab8ff;
+  color: var(--blue);
   font-variant-numeric: tabular-nums;
 }

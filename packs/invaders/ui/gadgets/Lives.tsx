@@ -3,17 +3,16 @@ import { Sprite } from "./Sprite";
 import "./Lives.css";
 
 const SHIP = [
-  "......#......",
-  ".....###.....",
-  ".....###.....",
-  ".###########.",
-  "#############",
-  "#############",
-  "#############",
-  "#############",
+  ".....#.....",
+  ".....#.....",
+  "....###....",
+  ".#########.",
+  "###########",
+  "###########",
+  "#.#.#.#.#.#",
 ];
 
-/** Player 1's lives as a row of laser bases. */
+/** Player 1's lives as a row of laser bases, in our own pixel art (docs/gadget-design.md#no-real-game-assets). */
 export function Lives() {
   const lives = useVar<number | null>("p1.lives");
   if (lives === undefined) return null;

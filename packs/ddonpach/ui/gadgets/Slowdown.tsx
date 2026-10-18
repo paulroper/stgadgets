@@ -16,8 +16,8 @@ export function Slowdown() {
       <div className="value small">
         {paused ? "PAUSED" : percent === null ? "-" : `${percent}%`}
       </div>
-      <div className="slowdown-bar">
-        <div className="slowdown-bar-fill" style={{ width: `${percent ?? 0}%` }} />
+      <div className="bar">
+        <div className="bar-fill" style={{ width: `${percent ?? 0}%` }} />
       </div>
     </div>
   );

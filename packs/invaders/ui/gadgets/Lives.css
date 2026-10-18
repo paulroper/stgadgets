@@ -1,7 +1,7 @@
 .lives {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .lives-count {
@@ -9,7 +9,7 @@
 }
 
 .lives-ship {
-  width: 26px;
-  height: 16px;
+  width: 1.625rem;
+  height: 1rem;
   fill: var(--label);
 }

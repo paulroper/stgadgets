@@ -17,8 +17,8 @@ import "./layout.css";
  */
 export default function DoDonPachi() {
   return (
-    <div className="ddonpach-layout">
-      <div className="ddonpach-side">
+    <div className="layout">
+      <div className="layout-left">
         <div className="panel">
           <Score name="p1.score" label="SCORE" digits={9} gain="p1.score_popup" />
           <StageClear />
@@ -35,11 +35,11 @@ export default function DoDonPachi() {
           <SecondLoop />
         </div>
       </div>
-      <div className="ddonpach-side ddonpach-right">
+      <div className="layout-right">
         <div className="panel">
           <Boss />
         </div>
-        <div className="ddonpach-bottom">
+        <div className="layout-bottom">
           <div className="panel ddonpach-timing">
             <Slowdown />
             <LatencyMeter />

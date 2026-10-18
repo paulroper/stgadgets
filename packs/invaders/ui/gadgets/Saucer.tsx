@@ -34,31 +34,31 @@ export function Saucer() {
 
   return (
     <>
-      <div className={`gadget saucer-${status}`}>
+      <div className={`gadget saucer saucer-${status}`}>
         <div className="label">MYSTERY SHIP</div>
         <div className="value saucer-headline">
           {counting ? (
             <>
               {(appearsIn / FRAMES_PER_SECOND).toFixed(1)}
-              <span className="saucer-unit"> s</span>
+              <span className="unit"> s</span>
             </>
           ) : (
             headline[status]
           )}
         </div>
         {counting && (
-          <div className="saucer-bar">
-            <div className="saucer-bar-fill" style={{ width: `${Math.min(appearsIn / TIMER_RELOAD, 1) * 100}%` }} />
+          <div className="bar">
+            <div className="bar-fill" style={{ width: `${Math.min(appearsIn / TIMER_RELOAD, 1) * 100}%` }} />
           </div>
         )}
-        {note[status] && <div className="saucer-note dim">{note[status]}</div>}
+        {note[status] && <div className="note">{note[status]}</div>}
       </div>
       {nextScore != null && shotsTo300 != null && (
         <div className="gadget">
           <div className="label">NEXT HIT</div>
           <div className={nextScore === 300 ? "value saucer-300" : "value"}>{nextScore}</div>
-          <div className="saucer-note dim">{shotsTo300 === 1 ? "300 on this shot!" : `300 on shot ${shotsTo300}`}</div>
-          <div className="saucer-shots">
+          <div className="note">{shotsTo300 === 1 ? "300 on this shot!" : `300 on shot ${shotsTo300}`}</div>
+          <div className="pips saucer-shots">
             {Array.from({ length: shotsTo300 }, (_, i) => (
               <span key={i} className={i === shotsTo300 - 1 ? "saucer-shot jackpot" : "saucer-shot"} />
             ))}

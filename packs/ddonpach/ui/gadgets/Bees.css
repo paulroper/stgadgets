@@ -1,39 +1,23 @@
-.bees-unit {
-  font-size: var(--value-small-size);
-  color: var(--dim);
-}
-
 .bees-perfect {
-  color: #ffd24a;
-}
-
-.bees-pips {
-  display: flex;
-  gap: 3px;
-  margin-top: 6px;
+  color: var(--live);
 }
 
 .bee {
-  width: 9px;
-  height: 9px;
+  width: 0.5625rem;
+  height: 0.5625rem;
   border-radius: 50%;
-  border: 1px solid rgb(255 210 74 / 0.4);
+  border: 1px solid color-mix(in srgb, var(--live) 40%, transparent);
 }
 
 .bee.on {
-  background: #ffd24a;
-  border-color: #ffd24a;
-}
-
-.bees-note {
-  margin-top: 4px;
-  font-size: var(--label-size);
+  background: var(--live);
+  border-color: var(--live);
 }
 
 .bees-stages {
   display: flex;
-  gap: 4px;
-  margin-top: 8px;
+  gap: 0.25rem;
+  margin-top: var(--gadget-gap);
 }
 
 .bees-stage {
@@ -41,9 +25,9 @@
   flex-direction: column;
   align-items: center;
   min-width: 2.4ch;
-  padding: 2px 3px;
-  border-radius: 3px;
-  background: rgb(255 255 255 / 0.06);
+  padding: 0.125rem 0.1875rem;
+  border-radius: var(--radius-small);
+  background: var(--track);
   font-size: var(--label-size);
   font-variant-numeric: tabular-nums;
 }
@@ -53,12 +37,12 @@
 }
 
 .bees-stage.current {
-  outline: 1px solid rgb(255 255 255 / 0.35);
+  outline: 1px solid color-mix(in srgb, var(--text) 35%, transparent);
 }
 
 .bees-stage.perfect {
-  background: rgb(255 210 74 / 0.25);
-  color: #ffd24a;
+  background: color-mix(in srgb, var(--live) 25%, transparent);
+  color: var(--live);
 }
 
 .bees-icon {

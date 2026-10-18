@@ -1,28 +1,19 @@
-.slowdown-bar {
-  margin-top: 4px;
-  height: 5px;
-  background: rgb(255 255 255 / 0.1);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.slowdown-bar-fill {
-  height: 100%;
-  background: #6be08a;
+.slowdown .bar-fill {
+  background: var(--good);
 }
 
 .slowdown-slow .value {
-  color: #ffd24a;
+  color: var(--live);
 }
 
-.slowdown-slow .slowdown-bar-fill {
-  background: #ffd24a;
+.slowdown-slow .bar-fill {
+  background: var(--live);
 }
 
 .slowdown-very-slow .value {
-  color: #ff5a4a;
+  color: var(--bad);
 }
 
-.slowdown-very-slow .slowdown-bar-fill {
-  background: #ff5a4a;
+.slowdown-very-slow .bar-fill {
+  background: var(--bad);
 }
