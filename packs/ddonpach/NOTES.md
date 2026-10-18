@@ -56,7 +56,7 @@ From the World code at `0x3362`, which epozzobon's formula matches, with some ex
   `+ bees` (low byte of `0x103F8E`), `+ survival_frames >> 11`, `+ 32 * loop`, capped at 63.
 - Afterwards: `0x10196B = rank / 2`, `0x10196D = rank / 4`, `0x10196F = max(rank - 32, 0) * 2`.
 
-`derived.js` computes these parts (`rank.from_*`) and their total (`rank.model`). Over the whole of play-01 the
+`derived.js` computes these parts (`rank.from_*`) and their total (`rank.model`). Over a whole recorded session the
 model matches `rank` except right after a change: the game only recalculates rank as the stage scrolls, so memory
 catches up up to ~15 frames later. The rank gadget shows the game's value, with the model's reason for each change.
 
@@ -65,7 +65,7 @@ catches up up to ~15 frames later. The rank gadget shows the game's value, with 
 The check at `0x400B4` (World) matches the shmups wiki: P1 in play, `game.flags` bit 6 (solo), first credit
 (`p1.continues` 0x100), then any of: `p1.deaths_first_credit` <= 2, `p1.max_hits` >= 270/300/330 for ship A/B/C
 (BCD table at `0x40038`), `p1.score_digits` >= `0x05000000` (50,000,000), or `bees.perfect_stages` >= 4.
-`p1.deaths_first_credit` stopped at 2 on the final death in play-01 (the game was over anyway).
+`p1.deaths_first_credit` stopped at 2 on the final death in a recorded session (the game was over anyway).
 
 ## Bees and score per hit
 
@@ -74,10 +74,10 @@ bees this stage + perfect stages so far, matching the wiki's 100 ... 100,000 and
 score base value x hit count (+1,400 for the 14th hit on a 100-point enemy); the score only changes every other
 frame, so `pN.hit_gain` credits a gain to a hit on that tick or the one before.
 
-## Recording play-01
+## First recorded session
 
 Type B shot, fresh credit on stage 1: a 14-hit chain, a bee, a power-up, three deaths with a bomb in between, and a
-continue. `expected.yaml` checks it (`dotnet test src/server`). Findings, now in `map.yaml`:
+continue. The recording stays local (ADR 0011). Findings, now in `map.yaml`:
 
 - `p1.stock` drops at respawn, about 220 frames after the hit; `p1.flags` bit 0 marks the explosion, so
   `derived.js` takes the exploding ship off for the standard `p1.lives`.
@@ -92,7 +92,7 @@ continue. `expected.yaml` checks it (`dotnet test src/server`). Findings, now in
 
 `frame_counter` (`0x101270`) goes up once per pass of the main loop, which waits for vblank, so a pass that runs
 long skips a frame (epozzobon's notes explain why). The board refreshes at 15625 / 271.5 = 57.55 Hz (MAME
-`cave.cpp`), and play-01's ticks came at 57.59 a second, so each tick is one emulated frame. The counter advanced on
+`cave.cpp`), and a recorded session's ticks came at 57.59 a second, so each tick is one emulated frame. The counter advanced on
 every tick on the ship select screen and early in stage 1, but on only 70-89% of them later in stage 1.
 `game.speed` is that share, smoothed over about half a second. It assumes one read per emulated frame, which holds
 for RetroArch at the board's own rate.

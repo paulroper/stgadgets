@@ -74,7 +74,7 @@ variables:
       laser power, plus the stage index once (if no continues used) or twice (and no deaths this stage); halved if
       both play. Then + the difficulty's table entry for the stage + 2 x both players' lives + bees this stage +
       survival frames / 2048 + 32 on the second loop, capped at 63. A player whose ship is exploding is left out
-      of the per-player part until respawn. Matched the formula at every change in recordings/play-01.
+      of the per-player part until respawn. Matched the formula at every change in a recorded session.
   rank.half:
     type: u8
     address: 0x10196B
@@ -104,7 +104,7 @@ variables:
     address: 0x103F90
     description: >-
       Stars counted for the stage clear bonus, 1,000 points each (results code at 0xF24), up to 999. Reset on death.
-      RA calls these ground stars. Went 0 -> 1 in play-01.
+      RA calls these ground stars. Went 0 -> 1 when a star was collected in play.
     verified: true
   p1.stars_small:
     type: u16
@@ -202,7 +202,7 @@ variables:
     description: >-
       The score for the next extra life, as BCD score digits like p1.score_digits (0x00600000 is 6,000,000), or
       0xFFFF when no more are due. When the score reaches it, the routine at 0x44BBE adds a life and 0x44CEA adds
-      the next step from the table at 0x44CDA (6M then 20M by default). 0x00600000 throughout play-01.
+      the next step from the table at 0x44CDA (6M then 20M by default). 0x00600000 throughout a game that stayed under 6M.
     verified: true
   p2.next_extend: u32 @ 0x101954
   p1.deaths_stage:
