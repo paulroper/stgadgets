@@ -12,12 +12,13 @@ const SOLO = 0x40;        // game.flags bit 6: required for the second loop (0x4
 
 const FIRST_CREDIT = 0x100;   // pN.continues before any continue
 
-// Rank (routine at 0x3362). The difficulty's table, indexed by stage.index; settings.dips bits 0-1 pick it.
+// Rank (routine at 0x3362). The difficulty's table, indexed by stage.index; settings.dips bits 0-1 pick it (pointers
+// at 0x5092). These are the World set's: epozzobon's ddonpachj notes give other easy and very hard tables.
 const RANK_BY_STAGE = [
-  [16, 20, 24, 28, 32, 36, 40, 44],    // normal (checked)
-  [8, 10, 12, 14, 16, 18, 20, 22],     // easy
+  [16, 20, 24, 28, 32, 36, 40, 44],    // normal (checked in play)
+  [0, 0, 0, 0, 0, 0, 0, 0],            // easy
   [32, 38, 44, 50, 56, 62, 68, 74],    // hard
-  [48, 56, 64, 72, 80, 88, 96, 104],   // very hard
+  [63, 63, 63, 63, 63, 63, 63, 0],     // very hard: rank is always at its cap
 ];
 const RANK_MAX = 63;
 const SURVIVAL_FRAMES_PER_RANK = 2048;
@@ -406,7 +407,7 @@ export default {
     },
   },
   'rank.from_stage': {
-    description: "Rank from the stage, by difficulty: 16 on stage 1 at normal, +4 a stage. Easy, hard and very hard aren't checked yet.",
+    description: "Rank from the stage, by difficulty: 16 on stage 1 at normal, +4 a stage; 0 on easy; 32 +6 a stage on hard; 63 on very hard. Only normal is checked in play.",
     value: v => v['game.running'] ? RANK_BY_STAGE[v['settings.dips'] & 3][v['stage.index']] ?? null : null,
   },
   'rank.from_loop': {
