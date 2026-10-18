@@ -129,6 +129,9 @@ sequences:                                  # every distinct value, in order, ov
 
 ## Adding a game
 
+The steps below are the checklist. [Developing a game pack](pack-development.md) covers the workflow behind them:
+where to find addresses, attribution and licensing, choosing gadgets, and the build-and-look loop.
+
 1. Create `packs/<parent romset>/` with `pack.yaml` and `map.yaml`. Start from published addresses where they exist ([finding addresses](memory-maps.md#finding-addresses)).
 2. Add provider settings for the emulators and cores you've checked, e.g. `providers/retroarch.yaml`.
 3. Record a session with markers at the events you care about, find or confirm addresses, and write its `expected.yaml`. The `game-recording` skill walks through this.

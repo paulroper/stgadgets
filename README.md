@@ -53,7 +53,8 @@ See [Architecture](docs/architecture.md) for the full picture.
 
 - [Requirements](docs/requirements.md): latency first. STG players feel every frame
 - [Architecture](docs/architecture.md): the parts of the system and how they fit together
-- [Game packs](docs/packs.md): how to add a game
+- [Game packs](docs/packs.md): what goes in a pack
+- [Developing a game pack](docs/pack-development.md): the workflow, from research to gadgets
 - [Memory maps](docs/memory-maps.md): the per-game map format
 - [Gadgets & layouts](docs/gadgets.md): the React SDK
 - [Emulator providers](docs/providers.md): the provider interface, RetroArch, and recordings for replay

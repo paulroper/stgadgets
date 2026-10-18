@@ -119,18 +119,21 @@ variables:
 | `u16le` `u16be` … | Byte order given explicitly, overriding the system's |
 | `bool` | Zero is false, anything else is true |
 | `bcdN` | Binary-coded decimal across *N* bytes (2 digits per byte), common for scores. Bytes are read in the system's byte order |
-| `bytes[N]` | A raw block of *N* bytes, sent to the layout as an array |
 
-Long-form options. Following the [roadmap principle](roadmap.md#principles), anything beyond what Space Invaders needs gets built only when a real game needs it:
+Long-form options. Following the [roadmap principle](roadmap.md#principles), anything beyond what the packs need gets built only when a real game needs it:
 
 | Option | Meaning |
 |---|---|
-| `mask`, `shift` | Pick out one bit or a group of bits: `{ type: bool, address: 0x2015, mask: 0x80 }` |
-| `scale` | Multiply after decoding, e.g. `10` for games that store the score without its last digit |
+| `mask`, `shift` | Pick out bits: the value is `(raw & mask) >> shift`, from the unsigned value whatever the type. A `bool` with a mask is whether any of its bits are set: `{ type: bool, address: 0x102C8C, mask: 0x80 }`. `shift` (0-31) needs a `mask`; neither applies to `bcdN` |
 | `description` | Free text, shown in tooling |
 | `verified` | `true` once checked against a running game |
 
+Any other option is an error, so a misspelt or not-yet-supported option fails loudly instead of being ignored.
+
 Expected later, once a game needs them:
+
+- **`scale`:** multiply after decoding, e.g. `10` for games that store the score without its last digit. DoDonPachi's last digit means something else, so its `derived.js` builds the score instead
+- **`bytes[N]`:** a raw block of *N* bytes, sent to the layout as an array
 
 - **Arrays and structs:** enemy tables, bullet lists, per-player blocks with an address step between them
 - **Pointers:** an address that comes from reading another variable, common on 68000 games such as DoDonPachi
