@@ -47,13 +47,14 @@ class Recording:
         return self.data[tick * self.size + (address - self.base)]
 
     def value(self, tick, address, kind):
-        size = 1 if kind == "u8" else 2 if kind in ("u16le", "u16be") else int(kind[3:])
+        size = 1 if kind == "u8" else 2 if kind in ("u16le", "u16be") else int(kind[3:].removesuffix("be"))
         raw = self.data[tick * self.size + (address - self.base):][:size]
         if kind == "u8":
             return raw[0]
         if kind in ("u16le", "u16be"):
             return int.from_bytes(raw, "little" if kind == "u16le" else "big")
-        digits = "".join(f"{b:02x}" for b in reversed(raw))
+        # bcdN: low byte first, as on the 8080; bcdNbe: high byte first, as on the 68000
+        digits = "".join(f"{b:02x}" for b in (raw if kind.endswith("be") else reversed(raw)))
         return int(digits) if digits.isdigit() else None
 
     def save_manifest(self):
@@ -150,7 +151,7 @@ def main():
 
     h = sub.add_parser("history", help="distinct values of one address over time")
     h.add_argument("recording"); h.add_argument("address"); h.add_argument("--region")
-    h.add_argument("--type", default="u8", help="u8, u16le, u16be or bcdN (default u8)")
+    h.add_argument("--type", default="u8", help="u8, u16le, u16be, bcdN (low byte first) or bcdNbe (default u8)")
     h.set_defaults(run=history)
 
     m = sub.add_parser("mark", help="add a marker")

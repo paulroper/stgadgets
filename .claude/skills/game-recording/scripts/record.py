@@ -12,6 +12,8 @@ To mark an event while recording, write its label to <out>/MARK (e.g. `echo "coi
 Example (Space Invaders on FBNeo: READ_CORE_RAM offset 0 is 0x2000):
   python3 -I record.py --out packs/invaders/recordings/play-02 --base 0x2000 --size 0x400 --ram-base 0x2000 \
       --watch 0x20F8:bcd2:p1.score --watch 0x21FF:u8:p1.ships_reserve
+
+68000 games on FBNeo (e.g. DoDonPachi): add --word-swapped, since the core returns each 16-bit word byte-swapped.
 """
 import argparse, json, os, signal, socket, struct, sys, time
 from datetime import datetime, timezone
@@ -24,12 +26,12 @@ def number(text):
 
 
 def parse_watch(text):
-    """ADDR[:TYPE[:NAME]], TYPE one of u8, u16le, u16be, bcdN."""
+    """ADDR[:TYPE[:NAME]], TYPE one of u8, u16le, u16be, bcdN (low byte first) or bcdNbe (high byte first)."""
     parts = text.split(":")
     address = number(parts[0])
     kind = parts[1] if len(parts) > 1 else "u8"
     name = parts[2] if len(parts) > 2 else f"0x{address:X}"
-    size = {"u8": 1, "u16le": 2, "u16be": 2}.get(kind) or (int(kind[3:]) if kind.startswith("bcd") else None)
+    size = {"u8": 1, "u16le": 2, "u16be": 2}.get(kind) or (int(kind[3:].removesuffix("be")) if kind.startswith("bcd") else None)
     if size is None:
         raise argparse.ArgumentTypeError(f"unknown type {kind!r}")
     return name, address, size, kind
@@ -42,7 +44,8 @@ def decode(data, kind):
         return int.from_bytes(data, "little")
     if kind == "u16be":
         return int.from_bytes(data, "big")
-    digits = "".join(f"{b:02x}" for b in reversed(data))  # bcdN: low byte first, as on the 8080
+    # bcdN: low byte first, as on the 8080; bcdNbe: high byte first, as on the 68000
+    digits = "".join(f"{b:02x}" for b in (data if kind.endswith("be") else reversed(data)))
     return int(digits) if digits.isdigit() else None
 
 
@@ -86,6 +89,8 @@ def main():
     p.add_argument("--base", type=number, required=True, help="first address to record (original hardware address)")
     p.add_argument("--size", type=number, required=True, help="bytes to record")
     p.add_argument("--ram-base", type=number, help="address that READ_CORE_RAM offset 0 maps to (default: --base)")
+    p.add_argument("--word-swapped", action="store_true",
+                   help="the core returns 16-bit words byte-swapped (FBNeo's 68000 RAM); store them in hardware order")
     p.add_argument("--region", default="ram", help="region name in the manifest (default: ram)")
     p.add_argument("--watch", type=parse_watch, action="append", default=[], help="ADDR[:TYPE[:NAME]] to log when it changes")
     p.add_argument("--seconds", type=float, default=600)
@@ -98,6 +103,8 @@ def main():
     offset = args.base - ram_base
     if offset < 0:
         sys.exit("--base is below --ram-base")
+    if args.word_swapped and (offset % 2 or args.size % 2):
+        sys.exit("--word-swapped needs an even --base offset and --size")
     for name, address, size, _ in args.watch:
         if not (args.base <= address and address + size <= args.base + args.size):
             sys.exit(f"--watch {name} (0x{address:X}) is outside the recorded range")
@@ -135,6 +142,10 @@ def main():
             t0 = time.perf_counter()
             try:
                 ram = ra.read(offset, args.size)
+                if args.word_swapped:
+                    swapped = bytearray(ram)
+                    swapped[0::2], swapped[1::2] = ram[1::2], ram[0::2]
+                    ram = bytes(swapped)
                 timeouts = 0
             except (TimeoutError, socket.timeout):
                 timeouts += 1
@@ -170,7 +181,7 @@ def main():
             "ticks": ticks,
             "regions": [{"name": args.region, "start": f"0x{args.base:X}", "size": f"0x{args.size:X}", "file": f"{args.region}.bin"}],
             "markers": markers,
-            "notes": args.notes or f"Recorded via READ_CORE_RAM (offset 0 = 0x{ram_base:X}), one request per frame, not frame-synced.",
+            "notes": args.notes or f"Recorded via READ_CORE_RAM (offset 0 = 0x{ram_base:X}{', word-swapped' if args.word_swapped else ''}), one request per frame, not frame-synced.",
         }
         with open(os.path.join(args.out, "manifest.json"), "w") as f:
             json.dump(manifest, f, indent=2)

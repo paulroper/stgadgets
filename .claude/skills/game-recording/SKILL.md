@@ -39,7 +39,7 @@ python3 -I .claude/skills/game-recording/scripts/record.py \
   --watch 0x20F8:bcd2:p1.score --watch 0x21FF:u8:p1.ships_reserve --seconds 300
 ```
 
-- `--watch ADDR[:TYPE[:NAME]]` (types `u8`, `u16le`, `u16be`, `bcdN`) logs every change to `changes.log`, with tick numbers. Watch whatever you already know or suspect.
+- `--watch ADDR[:TYPE[:NAME]]` (types `u8`, `u16le`, `u16be`, `bcdN`, `bcdNbe`) logs every change to `changes.log`, with tick numbers. Watch whatever you already know or suspect.
 - Give the user a short script of events that separate the value you're after, such as "insert a coin, start, lose one life, then wait". Ask them to tell you as each one happens.
 - **Live markers:** when the user says something happened, run `echo "<label>" > packs/<id>/recordings/<name>/MARK`. Relaying through chat adds a delay of a few seconds, so treat these markers as approximate and refine them later with `history`.
 - **Stopping:** `touch packs/<id>/recordings/<name>/STOP`, or let `--seconds` run out. The manifest is written on stop.
@@ -59,7 +59,8 @@ Tips:
 
 - Combine "changed when X happened" with "unchanged when nothing relevant happened". The second kind of filter removes most of the noise.
 - Values are often stored differently from how they're shown: lives as spare ships (shown − 1), scores as BCD without the last digit, flags as single bits. Try `--equals` with a few variations.
-- 16-bit values show up as two neighbouring bytes, and on the 68000 the high byte comes first.
+- 16-bit values show up as two neighbouring bytes, and on the 68000 the high byte comes first: use `u16be` and `bcdNbe` there (`bcdN` is low byte first, as on the 8080).
+- **68000 games on FBNeo** (e.g. DoDonPachi): the core returns RAM byte-swapped, so record with `--word-swapped` to store it in the hardware's order. The pack's `providers/retroarch.yaml` says `word_swapped: true` when this applies.
 - Confirm a candidate with `history REC 0xADDR --type bcd2` (or `u16be` …). Its distinct values over time should match what happened on screen.
 - Use `mark REC <tick> "<label>"` to pin events exactly once `history` shows the tick where something changed.
 
