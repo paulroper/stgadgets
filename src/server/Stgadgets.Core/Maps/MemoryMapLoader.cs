@@ -38,17 +38,34 @@ public static partial class MemoryMapLoader
             // Long form: a mapping with type, address and options
             case Dictionary<object, object> longForm:
                 string? Get(string key) => longForm.TryGetValue(key, out var v) ? v?.ToString() : null;
+                if (longForm.Keys.Select(k => k.ToString()).FirstOrDefault(k => !LongFormKeys.Contains(k!)) is { } unknown)
+                    throw new FormatException($"Variable '{name}' has an unknown option '{unknown}'; expected {string.Join(", ", LongFormKeys)}");
+
+                var type = VariableType.Parse(Get("type") ?? throw new FormatException($"Variable '{name}' has no type"));
+                long? mask = Get("mask") is { } m ? PackYaml.ParseNumber(m) : null;
+                var shift = Get("shift") is { } s ? (int)PackYaml.ParseNumber(s) : 0;
+                if (mask is null && shift != 0)
+                    throw new FormatException($"Variable '{name}': shift needs a mask");
+                if (mask is not null && type.Kind == VariableKind.Bcd)
+                    throw new FormatException($"Variable '{name}': mask and shift don't apply to BCD");
+                if (shift is < 0 or > 31)
+                    throw new FormatException($"Variable '{name}': shift must be 0-31");
+
                 return new Variable(
                     name,
                     PackYaml.ParseNumber(Get("address") ?? throw new FormatException($"Variable '{name}' has no address")),
-                    VariableType.Parse(Get("type") ?? throw new FormatException($"Variable '{name}' has no type")),
+                    type,
                     Get("description"),
-                    Get("verified") is { } verified && bool.Parse(verified));
+                    Get("verified") is { } verified && bool.Parse(verified),
+                    mask,
+                    shift);
 
             default:
                 throw new FormatException($"Variable '{name}' must be '<type> @ <address>' or a mapping");
         }
     }
+
+    private static readonly string[] LongFormKeys = ["type", "address", "description", "verified", "mask", "shift"];
 
     [GeneratedRegex(@"^\s*(?<type>\w+)\s*@\s*(?<address>0x[0-9A-Fa-f]+|\d+)\s*$")]
     private static partial Regex ShortForm();

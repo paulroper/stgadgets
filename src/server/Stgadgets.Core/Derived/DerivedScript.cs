@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Jint;
 using Jint.Native;
 using Jint.Native.Function;
@@ -45,8 +46,8 @@ public sealed class DerivedScript
         var source = File.ReadAllText(path);
         try
         {
-            using var engine = CreateEngine();
-            var values = Functions(engine, source).Select(f => f.Value).ToList();
+            using var engine = CreateEngine(out var deadline);
+            var values = Functions(engine, deadline, source).Select(f => f.Value).ToList();
             return new DerivedScript(path, source, values);
         }
         catch (Exception ex) when (ex is JavaScriptException or JintException or TimeoutException or Acornima.ParseErrorException or FormatException)
@@ -62,12 +63,12 @@ public sealed class DerivedScript
     /// </summary>
     public DerivedEvaluator CreateEvaluator(MemoryMap map)
     {
-        var engine = CreateEngine();
-        var evaluator = new DerivedEvaluator(engine, Functions(engine, Source));
+        var engine = CreateEngine(out var deadline);
+        var evaluator = new DerivedEvaluator(engine, Functions(engine, deadline, Source));
         foreach (byte fill in (byte[])[0x00, 0x01, 0x11, 0x01])   // vary the values so scripts take more of their branches
         {
             var bytes = Enumerable.Repeat(fill, 8).ToArray();
-            evaluator.Evaluate(map.Variables.ToDictionary(v => v.Name, v => MapDecoder.Decode(v.Type, bytes.AsSpan(0, v.Type.Size), map.Endianness)));
+            evaluator.Evaluate(map.Variables.ToDictionary(v => v.Name, v => MapDecoder.Decode(v, bytes.AsSpan(0, v.Type.Size), map.Endianness)));
         }
         evaluator.Restart();
         return evaluator;
@@ -75,16 +76,38 @@ public sealed class DerivedScript
 
     // Sandboxed: no .NET access and no I/O. Time, memory and recursion are bounded for each tick so a runaway script
     // can't stall the game loop: one frame is the most a tick may spend, and real scripts take microseconds.
-    private static Engine CreateEngine() => new(options => options
-        .Strict()
-        .TimeoutInterval(TimeSpan.FromMilliseconds(16))
-        .LimitMemory(16_000_000)
-        .LimitRecursion(256));
+    private static Engine CreateEngine(out Deadline deadline)
+    {
+        var limit = new Deadline(TickLimit);
+        deadline = limit;
+        return new(options => options
+            .Strict()
+            .Constraint(limit)
+            .LimitMemory(16_000_000)
+            .LimitRecursion(256));
+    }
 
-    private static List<(DerivedValue Value, Function Function)> Functions(Engine engine, string source)
+    private static readonly TimeSpan TickLimit = TimeSpan.FromMilliseconds(16);
+
+    // Loading parses and runs the whole module, once, before the game loop uses it. Cold (the first script in the
+    // process, while .NET is still compiling Jint) that takes tens of milliseconds, so it gets more time than a tick.
+    private static readonly TimeSpan LoadLimit = TimeSpan.FromSeconds(2);
+
+    private static List<(DerivedValue Value, Function Function)> Functions(Engine engine, Deadline deadline, string source)
     {
         engine.Modules.Add("derived", source);
-        if (engine.Modules.Import("derived").Get("default") is not ObjectInstance exports)
+        deadline.Limit = LoadLimit;
+        deadline.Reset();
+        JsValue module;
+        try
+        {
+            module = engine.Modules.Import("derived").Get("default");
+        }
+        finally
+        {
+            deadline.Limit = TickLimit;
+        }
+        if (module is not ObjectInstance exports)
             throw new FormatException("must 'export default' an object of functions: { name: (v, prev) => value }");
 
         return exports.GetOwnPropertyKeys(Types.String)
@@ -112,6 +135,22 @@ public sealed class DerivedScript
 
         throw new FormatException($"'{name}' must be a function (v, prev) => value, or {{ description, value: (v, prev) => value }}");
     }
+}
+
+/// <summary>Stops a script that runs past <see cref="Limit"/> since the last <see cref="Reset"/>.</summary>
+internal sealed class Deadline(TimeSpan limit) : Constraint
+{
+    private long _deadline = long.MaxValue;
+
+    public TimeSpan Limit { get; set; } = limit;
+
+    public override void Check()
+    {
+        if (Stopwatch.GetTimestamp() > _deadline)
+            throw new TimeoutException($"Script ran for more than {Limit.TotalMilliseconds} ms");
+    }
+
+    public override void Reset() => _deadline = Stopwatch.GetTimestamp() + (long)(Limit.TotalSeconds * Stopwatch.Frequency);
 }
 
 /// <summary>Computes a pack's derived values tick by tick. Not thread-safe: one per game loop.</summary>

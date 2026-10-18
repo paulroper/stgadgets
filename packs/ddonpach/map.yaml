@@ -1,0 +1,286 @@
+schema: 1
+
+system:
+  cpu: m68000
+  endianness: big
+  regions:
+    work_ram: { start: 0x100000, size: 0x10000 }   # MAME cave.cpp ddonpach_map
+
+# Draft from published research; variables marked verified have been checked against a running game (RetroArch,
+# FBNeo, World set). Sources (NOTES.md):
+# epozzobon's DoDonPachi RE notes, Grego and alamone's ddonpachj trainer (GPL-3.0), and RetroAchievements code notes
+# for game 12751. All three describe ddonpachj; each address was also found in the World set's program ROMs, and the
+# routines quoted below are from its disassembly (World addresses).
+#
+# The 68000 is big-endian, and many values are words whose low byte is at the odd address: rank is written as a
+# byte at 0x101969, the low byte of the word at 0x101968.
+variables:
+  # --- Game flow ---------------------------------------------------------------------------------------------------
+
+  game.state:
+    type: u16
+    address: 0x1017A6
+    description: >-
+      0 play with both players, 1 title before credit, 2 score ranking, 4 title after credit, 5 demo, 6 play
+      (P2 only), 7 play/results/ending (P1 only), 8 continue, 0x0B ship select, 0x0C "presented by Cave", 0x0E
+      briefly between the logo and the title. Checked: 0x0C, 0x0E, 1, 4, 0x0B, 7, 8; the rest are RA's.
+    verified: true
+  game.phase:
+    type: u8
+    address: 0x1017A4
+    description: "RA (as 0x17A5, word-swapped): 3 results, 4 ending/credits. Stayed 0 from the logo to stage 1 play."
+  frame_counter:
+    type: u16
+    address: 0x101270
+    description: Trainer's frame_counter. Goes up by 1 every frame, and stops while the game is paused.
+    verified: true
+  game.flags:
+    type: u8
+    address: 0x1017A9
+    description: >-
+      Bit 6 must be set for the second loop (check at 0x400CA); it was set throughout a solo game (0xE0 in play,
+      0xF0 on the continue screen). Cleared at 0x4CB0 when bits 4-5 of this byte are both clear. The shmups wiki
+      says the second loop needs solo play, so bit 6 is probably that.
+  credits:
+    type: u16
+    address: 0x1013AA
+    description: Credits inserted and not yet used (RA, trainer).
+    verified: true
+
+  stage.index:
+    type: u16
+    address: 0x101978
+    description: 0-5 for stages 1-6; 6 is the end of loop 1 or loop 2's stage 7 (Hibachi); 7 is loop 2's credits.
+  loop:
+    type: u16
+    address: 0x10197A
+    description: 0 first loop, 1 second loop (also loop 1's credits), 2 second loop's credits. Adds 32 to rank.
+  stage.progress:
+    type: s16
+    address: 0x10198E
+    description: >-
+      Scroll distance into the stage: -41 as stage 1 starts, then up by 1 per scroll step (every frame during the
+      fly-in, about every 16 frames after; 0x3326). Rank is recalculated on each step. RA: bosses at 0x200, 0x160,
+      0x1B0, 0x200, 0x250, 0x121 for stages 1-6 (not yet checked).
+
+  # --- Rank (routine at 0x3362) ------------------------------------------------------------------------------------
+
+  rank:
+    type: u8
+    address: 0x101969
+    verified: true
+    description: >-
+      0-63, recomputed as the stage scrolls (with stage.progress), so it trails changes by up to ~15 frames. Per player in play: ship (A 0, B 1, C 2) + 2 for shot type + 2 x shot power +
+      laser power, plus the stage index once (if no continues used) or twice (and no deaths this stage); halved if
+      both play. Then + the difficulty's table entry for the stage + 2 x both players' lives + bees this stage +
+      survival frames / 2048 + 32 on the second loop, capped at 63. A player whose ship is exploding is left out
+      of the per-player part until respawn. Matched the formula at every change in a recorded session.
+  rank.half:
+    type: u8
+    address: 0x10196B
+    description: rank / 2, written straight after rank for enemy code to use.
+  rank.quarter:
+    type: u8
+    address: 0x10196D
+    description: rank / 4.
+  rank.over_32:
+    type: u8
+    address: 0x10196F
+    description: max(rank - 32, 0) x 2.
+  rank.survival_frames:
+    type: u32
+    address: 0x101970
+    description: >-
+      Frames since the last death: 0 from the moment the ship is hit until it's back under control, then counts
+      up. Adds 1 rank every 2048 frames (~34 s).
+    verified: true
+  bees.stage:
+    type: u16
+    address: 0x103F8E
+    description: Bees collected this stage. Reset on death. Adds 1 rank each.
+    verified: true
+  p1.stars_large:
+    type: u16
+    address: 0x103F90
+    description: >-
+      Stars counted for the stage clear bonus, 1,000 points each (results code at 0xF24), up to 999. Reset on death.
+      RA calls these ground stars. Went 0 -> 1 when a star was collected in play.
+    verified: true
+  p1.stars_small:
+    type: u16
+    address: 0x103F92
+    description: Stars counted for the stage clear bonus, 500 points each, up to 999. Reset on death. RA's aerial stars.
+  p2.stars_large: u16 @ 0x103F94
+  p2.stars_small: u16 @ 0x103F96
+  bees.perfect_stages:
+    type: u16
+    address: 0x1017C2
+    description: "RA: number of stages with every bee collected."
+  settings.dips:
+    type: u8
+    address: 0x101299
+    description: >-
+      Bits 0-1 difficulty (0 normal, 1 easy, 2 hard, 3 very hard): the code at 0x5024 picks the rank table with
+      them, from the word copied to 0x101294 each frame (0x9C0). RA (as 0x1298, word-swapped): bits 2-3 extend,
+      4-5 lives, 7 continue. 0 in play, i.e. normal; other settings not yet seen.
+
+  # --- Scores ------------------------------------------------------------------------------------------------------
+
+  p1.score_digits:
+    type: bcd4
+    address: 0x10161E
+    description: The first 8 of the 9 score digits. The last digit on screen is the continue count (p1.continues).
+    verified: true
+  p2.score_digits: bcd4 @ 0x101622
+  hiscore_digits:
+    type: bcd4
+    address: 0x1016EA
+    description: >-
+      Top entry of the 5-entry score ranking (0x1016EA-0x1016FD, searched by 0x431A4), first 8 digits. Shown as
+      the high score, with hiscore.last_digit after it.
+    verified: true
+  hiscore.last_digit:
+    type: u16
+    address: 0x101744
+    description: >-
+      The high score's last digit: the continues its player used. First of 5 words, one per ranking entry; the
+      ranking code stores pN.continues - 0x100 here.
+    verified: true
+  p1.continues:
+    type: u16
+    address: 0x10174E
+    description: >-
+      0x100 + continues used (up to 9; RA). The low byte is the score's last digit. Rank adds the stage only while
+      this is 0x100, and the ranking entry stores it minus 0x100.
+    verified: true
+  p2.continues: u16 @ 0x101752
+
+  # --- Chain (hits) ------------------------------------------------------------------------------------------------
+
+  p1.hit_timer:
+    type: u16
+    address: 0x1017D0
+    description: >-
+      The chain gauge: counts down by 1 a frame, and each hit tops it up (to 55 at most, with chain.timer_reload
+      56). The chain is over at 0, though p1.hits keeps its value until the next hit starts a new chain.
+    verified: true
+  p2.hit_timer: u16 @ 0x1017FA
+  chain.timer_reload:
+    type: u16
+    address: 0x101614
+    description: Value the hit timers are reloaded with (code at 0x44468), from a table at 0x440E2.
+  p1.hits:
+    type: bcd2
+    address: 0x1017EA
+    description: "Hits in the current (or last) chain, in BCD. Reset to 0 by the first hit of the next chain."
+    verified: true
+  p2.hits: bcd2 @ 0x101814
+  p1.max_hits:
+    type: bcd2
+    address: 0x101842
+    description: The longest chain this credit. Reset on continue.
+    verified: true
+  p2.max_hits: bcd2 @ 0x101844
+  boss.hits:
+    type: u16
+    address: 0x101820
+    description: RA's boss HIT count. Unknown encoding.
+
+  # --- Lives, deaths, bombs ----------------------------------------------------------------------------------------
+
+  p1.stock:
+    type: u16
+    address: 0x101964
+    verified: true
+    description: >-
+      Lives, including the ship in play: 1 with no spares shown. Drops when the ship respawns, not when it's hit,
+      so it still counts an exploding ship (derived.js gives the standard pN.lives). 0 at the continue screen,
+      then 3 again. Rank reads the low byte.
+  p2.stock: u16 @ 0x101966
+  p1.next_extend:
+    type: u32
+    address: 0x101950
+    description: >-
+      The score for the next extra life, as BCD score digits like p1.score_digits (0x00600000 is 6,000,000), or
+      0xFFFF when no more are due. When the score reaches it, the routine at 0x44BBE adds a life and 0x44CEA adds
+      the next step from the table at 0x44CDA (6M then 20M by default). 0x00600000 throughout a game that stayed under 6M.
+    verified: true
+  p2.next_extend: u32 @ 0x101954
+  p1.deaths_stage:
+    type: u16
+    address: 0x10194C
+    verified: true
+    description: "RA: deaths this stage, x2. Reset each stage; 0 at the results screen gives the no-miss bonus."
+  p2.deaths_stage: u16 @ 0x10194E
+  p1.deaths_first_credit:
+    type: u16
+    address: 0x101948
+    description: "RA: deaths before the first continue; part of the second-loop condition. Stays 0 after a continue."
+  p2.deaths_first_credit: u16 @ 0x10194A
+
+  p1.bombs:
+    type: u8
+    address: 0x102CB0
+    verified: true
+    description: >-
+      Bombs in stock. A bomb pickup adds 1 unless it equals p1.bomb_slots (code at 0x4EC8A). The trainer agrees;
+      RA lists the two the other way round, because its byte addresses are word-swapped. Refilled to
+      p1.bomb_slots on respawn.
+  p1.bomb_slots:
+    type: u8
+    address: 0x102CB1
+    description: Bomb capacity. 3 at the start for type B, +1 on each death, 6 after a continue.
+    verified: true
+  p2.bombs: u8 @ 0x102CF0
+  p2.bomb_slots: u8 @ 0x102CF1
+
+  p1.max_bonus:
+    type: u16
+    address: 0x10192A
+    description: "RA: the MAXIMUM bonus. 0x101924 (+0x16 per bomb picked up at full stock) looks like its rate."
+  p2.max_bonus: u16 @ 0x101934
+
+  # --- Player blocks: 0x40 bytes each, P1 at 0x102C8C, P2 at 0x102CCC ----------------------------------------------
+
+  p1.flags:
+    type: u8
+    address: 0x102C8C
+    description: >-
+      Bit 7: ship in play. Bit 0: hit, exploding (bit 7 clears); bit 2 joins it about 40 frames later; all clear
+      for one frame at respawn. Bit 6: set by using a bomb, until death (code clears it when the stock fills).
+      Bit 3 flickers for a few frames at a time, cause unknown. Rank counts the player while bit 7 is set and
+      bit 0 clear (0x5A688).
+    verified: true
+  p2.flags: u8 @ 0x102CCC
+  p1.ship:
+    type: u16
+    address: 0x102CA8
+    verified: true
+    description: 0 type A, 1 type B, 2 type C.
+  p2.ship: u16 @ 0x102CE8
+  p1.style:
+    type: u16
+    address: 0x102CAA
+    verified: true
+    description: 0 shot (S), 1 laser (L). S adds 2 rank.
+  p2.style: u16 @ 0x102CEA
+  p1.shot_power:
+    type: u16
+    address: 0x102CAC
+    description: >-
+      0-4. Power-ups raise this and p1.laser_power together; reset to 0 on death; 4 after a continue. Reads 3 on
+      the ship select screen.
+    verified: true
+  p2.shot_power: u16 @ 0x102CEC
+  p1.laser_power:
+    type: u16
+    address: 0x102CAE
+    description: As p1.shot_power, and so far always equal to it.
+    verified: true
+  p2.laser_power: u16 @ 0x102CEE
+  p1.invincibility:
+    type: u8
+    address: 0x102CCA
+    description: Invincibility timer after respawning, from 0xF0 down to 0 (RA as 0x2CCB, trainer).
+    verified: true
+  p2.invincibility: u8 @ 0x102D0A

@@ -1,0 +1,15 @@
+schema: 1
+
+id: ddonpach                    # the MAME parent ROM set; must match the folder name
+title: DoDonPachi
+manufacturer: Cave
+year: 1997
+screen: { width: 320, height: 240, rotation: 270 }   # native raster; MAME lists ROT270
+
+match:
+  # ddonpachj looks to share the World set's RAM layout (see NOTES.md), and ddonpacha is a hack of it. Add them
+  # (romsets and CRCs) once they've been checked against a running game.
+  romsets: [ddonpach]
+  program_crcs:                 # 68000 program ROMs, World set (MAME 0.27x)
+    b1.u27: 0xb5cdc8d3
+    b2.u26: 0x6bbb063a

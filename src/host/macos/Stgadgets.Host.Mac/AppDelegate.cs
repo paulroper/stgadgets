@@ -20,7 +20,11 @@ public sealed class AppDelegate : NSApplicationDelegate
     private NSMenuItem? _stateItem;
     private NSTimer? _timer;
     private CGRect? _lastFrame;
+
+    // Never a real frame: makes Track's next run apply its decision even if the frame hasn't changed.
+    private static readonly CGRect Hidden = new(-1, -1, 0, 0);
     private NSObject? _activity;
+    private SnapshotServer? _snapshots;
 
     public override void DidFinishLaunching(NSNotification notification)
     {
@@ -33,6 +37,14 @@ public sealed class AppDelegate : NSApplicationDelegate
         _locator = new EmulatorLocator(server);
         _overlay = new OverlayWindow(new NSUrl(url));
         CreateStatusItem();
+
+        if (int.TryParse(Environment.GetEnvironmentVariable("STGADGETS_SNAPSHOT_PORT"), out var snapshotPort))
+        {
+            _snapshots = new SnapshotServer(snapshotPort, _overlay,
+                () => _locator.Target is { } target ? EmulatorWindowTracker.FindContentRect(target) : null,
+                () => _lastFrame = Hidden);   // forget what Track last did, so its next run shows or hides afresh
+            Console.WriteLine($"stgadgets overlay: snapshots at http://127.0.0.1:{snapshotPort}/snapshot");
+        }
 
         _timer = NSTimer.CreateRepeatingScheduledTimer(TrackingInterval, _ => Track());
 
@@ -50,6 +62,7 @@ public sealed class AppDelegate : NSApplicationDelegate
     {
         _timer?.Invalidate();
         _locator?.Dispose();
+        _snapshots?.Dispose();
         if (_activity is not null)
             NSProcessInfo.ProcessInfo.EndActivity(_activity);
     }

@@ -1,6 +1,6 @@
 # stgadgets
 
-Emulator overlay that shows M2 ShotTriggers-style gadgets for shmups. A .NET server reads game memory through emulator APIs and decodes it with per-game YAML memory maps. React gadgets display the values, in a browser or in a transparent native overlay. Start with `README.md`. Reference material lives in `docs/`: architecture, requirements, maps, providers, gadgets, latency results, and decision records in `docs/decisions/`.
+Emulator overlay that shows M2 ShotTriggers-style gadgets for shmups. A .NET server reads game memory through emulator APIs and decodes it with per-game YAML memory maps. React gadgets display the values, in a browser or in a transparent native overlay. Start with `README.md`. Reference material lives in `docs/`: architecture, requirements, maps, providers, gadgets, latency results, and decision records in `docs/decisions/`. For work on a game pack, follow `docs/pack-development.md`.
 
 ## Key rules
 

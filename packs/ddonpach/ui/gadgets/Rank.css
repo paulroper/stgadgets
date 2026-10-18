@@ -1,0 +1,80 @@
+.rank-unit {
+  font-size: var(--value-small-size);
+  color: var(--dim);
+}
+
+.rank-pending {
+  font-size: var(--value-small-size);
+  color: #ffd24a;
+}
+
+.rank-bar {
+  display: flex;
+  margin-top: 6px;
+  height: 8px;
+  background: rgb(255 255 255 / 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.rank-change {
+  margin-top: 6px;
+  font-size: var(--value-small-size);
+  animation: rank-change-in 150ms ease-out;
+}
+
+.rank-change.up {
+  color: #ff6b5a;
+}
+
+.rank-change.down {
+  color: #6be08a;
+}
+
+@keyframes rank-change-in {
+  from { opacity: 0; transform: translateY(4px); }
+}
+
+.rank-parts {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  font-size: var(--label-size);
+  color: var(--dim);
+}
+
+.rank-parts li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.6;
+}
+
+.rank-part-value {
+  margin-left: auto;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.rank-key {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.rank-from_stage { background: #8a8a96; }
+.rank-from_loop { background: #b05aff; }
+.rank-from_ships { background: #ff8a3d; }
+.rank-from_lives { background: #ff5a7a; }
+.rank-from_bees { background: #ffd24a; }
+.rank-from_time { background: #4ab8ff; }
+
+.rank-timer {
+  margin-top: 4px;
+  font-size: var(--label-size);
+}
+
+.rank-timer-value {
+  color: #4ab8ff;
+  font-variant-numeric: tabular-nums;
+}

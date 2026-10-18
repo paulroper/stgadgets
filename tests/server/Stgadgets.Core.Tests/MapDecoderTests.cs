@@ -24,6 +24,17 @@ public class MapDecoderTests
     }
 
     [Fact]
+    public void Picks_out_bits_with_mask_and_shift()
+    {
+        byte[] flags = [0xC5];   // 1100 0101
+        Assert.Equal(true, MapDecoder.Decode(new Variable("in_play", 0, VariableType.Parse("bool"), Mask: 0x80), flags, Endianness.Big));
+        Assert.Equal(false, MapDecoder.Decode(new Variable("x", 0, VariableType.Parse("bool"), Mask: 0x02), flags, Endianness.Big));
+        Assert.Equal(1L, MapDecoder.Decode(new Variable("bits_2_3", 0, VariableType.Parse("u8"), Mask: 0x0C, Shift: 2), flags, Endianness.Big));
+        Assert.Equal(0x0AL, MapDecoder.Decode(new Variable("high_nibble", 0, VariableType.Parse("u16"), Mask: 0xF000, Shift: 12), [0xA1, 0x23], Endianness.Big));
+        Assert.Equal(0x0FL, MapDecoder.Decode(new Variable("signed", 0, VariableType.Parse("s8"), Mask: 0xF0, Shift: 4), [0xF0], Endianness.Big));   // bits of the raw byte, not of -16
+    }
+
+    [Fact]
     public void Read_plan_merges_nearby_ranges()
     {
         var plan = ReadPlan.Create([new(0x2100, 1), new(0x20F4, 2), new(0x2400, 4), new(0x20F8, 2)], maxGap: 256);

@@ -1,0 +1,66 @@
+.bees-unit {
+  font-size: var(--value-small-size);
+  color: var(--dim);
+}
+
+.bees-perfect {
+  color: #ffd24a;
+}
+
+.bees-pips {
+  display: flex;
+  gap: 3px;
+  margin-top: 6px;
+}
+
+.bee {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgb(255 210 74 / 0.4);
+}
+
+.bee.on {
+  background: #ffd24a;
+  border-color: #ffd24a;
+}
+
+.bees-note {
+  margin-top: 4px;
+  font-size: var(--label-size);
+}
+
+.bees-stages {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.bees-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 2.4ch;
+  padding: 2px 3px;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 0.06);
+  font-size: var(--label-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.bees-stage-n {
+  color: var(--dim);
+}
+
+.bees-stage.current {
+  outline: 1px solid rgb(255 255 255 / 0.35);
+}
+
+.bees-stage.perfect {
+  background: rgb(255 210 74 / 0.25);
+  color: #ffd24a;
+}
+
+.bees-icon {
+  letter-spacing: 0;
+}

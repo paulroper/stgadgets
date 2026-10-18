@@ -67,6 +67,8 @@ cores:
     ram_size: 0x2000
 ```
 
+Set `word_swapped: true` when the core returns each 16-bit word byte-swapped, as FBNeo does for 68000 games such as DoDonPachi. The provider then reads whole words and swaps them back, so maps keep the original hardware's byte order.
+
 Without an entry for the running core, the provider reports that the core isn't supported yet. Each core needs checking by hand for now (see [providers.md](providers.md#retroarch-provider)).
 
 ## UI
@@ -126,6 +128,9 @@ sequences:                                  # every distinct value, in order, ov
 `dotnet test src/server` replays every local recording of every pack through the pack's map and reports each mismatch (with no recordings present, there's nothing to check and it passes), for example `at 'player hit (1st death)' (tick 587): player.state is 0, expected 1`. A `stgadgets pack test <dir>` command for pack authors outside this repository is planned.
 
 ## Adding a game
+
+The steps below are the checklist. [Developing a game pack](pack-development.md) covers the workflow behind them:
+where to find addresses, attribution and licensing, choosing gadgets, and the build-and-look loop.
 
 1. Create `packs/<parent romset>/` with `pack.yaml` and `map.yaml`. Start from published addresses where they exist ([finding addresses](memory-maps.md#finding-addresses)).
 2. Add provider settings for the emulators and cores you've checked, e.g. `providers/retroarch.yaml`.

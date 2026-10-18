@@ -9,7 +9,7 @@ system:
 
 # Addresses from the Computer Archeology disassembly
 # (https://www.computerarcheology.com/Arcade/SpaceInvaders/), verified against
-# recordings/play-01 (RetroArch 1.22.2, FBNeo).
+# recorded play (RetroArch 1.22.2, FBNeo).
 variables:
   hiscore:          bcd2 @ 0x20F4   # updated at game over
   p1.score:         bcd2 @ 0x20F8

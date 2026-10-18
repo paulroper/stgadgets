@@ -96,7 +96,7 @@ Measurements:
 
 How the provider works:
 
-- **Core profiles.** `READ_CORE_RAM` offsets are in the core's own layout. For FBNeo's Space Invaders, offset 0 is CPU address `0x2000` and `0x2000` bytes are readable (work RAM and video RAM). Each pack lists this for the cores it supports, keyed by RetroArch's system ID, in `providers/retroarch.yaml` ([packs.md](packs.md#provider-settings)), and `CoreProfile` reads it from the matched pack. Each new game and core pairing must be checked by hand for now.
+- **Core profiles.** `READ_CORE_RAM` offsets are in the core's own layout. For FBNeo's Space Invaders, offset 0 is CPU address `0x2000` and `0x2000` bytes are readable (work RAM and video RAM). Some cores also return the bytes in a different order: FBNeo keeps 68000 RAM as little-endian words, so each pair of bytes comes back swapped, and `word_swapped: true` makes the provider swap them back. Each pack lists this for the cores it supports, keyed by RetroArch's system ID, in `providers/retroarch.yaml` ([packs.md](packs.md#provider-settings)), and `CoreProfile` reads it from the matched pack. Each new game and core pairing must be checked by hand for now.
 - **Pipelined reads.** Every chunk for a tick is sent before waiting for any reply, so a tick costs one frame, not one frame per range.
 - **Watching for changes.** Every 2 seconds the provider re-checks `GET_STATUS` and ends the stream if the content changed. After 10 timeouts in a row, it assumes RetroArch is gone.
 - **Polling only.** It isn't synced to frames, so single-frame events can still be missed. A map's `frame_counter` variable, if it has one, can be used to spot missed or repeated frames.

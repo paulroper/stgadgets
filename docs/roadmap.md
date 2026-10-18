@@ -64,27 +64,91 @@ Before tackling harder games, build tools to find addresses (see [memory-maps.md
 
 Pick games that need features Space Invaders didn't:
 
-- 16-bit values and big-endian CPUs (68000)
-- Arrays and structs (enemy and bullet tables), and pointers
-- Maps that extend other maps, for clone ROM sets
-- Calibrating the game picture position, and `GameSpace`
-- Second provider (whichever wasn't picked in milestone 0)
-- Windows overlay host (separate session), including the L1 check for independent flip
+- [x] 16-bit values and big-endian CPUs (68000), via DoDonPachi: including FBNeo's byte-swapped 68000 RAM (`word_swapped` in a pack's `providers/retroarch.yaml`)
+- [x] Bit fields in maps (`mask`, `shift`)
+- [ ] Arrays and structs (enemy and bullet tables), and pointers
+- [ ] Maps that extend other maps, for clone ROM sets (DoDonPachi's `ddonpachj` and `ddonpacha` are waiting on this or a check)
+- [ ] Calibrating the game picture position, and `GameSpace`
+- [ ] Second provider (whichever wasn't picked in milestone 0)
+- [ ] Windows overlay host: see [milestone 7](#7-ready-for-other-people)
 
 ## 5. 90s shmups
 
 Games with hidden systems are where ShotTriggers-style gadgets earn their keep:
 
-- **Rank meters:** hidden difficulty that changes as you play
-- **Chain and combo systems**
-- **Hitbox overlays:** need exact alignment with the game picture, per-object position data, and a canvas renderer
+- [x] **Rank meters:** hidden difficulty that changes as you play (DoDonPachi's rank, its parts and what changed it)
+- [x] **Chain and combo systems** (DoDonPachi's chain gauge and hits)
+- [ ] **Hitbox overlays:** on hold, undecided whether gadgets should draw over the game at all. They'd also need exact alignment with the game picture, per-object position data, and a canvas renderer
 
 ## 6. DoDonPachi 🐝
 
-The long-term goal. DoDonPachi (`ddonpach`, Cave, 1997) runs on a 68000-based Cave board, is vertical, and has a combo system that's an obvious fit for gadgets: a chain gauge, hit counter and hyper stock, and possibly bullet and hitbox overlays.
+The long-term goal. DoDonPachi (`ddonpach`, Cave, 1997) runs on a 68000-based Cave board, is vertical, and has a combo system that's an obvious fit for gadgets: a chain gauge and hit counter (hyper stock came later, in DaiOuJou), plus hidden rank, bees and a secret second loop.
+
+- [x] Pack for the World set (`packs/ddonpach/`): the map from published research checked against the World ROM's code, derived values for the game's rules, and a layout with score and stage clear bonus, chain, lives and next extend, power, rank, bees, second loop conditions, distance to the boss, game speed (slowdown) and stage splits. The research is in its [`NOTES.md`](../packs/ddonpach/NOTES.md)
+- [ ] Check what one-player stage 1 play hasn't reached: two players, other settings, later stages and bosses, the second loop, the MAXIMUM bonus
+- [ ] `ddonpachj` and `ddonpacha` in the pack
+- [ ] Future gadgets from the notes: rank graph, personal-best splits
+
+## 7. Ready for other people
+
+Turn stgadgets from something that runs from this repo into something people can install, and write packs for
+without it.
+
+### Pack test framework
+
+Recordings stay local ([ADR 0011](decisions/0011-recordings-are-local.md)), so today a pack has no committed tests:
+its checks only run on the machine that made its recordings.
+
+- [ ] Committed tests for a pack's logic that don't need a recording: hand-written ticks of map values in,
+  expected derived values out, kept in the pack
+- [ ] `stgadgets pack check <dir>`: check a pack against the schema (pack.yaml, map.yaml, derived.js, and the UI's
+  imports)
+- [ ] `stgadgets pack test <dir>`: the recording checks that `dotnet test src/server` runs today, for a pack anywhere
+  on disk
+- [ ] Testing a pack's layout: render it with given values, and compare against an expected snapshot
+
+### Documentation
+
+- [ ] A pack author's guide, from [developing a game pack](pack-development.md), with a reference for the map
+  format, `derived.js`, the SDK and the standard gadgets that doesn't assume this repo
+- [ ] User docs: installing, setting up the emulator (RetroArch network commands, cores), the overlay and OBS
+- [ ] A list of supported games and emulator cores, with what each pack shows
+
+### Windows host
+
+- [ ] Overlay host for Windows (separate session): a transparent, click-through window with WebView2, sharing
+  `host/lib`, including the L1 check for independent flip
+- [ ] The same development hooks as the macOS host, such as snapshots
+
+### Build tooling and a single package
+
+- [ ] One build that produces a release for each OS: the server (self-contained .NET), the UI, the built-in packs and
+  the overlay host, as one installable package (a `.app`/`.dmg` on macOS, an installer on Windows)
+- [ ] The host starts and stops the server itself, so users run one thing
+- [ ] Signing and notarization (Apple Developer account for macOS; code signing on Windows)
+- [ ] CI that builds and tests each OS's package
+
+### Packs outside the repo
+
+- [ ] Load packs from a user folder as well as the built-in ones, with a rule for which wins when both have a game
+- [ ] Build a pack's UI separately and load it at runtime as an ES module, with the SDK, gadgets and React shared
+  through an import map ([gadgets](gadgets.md#open-questions))
+- [ ] Versioning: which platform and SDK versions a pack works with
+- [ ] Trust and sandboxing for third-party `derived.js` and UI code: its own ADR, as
+  [ADR 0010](decisions/0010-game-packs.md) planned
+
+## Dev env improvements
+
+Found while building the DoDonPachi pack:
+
+- [x] Overlay snapshots: `STGADGETS_SNAPSHOT_PORT` makes the overlay serve a PNG of the layout, so a change can be checked without looking at the screen ([pack development](pack-development.md#the-build-and-look-loop))
+- [ ] Replay provider (milestone 2), so a layout can be viewed against a recording, not only live play
+- [ ] A tool to dump a pack's derived values over a recording, tick by tick, for working out `expected.yaml` and debugging `derived.js` (today only mismatches are reported)
+- [ ] Keep derived state, such as stage splits, across server restarts, or reload `map.yaml` and `derived.js` without one: changing either needs a restart, which resets the splits
+- [ ] Show the read → paint latency meter as idle while the overlay is hidden: a hidden overlay doesn't paint, so its numbers stop meaning anything
 
 ## Any time
 
 - Input display gadget. Needs its own input source: reading the controller directly (GameController/HID on macOS) or the game's input bytes in RAM. Emulator APIs don't give us controller input.
 - Using a layout as an OBS browser source
-- Distribution: Apple Developer account, signing and notarization for macOS releases
+- Distribution: see [milestone 7](#7-ready-for-other-people)
