@@ -16,8 +16,20 @@ public sealed class MapDecoder(MemoryMap map)
     {
         var values = new Dictionary<string, object?>(Map.Variables.Count);
         foreach (var variable in Map.Variables)
-            values[variable.Name] = Decode(variable.Type, snapshot.Read(variable.Address, variable.Type.Size), Map.Endianness);
+            values[variable.Name] = Decode(variable, snapshot.Read(variable.Address, variable.Type.Size), Map.Endianness);
         return values;
+    }
+
+    /// <summary>Decodes one variable, applying its <see cref="Variable.Mask"/> and <see cref="Variable.Shift"/>.</summary>
+    public static object? Decode(Variable variable, ReadOnlySpan<byte> bytes, Endianness systemEndianness)
+    {
+        if (variable.Mask is not { } mask)
+            return Decode(variable.Type, bytes, systemEndianness);
+
+        // Bits are picked out of the unsigned value, whatever the type.
+        var raw = (long)Decode(variable.Type with { Kind = VariableKind.Unsigned }, bytes, systemEndianness)!;
+        var bits = (raw & mask) >> variable.Shift;
+        return variable.Type.Kind == VariableKind.Bool ? bits != 0 : bits;
     }
 
     public static object? Decode(VariableType type, ReadOnlySpan<byte> bytes, Endianness systemEndianness)
