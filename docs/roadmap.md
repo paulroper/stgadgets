@@ -24,7 +24,7 @@ One game, one variable, one gadget, on screen, with latency measured.
 
 - [x] Set up the .NET solution (`src/`, `tests/`) on .NET 10
 - [x] The chosen provider, streaming work RAM
-- [x] Capture recordings: `record.py` in the `game-recording` skill ([ADR 0011](decisions/0011-recordings-are-local.md)) in the [recording format](providers.md#recording-format-draft)
+- [x] Capture recordings: `stgadgets recording record` ([cli.md](cli.md)), used by the `game-recording` skill ([ADR 0011](decisions/0011-recordings-are-local.md)) in the [recording format](providers.md#recording-format-draft)
 - [x] Capture fixture recordings (`invaders/play-01`: mystery ship, deaths, game over; still to capture: inserting a coin, clearing a wave): attract mode, inserting a coin, scoring, losing a life, clearing a wave
 - [x] Check the draft addresses in [memory-maps.md](memory-maps.md) against the recordings
 - [x] Minimal decoding of `p1.score` (BCD), with the map hardcoded or very minimal
@@ -42,13 +42,13 @@ One game, one variable, one gadget, on screen, with latency measured.
 Generalise only what milestone 1 proved:
 
 - [x] Map loader and decoder for real (YAML, types, byte order)
-- [ ] Match maps to ROM set and hash
-- [ ] Replay provider
-- [ ] `stgadgets map test`: decode a recording and print the variables
+- [ ] Match maps to ROM set and hash (ROM set works; chip CRCs wait on providers reporting them)
+- [x] Replay provider ([providers](providers.md#replay-provider))
+- [x] Decode a recording and print the variables: `stgadgets recording values` and `history` ([cli.md](cli.md))
 - [x] Unit tests for decoding against the recordings
-- [ ] SDK: `useGame`, `useConnection`, `useOnFrame`
-- [ ] Gadgets: lives, aliens remaining. Tracker: shots fired and accuracy
-- [ ] Overlay follows the emulator window; menu bar app
+- [x] SDK: `useGame`, `useConnection`, `useOnFrame`
+- [x] Gadgets: lives, aliens remaining. Shots fired and accuracy (as derived values, [ADR 0012](decisions/0012-derived-values-in-javascript.md))
+- [x] Overlay follows the emulator window; menu bar app
 
 **Done when** a live score and accuracy panel sit next to a game of Space Invaders and stay correct, and the same layout runs in a browser against a recording.
 
@@ -56,8 +56,8 @@ Generalise only what milestone 1 proved:
 
 Before tackling harder games, build tools to find addresses (see [memory-maps.md](memory-maps.md#finding-addresses)):
 
-- [x] RAM search on recordings (changed, unchanged, went up, went down, equals a value): `recording.py search` in the `game-recording` skill
-- [ ] Watch view: show chosen addresses live while playing
+- [x] RAM search on recordings (changed, unchanged, went up, went down, equals a value): `stgadgets recording search` ([cli.md](cli.md)), used by the `game-recording` skill
+- [ ] Watch view: show chosen addresses live while playing (for now, `recording record --watch` logs them to `changes.log`)
 - [ ] Import helpers for MAME cheat files
 
 ## 4. Fill out the format (early 80s and 16-bit era)
@@ -96,16 +96,20 @@ without it.
 
 ### Pack test framework
 
-Recordings stay local ([ADR 0011](decisions/0011-recordings-are-local.md)), so today a pack has no committed tests:
-its checks only run on the machine that made its recordings.
+Recordings stay local ([ADR 0011](decisions/0011-recordings-are-local.md)), so their checks only run on the machine
+that made them. Committed scenarios and layout tests now cover each pack's logic and UI wherever it's checked out.
 
-- [ ] Committed tests for a pack's logic that don't need a recording: hand-written ticks of map values in,
-  expected derived values out, kept in the pack
+- [x] Committed tests for a pack's logic that don't need a recording: scenarios of hand-written ticks of map values
+  in, expected derived values out, in the pack's `tests/derived/` ([packs.md](packs.md#testing-derived-values))
+- [x] The `stgadgets` CLI (`src/cli/`), on `Stgadgets.Core` and the providers moved to `src/lib/`
+  ([ADR 0015](decisions/0015-pack-tools-in-a-dotnet-cli.md)): `recording record`, `markers`, `search`, `history`,
+  `values`, `mark` and `trim`, replacing the `game-recording` skill's Python scripts ([cli.md](cli.md))
 - [ ] `stgadgets pack check <dir>`: check a pack against the schema (pack.yaml, map.yaml, derived.js, and the UI's
   imports)
-- [ ] `stgadgets pack test <dir>`: the recording checks that `dotnet test src/server` runs today, for a pack anywhere
-  on disk
-- [ ] Testing a pack's layout: render it with given values, and compare against an expected snapshot
+- [ ] `stgadgets pack test <dir>`: the scenario and recording checks that `dotnet test src/server` runs today, for a
+  pack anywhere on disk
+- [x] Testing a pack's layout: show it in named game states and check what's on screen, without snapshots
+  ([packs.md](packs.md#testing-the-ui))
 
 ### Documentation
 
@@ -142,9 +146,16 @@ its checks only run on the machine that made its recordings.
 Found while building the DoDonPachi pack:
 
 - [x] Overlay snapshots: `STGADGETS_SNAPSHOT_PORT` makes the overlay serve a PNG of the layout, so a change can be checked without looking at the screen ([pack development](pack-development.md#the-build-and-look-loop))
-- [ ] Replay provider (milestone 2), so a layout can be viewed against a recording, not only live play
-- [ ] A tool to dump a pack's derived values over a recording, tick by tick, for working out `expected.yaml` and debugging `derived.js` (today only mismatches are reported)
-- [ ] Keep derived state, such as stage splits, across server restarts, or reload `map.yaml` and `derived.js` without one: changing either needs a restart, which resets the splits
+- [x] Test game states: a pack's `tests/states.ts`, written as ticks of map values with `derived.js` computing the rest, shown with `/?state=` in the dev server and screenshotted with `npm run screenshot -- --state`, so a layout can be seen at any moment of the game without playing to it ([pack development](pack-development.md#looking-at-game-states))
+- [x] The server's emulator is chosen in configuration (`Stgadgets:Provider`), from the same list of providers as the CLI ([providers](providers.md#choosing-a-provider))
+- [x] Replay provider (milestone 2), so a layout can be viewed against a recording, not only live play: `Stgadgets:Provider=replay`, with a recording's folder as the endpoint, optionally `#<marker>` to hold at a moment ([providers](providers.md#replay-provider))
+- [x] `stgadgets dev`: start, restart, check and stop the server (live or replaying) and the overlay, and take snapshots, in one command each ([cli.md](cli.md#development))
+- [ ] CI: a GitHub Actions workflow that runs the committed tests on every push (`dotnet test src/server`, `dotnet test src/cli`, `npm test` in `src/ui`). They need no emulator or Xcode, and recordings are local, so their checks are skipped there
+- [x] A tool to show a pack's derived values over a recording, for working out `expected.yaml` and debugging `derived.js`: `stgadgets recording history <name>` and `values` ([cli.md](cli.md))
+- [ ] A gadget interview: a guided conversation about what a game's players would want to see, drawing on existing packs and the game's own systems, ending in a list of gadgets to build and the data each needs ([choosing gadgets](pack-development.md#2-decide-which-gadgets-are-worth-having))
+- [ ] `/add-pack <game>`: one Claude skill that runs the whole workflow (research, recording, map, derived values, gadget interview, gadgets, game states and tests), built from the pieces above
+- [ ] Hot reload packs in the server: watch `packs/` and reload the matched pack when its `pack.yaml`, `map.yaml`, `derived.js` or provider settings change, so a `derived.js` change shows up in the overlay without restarting the server
+- [ ] Keep derived state, such as stage splits, across reloads and server restarts: today a restart resets the splits
 - [ ] Show the read → paint latency meter as idle while the overlay is hidden: a hidden overlay doesn't paint, so its numbers stop meaning anything
 
 ## Any time

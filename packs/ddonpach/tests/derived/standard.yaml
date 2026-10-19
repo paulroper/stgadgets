@@ -1,0 +1,85 @@
+# The standard values (docs/memory-maps.md#standard-variable-names): score, lives, bombs and stage, and that
+# they're null outside play, when memory holds the last game's leftovers.
+
+# Stage 1, solo, first credit, ship B, three lives.
+start:
+  game.state: 0
+  game.flags: 0xE0
+  frame_counter: 1000
+  p1.flags: 0x80
+  p1.stock: 3
+  p1.continues: 0x100
+  p1.ship: 1
+  p1.next_extend: 0x600000
+  p1.bombs: 3
+  p1.bomb_slots: 3
+  p1.score_digits: 1050
+  hiscore_digits: 590806
+  hiscore.last_digit: 5
+add: { frame_counter: 1 }
+
+scenarios:
+  in play:
+    - expect:
+        game.running: true
+        game.in_progress: true
+        stage: 1
+        p1.score: 10500
+        hiscore: 5908065
+        p1.lives: 3
+        p1.alive: true
+        p1.bombs_held: 3
+        p1.bomb_capacity: 3
+        p1.next_life_at: 6000000
+        p1.more_lives: true
+        p1.shot_level: 0
+        p1.laser_level: 0
+
+  the score's last digit is the continues used:
+    - set: { p1.continues: 0x102 }
+      expect: { p1.score: 10502 }
+
+  an exploding ship no longer counts as a life:
+    - expect: { p1.died: false }
+    - set: { p1.flags: 0x01 }
+      expect: { p1.lives: 2, p1.alive: false, p1.died: true }
+    - expect: { p1.died: false }
+    - set: { p1.flags: 0x80, p1.stock: 2 }
+      expect: { p1.lives: 2, p1.alive: true }
+
+  using a bomb:
+    - expect: { p1.bombed: false }
+    - set: { p1.bombs: 2 }
+      expect: { p1.bombed: true, p1.bombs_held: 2 }
+    - expect: { p1.bombed: false }
+
+  every extend given:
+    - set: { p1.next_extend: 0xFFFF }
+      expect: { p1.next_life_at: null, p1.more_lives: false }
+
+  the stage restarts at 1 on the second loop:
+    - set: { loop: 1, stage.index: 2 }
+      expect: { stage: 3 }
+
+  the ship select screen shows only the high score:
+    - set: { game.state: 11 }
+      expect:
+        game.running: false
+        game.in_progress: false
+        hiscore: 5908065
+        stage: null
+        p1.score: null
+        p1.lives: null
+        p1.alive: null
+        p1.bombs_held: null
+        p1.next_life_at: null
+
+  the continue screen holds play:
+    - set: { game.state: 8, p1.stock: 0 }
+      expect: { game.running: false, game.in_progress: true, p1.score: null, p1.lives: null }
+
+  both players' play states count as play:
+    - set: { game.state: 6 }
+      expect: { game.running: true }
+    - set: { game.state: 7 }
+      expect: { game.running: true }

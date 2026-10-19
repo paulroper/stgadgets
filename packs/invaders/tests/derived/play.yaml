@@ -1,0 +1,51 @@
+# Play, lives, and player 1's shots, kills, accuracy and score popup.
+
+# A wave in progress, player 1 up with the ship alive and two spare.
+start:
+  game.mode: true
+  game.moving: true
+  player.data: 0x21
+  player.state: 0xFF
+  aliens_remaining: 55
+  p1.ships_reserve: 2
+  rack.y: 0x70
+
+scenarios:
+  in play, the ship in play counts as a life:
+    - expect: { game.running: true, p1.alive: true, p1.lives: 3, fleet.aliens: 55 }
+    - set: { player.state: 0 }
+      expect: { p1.alive: false, p1.lives: 2 }
+
+  attract mode isn't play:
+    - set: { game.mode: false }
+      expect: { game.running: false, p1.alive: null, p1.lives: null, p1.shots: null, p1.kills: null, fleet.aliens: null }
+
+  the start screen holds play, and its 255 aliens aren't counted as kills:
+    - set: { game.moving: false, aliens_remaining: 255 }
+      expect: { game.running: false, p1.kills: 0, p1.shots: 0, fleet.aliens: null }
+    - set: { game.moving: true, aliens_remaining: 55 }
+      expect: { game.running: true, p1.kills: 0 }
+
+  shots, kills and accuracy:
+    - set: { shots.count: 254 }
+      expect: { p1.shots: 0, p1.kills: 0, p1.accuracy: null }
+    - set: { shots.count: 255, aliens_remaining: 54 }
+      expect: { p1.shots: 1, p1.kills: 1, p1.accuracy: 1 }
+    - set: { shots.count: 2 }
+      expect: { p1.shots: 4, p1.accuracy: 0.25 }
+
+  player 2's shots and kills aren't player 1's:
+    - set: { player.data: 0x22 }
+      expect: { p1.alive: null, p1.lives: null }
+    - set: { shots.count: 1, aliens_remaining: 54 }
+      expect: { p1.shots: 0, p1.kills: 0 }
+
+  the points just scored show for about a second:
+    - expect: { p1.last_gain: null, p1.score_popup: null }
+    - set: { p1.score: 10 }
+      expect: { p1.last_gain: 10, p1.last_gain_age: 0, p1.score_popup: 10 }
+    - repeat: 59
+      expect: { p1.last_gain_age: 59, p1.score_popup: 10 }
+    - expect: { p1.last_gain_age: 60, p1.score_popup: null, p1.last_gain: 10 }
+    - set: { p1.score: 110 }
+      expect: { p1.last_gain: 100, p1.score_popup: 100 }

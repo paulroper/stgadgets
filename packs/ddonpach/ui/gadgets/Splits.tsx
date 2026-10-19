@@ -14,6 +14,7 @@ interface Split {
   points: number | null;
   deaths: number | null;
   bombs: number | null;
+  continues: number | null;
 }
 
 function time(frames: number | null) {
@@ -43,14 +44,15 @@ function Row({ split, current }: { split: Split; current?: boolean }) {
       <td>{split.points === null ? "-" : split.points.toLocaleString("en")}</td>
       <td>{split.deaths ?? "-"}</td>
       <td>{split.bombs ?? "-"}</td>
+      <td>{split.continues ?? "-"}</td>
       <td>{slowdown(split)}</td>
     </tr>
   );
 }
 
-const ahead = (stage: string): Split => ({ stage, frames: null, game_frames: null, points: null, deaths: null, bombs: null });
+const ahead = (stage: string): Split => ({ stage, frames: null, game_frames: null, points: null, deaths: null, bombs: null, continues: null });
 
-/** Player 1's stage splits this credit: time, points, deaths, bombs and slowdown, with the current stage live. */
+/** Player 1's stage splits this credit: time, points, deaths, bombs, continues and slowdown, with the current stage live. */
 export function Splits() {
   const stage = useVar<string | null>("split.stage");
   const done = useVar<string | null>("split.done");
@@ -59,11 +61,12 @@ export function Splits() {
   const points = useVar<number | null>("split.points");
   const deaths = useVar<number | null>("split.deaths");
   const bombs = useVar<number | null>("split.bombs");
+  const continues = useVar<number | null>("split.continues");
   const finished = useMemo(() => new Map(parse(done).map((split) => [split.stage, split])), [done]);
   if (stage === undefined || done === undefined) return null;
 
   const current: Split | null =
-    stage === null ? null : { stage, frames: frames ?? null, game_frames: gameFrames ?? null, points: points ?? null, deaths: deaths ?? null, bombs: bombs ?? null };
+    stage === null ? null : { stage, frames: frames ?? null, game_frames: gameFrames ?? null, points: points ?? null, deaths: deaths ?? null, bombs: bombs ?? null, continues: continues ?? null };
 
   return (
     <div className="gadget splits">
@@ -76,6 +79,7 @@ export function Splits() {
             <th>POINTS</th>
             <th>✕</th>
             <th>B</th>
+            <th>C</th>
             <th>SLOW</th>
           </tr>
         </thead>

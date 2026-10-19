@@ -1,0 +1,105 @@
+# Slowdown (frame_counter skipping frames), pauses, and per-stage splits.
+
+# Stage 1, solo, first credit; frame_counter moves every tick, as at full speed.
+start:
+  game.state: 0
+  game.flags: 0xE0
+  frame_counter: 1000
+  p1.flags: 0x80
+  p1.stock: 3
+  p1.continues: 0x100
+  p1.bombs: 3
+  p1.score_digits: 1050
+add: { frame_counter: 1 }
+
+scenarios:
+  full speed:
+    - repeat: 10
+      expect: { game.frame_advance: 1, game.still_ticks: 0, game.speed: 1, game.paused: false }
+
+  a lost frame slows the game, which recovers:
+    - repeat: 10
+      expect: { game.speed: 1 }
+    - add: { frame_counter: -1 }
+      expect: { game.frame_advance: 0, game.still_ticks: 1, game.speed: 1 }
+    - expect: { game.frame_advance: 1, game.speed: 0.9678 }
+    - repeat: 300
+      expect: { game.speed: 1.0000 }
+
+  standing still for longer than 30 ticks is a pause, not slowdown:
+    - expect: { game.still_ticks: 0 }
+    - add: { frame_counter: -1 }
+      repeat: 30
+      expect: { game.still_ticks: 30, game.paused: false }
+    - add: { frame_counter: -1 }
+      expect: { game.still_ticks: 31, game.paused: true }
+    - expect: { game.paused: false, game.speed: 1 }
+
+  standing still for 30 ticks is still slowdown:
+    - expect: { game.speed: 1 }
+    - add: { frame_counter: -1 }
+      repeat: 30
+      expect: { game.still_ticks: 30, game.speed: 1 }
+    - expect: { game.speed: 0.3829 }
+
+  frame_counter wraps:
+    - set: { frame_counter: 0xFFFF }
+    - set: { frame_counter: 0 }
+      expect: { game.frame_advance: 1 }
+
+  a stage's split:
+    - expect: { split.stage: 1-1, split.frames: 0, split.game_frames: 0, split.points: 0, split.deaths: 0, split.bombs: 0, split.continues: 0, split.done: '[]' }
+    - repeat: 100
+      expect: { split.frames: 100, split.game_frames: 100 }
+    - set: { p1.score_digits: 1100 }
+      expect: { split.points: 500, split.frames: 101 }
+    - add: { frame_counter: -1 }
+      repeat: 2
+      expect: { split.frames: 101, split.game_frames: 101 }
+    - expect: { split.frames: 104, split.game_frames: 102 }
+    - set: { p1.bombs: 2 }
+      expect: { split.bombs: 1 }
+    - set: { p1.flags: 0x01 }
+      expect: { split.deaths: 1, split.frames: 106, split.game_frames: 104 }
+    - set: { p1.flags: 0x80, stage.index: 1 }
+      expect:
+        split.stage: 1-2
+        split.frames: 0
+        split.points: 0
+        split.done: '[{"stage":"1-1","frames":106,"game_frames":104,"points":500,"deaths":1,"bombs":1,"continues":0}]'
+
+  a continue keeps the stage's split open, and counts:
+    - repeat: 10
+      expect: { split.frames: 9 }
+    - set: { game.state: 8, p1.flags: 0, p1.stock: 0 }
+      repeat: 5
+      expect: { split.stage: 1-1, split.frames: 9, split.continues: 0 }
+    - set: { p1.continues: 0x101 }
+      expect: { split.stage: 1-1, split.continues: 1 }
+    - set: { game.state: 0, p1.flags: 0x80, p1.stock: 3 }
+      expect: { split.stage: 1-1, split.frames: 10, split.points: 0, split.continues: 1 }
+    - set: { stage.index: 1 }
+      expect:
+        split.stage: 1-2
+        split.continues: 0
+        split.done: '[{"stage":"1-1","frames":10,"game_frames":10,"points":0,"deaths":0,"bombs":0,"continues":1}]'
+
+  the splits are cleared after the credit:
+    - repeat: 10
+      expect: { split.frames: 9 }
+    - set: { game.state: 11 }
+      expect: { split.stage: null, split.frames: null, split.continues: null, split.done: '[]' }
+
+  loop 1's ending closes stage 1-6 when loop 2 starts:
+    - set: { stage.index: 5 }
+      expect: { split.stage: 1-6, split.frames: 0 }
+    - repeat: 10
+      expect: { split.frames: 10 }
+    - set: { stage.index: 6 }
+      repeat: 5
+      expect: { split.stage: 1-6, split.frames: 10, split.done: '[]' }
+    - set: { loop: 1, stage.index: 0 }
+      expect:
+        split.stage: 2-1
+        split.frames: 0
+        split.done: '[{"stage":"1-6","frames":10,"game_frames":10,"points":0,"deaths":0,"bombs":0,"continues":0}]'

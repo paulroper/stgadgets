@@ -1,0 +1,94 @@
+# Rank's parts (the formula at 0x3362), rank.model, and what changed it.
+
+# Stage 1 on normal, solo, first credit, ship B with shot style; three lives. Rank in memory agrees with the formula.
+start:
+  game.state: 0
+  game.flags: 0xE0
+  frame_counter: 1000
+  p1.flags: 0x80
+  p1.stock: 3
+  p1.continues: 0x100
+  p1.ship: 1
+  rank: 25
+add: { frame_counter: 1, stage.progress: 1 }
+
+scenarios:
+  rank's parts on stage 1:
+    - expect:
+        rank.from_ships: 3
+        rank.from_lives: 6
+        rank.from_bees: 0
+        rank.from_time: 0
+        rank.from_stage: 16
+        rank.from_loop: 0
+        rank.model: 25
+        rank.heading_to: null
+        rank.change: null
+        rank.time_point_in: 35.586
+
+  a power-up raises rank, which catches up as the stage scrolls:
+    - expect: { rank.model: 25 }
+    - set: { p1.shot_power: 1, p1.laser_power: 1 }
+      expect: { rank.from_ships: 6, rank.model: 28, rank.heading_to: 28, rank.change: 3, rank.change_reason: ship & power +3, rank.change_age: 0 }
+    - set: { rank: 28 }
+      expect: { rank.heading_to: null, rank.change: 3, rank.change_age: 1 }
+
+  rank waits while the stage stands still:
+    - add: { stage.progress: -1 }
+      repeat: 40
+      expect: { stage.scrolling: false }
+    - add: { stage.progress: -1 }
+      set: { p1.shot_power: 1 }
+      expect: { rank.model: 27, rank.heading_to: null }
+    - expect: { stage.scrolling: true, rank.heading_to: 27 }
+
+  survival time adds a point every 2048 frames:
+    - set: { rank.survival_frames: 2047 }
+      expect: { rank.from_time: 0, rank.time_point_in: 0.017 }
+    - set: { rank.survival_frames: 2048 }
+      expect: { rank.from_time: 1, rank.model: 26, rank.change: 1, rank.change_reason: survival +1, rank.time_point_in: 35.586 }
+
+  a death takes the ship's part off, and lists every part that moved:
+    - set: { bees.stage: 4, rank.survival_frames: 2048 }
+      expect: { rank.model: 30 }
+    - set: { p1.flags: 0x01, p1.stock: 2, bees.stage: 0, rank.survival_frames: 0 }
+      expect:
+        rank.from_ships: 0
+        rank.model: 20
+        rank.change: -10
+        rank.change_reason: ship & power -3, lives -2, bees -4, survival -1
+        rank.time_point_in: null
+
+  the first credit adds the stage, twice with no deaths this stage:
+    - set: { stage.index: 3 }
+      expect: { rank.from_ships: 9, rank.from_stage: 28 }
+    - set: { p1.deaths_stage: 1 }
+      expect: { rank.from_ships: 6 }
+    - set: { p1.continues: 0x101 }
+      expect: { rank.from_ships: 3 }
+
+  ship and shot style:
+    - set: { p1.ship: 2 }
+      expect: { rank.from_ships: 4 }
+    - set: { p1.style: 1 }
+      expect: { rank.from_ships: 2 }
+
+  difficulty picks the stage table:
+    - set: { settings.dips: 1 }
+      expect: { rank.from_stage: 0 }
+    - set: { settings.dips: 2 }
+      expect: { rank.from_stage: 32 }
+    - set: { settings.dips: 3 }
+      expect: { rank.from_stage: 63 }
+
+  the second loop adds 32, and rank is capped at 63:
+    - set: { loop: 1, stage.index: 6, p1.shot_power: 4, p1.laser_power: 4 }
+      expect: { rank.from_loop: 32, rank.from_stage: 40, rank.from_ships: 27, rank.model: 63 }
+
+  two players halve the ships' part and both lives count:
+    - set: { p2.flags: 0x80, p2.stock: 3, p2.continues: 0x100 }
+      expect: { rank.from_ships: 2, rank.from_lives: 12 }
+
+  nothing outside play:
+    - set: { game.state: 11 }
+      expect: { rank.from_ships: null, rank.model: null, rank.heading_to: null, rank.change: null, rank.time_point_in: null }

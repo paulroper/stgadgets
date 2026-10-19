@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Stgadgets.Core\Stgadgets.Core.csproj" />
+    <ProjectReference Include="..\Stgadgets.Providers.RetroArch\Stgadgets.Providers.RetroArch.csproj" />
+    <ProjectReference Include="..\Stgadgets.Providers.Replay\Stgadgets.Providers.Replay.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

@@ -162,7 +162,7 @@ The list will grow as we add games.
 
 ## Derived values
 
-Some values follow from memory plus knowledge of the game: a table in ROM, a rule from the disassembly, or what happened on earlier frames. The map stays raw data, and these values go in the pack's `derived.js`. The server computes them each tick, straight after decoding, and publishes them like any other variable. Layouts just display them, and recordings check them in `expected.yaml` ([ADR 0012](decisions/0012-derived-values-in-javascript.md)).
+Some values follow from memory plus knowledge of the game: a table in ROM, a rule from the disassembly, or what happened on earlier frames. The map stays raw data, and these values go in the pack's `derived.js`. The server computes them each tick, straight after decoding, and publishes them like any other variable. Layouts just display them. Scenarios in the pack's `tests/derived/` check the rules ([testing derived values](packs.md#testing-derived-values)), and recordings check them against real play in `expected.yaml` ([ADR 0012](decisions/0012-derived-values-in-javascript.md)).
 
 `derived.js` default-exports an object. Each entry is a function `(v, prev) => value`, or `{ description, value }` when it's worth explaining (the description is shown in tooling, like a map variable's):
 
@@ -214,17 +214,19 @@ Credit the source in the map's comments.
 3. **Watch** the candidates live while playing to confirm them.
 4. **MAME debugger** for the hard cases: set a watchpoint on an address to find the code that writes it, and work out what it means from there.
 
-Steps 1–3 are packaged as the `game-recording` Claude skill (`.claude/skills/game-recording/`): `record.py` records with live markers and watched addresses, and `recording.py search` / `history` do the filtering and confirming. Recordings are local and git-ignored ([ADR 0011](decisions/0011-recordings-are-local.md)).
+Steps 1–3 are packaged as the `game-recording` Claude skill (`.claude/skills/game-recording/`): it drives the `stgadgets` CLI ([cli.md](cli.md)), whose `recording record` records with live markers and watched values, and `recording search` / `history` do the filtering and confirming. Recordings are local and git-ignored ([ADR 0011](decisions/0011-recordings-are-local.md)).
 
-## Tooling (planned)
+## Tooling
+
+The `stgadgets` CLI ([cli.md](cli.md)) records games and works with recordings: `recording record`, `search`,
+`history`, `values`, `mark` and `trim`. Planned:
 
 - `stgadgets pack check packs/invaders`: check the pack against the schema
-- `stgadgets pack test packs/invaders`: replay the pack's recordings and check their `expected.yaml` (the same harness `dotnet test src/server` runs today; see [packs.md](packs.md#testing))
+- `stgadgets pack test packs/invaders`: run the pack's scenarios and check its recordings' `expected.yaml` (the same checks `dotnet test src/server` runs today; see [packs.md](packs.md#testing))
 - A JSON Schema for editor autocomplete
 - Generating TypeScript types from a map, so gadgets get typed `useVar` names
 - Reporting standard-name coverage, such as "provides 7 of 12 standard names", so gaps in the generic layout are visible. Standard names stay optional
 
 ## Open questions
 
-- **YAML library:** YamlDotNet is the obvious choice. JSON with comments works with `System.Text.Json`, but it's noticeably worse to write by hand.
 - **Per-player blocks:** `p1.*` / `p2.*` written out by hand, or a `players` construct that generates them?

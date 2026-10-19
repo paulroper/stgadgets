@@ -4,7 +4,7 @@
 
 ## Overview
 
-stgadgets is one .NET app that runs alongside the emulator. Inside it:
+stgadgets runs alongside the emulator. Two .NET processes do the work: the **server** (provider, core and the HTTP/WebSocket server) and the **overlay host**, which talk to each other only over HTTP on `127.0.0.1`. The box below shows them together:
 
 ```
                  ┌──────────────────────── stgadgets (.NET) ───────────────────────┐
@@ -32,7 +32,8 @@ stgadgets is one .NET app that runs alongside the emulator. Inside it:
 | **Server** | Serves layout bundles and streams variables over WebSocket | Variables | Addresses, emulators |
 | **Overlay host** | Transparent, click-through window that follows the emulator and shows a layout | Windows, the OS | Game memory |
 | **Gadgets & layouts** | React components that draw variables. Game-specific layouts come from packs | Variable names | Addresses, emulators, .NET |
-| **[Game packs](packs.md)** | Everything about one game: match rules, memory map, provider settings, optional UI, recordings | One game | The platform's internals |
+| **[Game packs](packs.md)** | Everything about one game: match rules, memory map, provider settings, derived values, optional UI, tests, recordings | One game | The platform's internals |
+| **[CLI](cli.md)** | Development tools: records games through a provider, and searches and inspects recordings with the core | Providers and the core, as libraries | The server, the UI |
 
 No part of the platform contains game-specific logic: it all lives in packs ([ADR 0010](decisions/0010-game-packs.md)).
 
@@ -50,11 +51,11 @@ The core sends every tick in order and doesn't drop or merge any, so a layout se
 
 ### Polling isn't frame-synced
 
-Polling providers (RetroArch over UDP) aren't tied to the emulator's frames, so they can miss a frame or read the same frame twice. Frame-synced providers (MAME Lua) label each snapshot with its emulated frame number. For polling providers, if a game's map declares a `frame_counter` variable, the core uses that instead. Either way, each tick reports how many frames it covers (`frames: 0 | 1 | 2…`), and gadgets that care can account for missed frames.
+Polling providers (RetroArch over UDP) aren't tied to the emulator's frames, so they can miss a frame or read the same frame twice. Frame-synced providers (MAME Lua) will label each snapshot with its emulated frame number. Ticks don't yet say how many frames they cover; for now a pack that cares works it out in `derived.js` from the game's own frame counter, as DoDonPachi's `game.frame_advance` does.
 
 ## Process and hosting
 
-- **One process.** The .NET app hosts the provider, the core, the server (Kestrel, listening only on `127.0.0.1`) and the overlay window. On macOS it's likely a menu bar app.
+- **Two processes.** The server hosts the provider, the core and Kestrel (listening only on `127.0.0.1`). The overlay host is a separate app (on macOS, a menu bar app) that asks the server which emulator to follow (`/api/emulator`) and loads the layout from it. Today they're started separately; the host will start the server itself ([roadmap](roadmap.md#build-tooling-and-a-single-package)).
 - **Layouts are web pages** served by the local server. The overlay host points a system webview at them: WKWebView on macOS, WebView2 on Windows.
 - **No Node.js at runtime.** Layouts and gadgets are built ahead of time into static bundles. The webview is the JavaScript runtime.
 - **OBS for free.** Because a layout is just a URL, streamers can add it as an OBS browser source instead of (or as well as) using the overlay.
@@ -90,14 +91,19 @@ Each module has its own build, so you only need the toolchain for the part you'r
 Code is organised by what it does, not what it is: see [Code conventions](conventions.md).
 
 ```
+bin/stgadgets                        # the CLI, built from source when it's changed; on the PATH with direnv (.envrc)
 src/
-  server/                            # Stgadgets.Server.slnx: any OS, plain .NET 10
-    Stgadgets.Core/                  # packs, map loader & decoder, derived values (Jint), recordings & expected values, provider interface
-    Stgadgets.Server/                # Kestrel: game loop, WebSocket, /api/emulator, serves src/ui/dist
-    providers/                       # one project per emulator
+  lib/                               # shared .NET libraries; the only code modules may reference
+    Stgadgets.Core/                  # packs, map loader & decoder, derived values (Jint) & their scenarios, recordings & expected values, provider interface
+    providers/                       # one project per emulator: the server streams from them, the CLI records from them
+      Stgadgets.Providers/           # EmulatorProviders: every provider by ID, for the server's config and the CLI's --provider
       Stgadgets.Providers.RetroArch/ # network-command provider
-      (later) Stgadgets.Providers.Mame/, Stgadgets.Providers.Replay/
-    (later) Stgadgets.Tools/
+      Stgadgets.Providers.Replay/    # plays a recording back as if it were an emulator
+      (later) Stgadgets.Providers.Mame/
+  server/                            # Stgadgets.Server.slnx (includes lib/): any OS, plain .NET 10
+    Stgadgets.Server/                # Kestrel: game loop, WebSocket, /api/emulator and /api/status, serves src/ui/dist
+  cli/                               # Stgadgets.Cli.slnx (includes lib/): any OS, plain .NET 10
+    Stgadgets.Cli/                   # the stgadgets command: recording tools, and `dev` to run the server and overlay (docs/cli.md)
   host/
     lib/                             # shared by every host; plain net10.0, no OS-specific code
       Stgadgets.Host.Lib.Api/        # client for the server's HTTP API (EmulatorLocator → /api/emulator)
@@ -109,28 +115,31 @@ src/
     src/gadgets/                     # standard gadgets (@stgadgets/gadgets)
     src/layouts/                     # generic layout, and loading pack layouts
 tests/                               # mirrors src/: tests for src/<module>/X live in tests/<module>/X.Tests
-  server/
-    Stgadgets.Core.Tests/            # part of the server solution
-  ui/                                # Vitest, run from src/ui (npm test): the app against a fake server
-  (later) host/lib/Stgadgets.Host.Lib.Api.Tests/, server/providers/...
+  lib/
+    Stgadgets.Core.Tests/            # in the server and CLI solutions; also runs packs/*/tests/derived and local recordings
+  cli/
+    Stgadgets.Cli.Tests/
+  ui/                                # Vitest, run from src/ui (npm test): the app against a fake server; also runs
+                                     # packs/*/tests, which import testing.ts as @stgadgets/testing
+  lib/providers/Stgadgets.Providers.Replay.Tests/
+  (later) host/lib/Stgadgets.Host.Lib.Api.Tests/
 packs/                               # game packs: everything game-specific (docs/packs.md)
-  invaders/                          # pack.yaml, map.yaml, providers/, ui/, recordings/
+  invaders/                          # pack.yaml, map.yaml, providers/, ui/, tests/, recordings/
 docs/
 ```
 
-The modules only talk to each other over HTTP and WebSocket on `127.0.0.1`, never through project references: the hosts and the UI talk to the server, and the hosts load the UI from the server.
+The modules only talk to each other over HTTP and WebSocket on `127.0.0.1`, never through project references: the hosts and the UI talk to the server, and the hosts load the UI from the server. The exception is `src/lib/`: libraries with no module of their own, which any .NET module may reference and include in its solution. `Stgadgets.Core` and the providers are there so the server and the CLI share the code that understands packs, recordings and emulators.
 
 Packs are data plus optional UI code. The server loads them from `packs/` (config `Stgadgets:PacksPath`), and the UI build compiles their `ui/` folders, which may import only `@stgadgets/sdk`, `@stgadgets/gadgets` and `react`.
 
 ## Security
 
 - The server listens only on `127.0.0.1`.
-- Layouts may come from third parties, so the webview loads only from the local server, with a Content Security Policy that blocks other network access.
+- Layouts may come from third parties, so the webview loads only from the local server. A Content Security Policy that blocks other network access is planned, along with sandboxing for third-party packs.
 - Providers are read-only. stgadgets never writes to game memory.
 
 ## Open questions
 
-- **First provider:** MAME (Lua, frame-synced) or RetroArch (network commands). Decided by the milestone 0 spike in the [roadmap](roadmap.md).
-- **Overlay host spike:** confirm the overlay approach on macOS, and whether Avalonia or Photino can replace some of the native code. See [ADR 0007](decisions/0007-native-overlay-host.md).
+- **Overlay host:** the macOS host works, including in fullscreen ([ADR 0007](decisions/0007-native-overlay-host.md), still proposed until the Windows host confirms it). Whether Avalonia or Photino could replace some of the native code is open.
 - **Compositor cost:** whether the overlay adds lag to the emulator in any display mode ([L1](requirements.md#l1-no-added-lag-in-the-game)).
 - **Getting the game picture:** whether calibration is acceptable or we need to detect it automatically.

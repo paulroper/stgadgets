@@ -5,7 +5,14 @@ import { client, source } from "./sdk/client";
 import { useConnection, useGame, usePack } from "./sdk/react";
 import "./styles.css";
 
-client.connect(`ws://${location.host}/ws`);
+// "?state=<pack>/<name>", in development only: show one of a pack's game states (packs/<id>/tests/states.ts) instead
+// of connecting to the server.
+const state = new URLSearchParams(location.search).get("state");
+if (import.meta.env.DEV && state) {
+  void import("./devStates").then(({ showGameState }) => showGameState(state));
+} else {
+  client.connect(`ws://${location.host}/ws`);
+}
 
 // "?overlay": running inside the transparent overlay window, so draw no page background.
 if (source === "overlay") {

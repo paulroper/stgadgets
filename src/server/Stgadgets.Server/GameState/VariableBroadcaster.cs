@@ -6,6 +6,9 @@ using Stgadgets.Core.Packs;
 
 namespace Stgadgets.Server.GameState;
 
+/// <summary>What the server is doing, for <c>GET /api/status</c>: the connection state, the matched pack, and ticks sent.</summary>
+public sealed record ServerStatus(string State, string? Detail, string? Pack, long Ticks);
+
 /// <summary>
 /// Sends game state to connected layouts over WebSocket. Every tick is delivered, in order, to every client
 /// (docs/gadgets.md#wire-protocol-internal).
@@ -19,6 +22,7 @@ public sealed class VariableBroadcaster(ILogger<VariableBroadcaster> logger)
 
     // Current state, so new clients start with a full picture.
     private object _status = new { type = "status", state = "starting" };
+    private (string State, string? Detail) _state = ("starting", null);
     private string? _pack;
     private object? _game;
     private object? _variables;
@@ -30,6 +34,7 @@ public sealed class VariableBroadcaster(ILogger<VariableBroadcaster> logger)
         lock (_gate)
         {
             _status = new { type = "status", state, detail };
+            _state = (state, detail);
             Broadcast(_status);
         }
     }
@@ -88,6 +93,12 @@ public sealed class VariableBroadcaster(ILogger<VariableBroadcaster> logger)
         {
             _clients.TryRemove(outbox, out _);
         }
+    }
+
+    public ServerStatus Status()
+    {
+        lock (_gate)
+            return new ServerStatus(_state.State, _state.Detail, _pack, _seq);
     }
 
     public static double UnixMs() => (DateTime.UtcNow - DateTime.UnixEpoch).TotalMilliseconds;

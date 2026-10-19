@@ -1,0 +1,60 @@
+# The second loop (the check at 0x400B4): solo, one credit, and any of four conditions.
+
+# Stage 1, solo, first credit, ship B.
+start:
+  game.state: 0
+  game.flags: 0xE0
+  frame_counter: 1000
+  p1.flags: 0x80
+  p1.stock: 3
+  p1.continues: 0x100
+  p1.ship: 1
+add: { frame_counter: 1 }
+
+scenarios:
+  two deaths or fewer is enough on its own:
+    - expect: { loop2.eligible: true, loop2.hits_needed: 300, loop2.by_deaths: true, loop2.by_hits: false, loop2.by_score: false, loop2.by_bees: false, loop2.possible: true }
+    - set: { p1.deaths_first_credit: 2 }
+      expect: { loop2.by_deaths: true, loop2.possible: true }
+    - set: { p1.deaths_first_credit: 3 }
+      expect: { loop2.by_deaths: false, loop2.possible: false }
+
+  the max chain needed depends on the ship:
+    - set: { p1.deaths_first_credit: 3, p1.max_hits: 299 }
+      expect: { loop2.by_hits: false, loop2.possible: false }
+    - set: { p1.max_hits: 300 }
+      expect: { loop2.by_hits: true, loop2.possible: true }
+    - set: { p1.ship: 0, p1.max_hits: 270 }
+      expect: { loop2.hits_needed: 270, loop2.by_hits: true }
+    - set: { p1.ship: 2 }
+      expect: { loop2.hits_needed: 330, loop2.by_hits: false }
+
+  50,000,000 points:
+    - set: { p1.deaths_first_credit: 3, p1.score_digits: 4999999 }
+      expect: { loop2.by_score: false, loop2.possible: false }
+    - set: { p1.score_digits: 5000000 }
+      expect: { loop2.by_score: true, loop2.possible: true }
+
+  four perfect stages of bees:
+    - set: { p1.deaths_first_credit: 3, bees.perfect_stages: 3 }
+      expect: { loop2.by_bees: false, loop2.possible: false }
+    - set: { bees.perfect_stages: 4 }
+      expect: { loop2.by_bees: true, loop2.possible: true }
+
+  a continue rules it out:
+    - set: { p1.continues: 0x101 }
+      expect: { loop2.eligible: false, loop2.by_deaths: true, loop2.possible: false }
+
+  so does a second player joining:
+    - set: { game.flags: 0xA0 }
+      expect: { loop2.eligible: false, loop2.possible: false }
+
+  it still counts on the continue screen:
+    - set: { game.state: 8 }
+      expect: { loop2.eligible: true, loop2.possible: true }
+
+  it no longer applies on the second loop, or outside play:
+    - set: { loop: 1 }
+      expect: { loop2.eligible: null, loop2.hits_needed: null, loop2.by_deaths: null, loop2.possible: null }
+    - set: { loop: 0, game.state: 11 }
+      expect: { loop2.eligible: null, loop2.possible: null }

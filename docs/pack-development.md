@@ -50,11 +50,12 @@ trusting one:
 
 ### Record and verify
 
-Record play with the `game-recording` Claude skill (`.claude/skills/game-recording/`) and a short script of events:
-start a credit, lose a life, use a bomb, and so on. Then:
+Record play with the `game-recording` Claude skill (`.claude/skills/game-recording/`), which drives the `stgadgets`
+CLI ([cli.md](cli.md)), and a short script of events: start a credit, lose a life, use a bomb, and so on. Then:
 
-- Search the recording for addresses the research didn't have.
-- Confirm each variable's values over time, and set `verified: true` on the ones that check out.
+- Search the recording for addresses the research didn't have (`stgadgets recording search`).
+- Confirm each variable's values over time (`recording history`), and set `verified: true` on the ones that check
+  out.
 - Write the recording's `expected.yaml`, so `dotnet test src/server` checks the map (and `derived.js`) against it.
 
 Recordings are local working material and are never committed ([ADR 0011](decisions/0011-recordings-are-local.md)).
@@ -94,11 +95,14 @@ Write the ideas down, and put the ones you don't build yet in the pack's `NOTES.
 ### Derived values first
 
 Put the game logic in the pack's `derived.js`, not in the gadgets
-([memory maps → derived values](memory-maps.md#derived-values)). Gadgets then only display values, and the logic is
-checked by recordings like the map is:
+([memory maps → derived values](memory-maps.md#derived-values)). Gadgets then only display values, and the logic can
+be tested on its own:
 
 - Gate everything on `game.running`, and use the standard names where they fit.
-- Add the new values to a recording's `expected.yaml`, and run `dotnet test src/server`.
+- Write scenarios for each rule in `tests/derived/` ([testing derived values](packs.md#testing-derived-values)),
+  including its edges: the tick a threshold is crossed, outside play, the second player. Write them from the rule
+  (the routine in the ROM, or the write-up), not from what `derived.js` happens to return.
+- Add the new values to a recording's `expected.yaml` too, so real play checks them. Run `dotnet test src/server`.
 - Keep an eye on cost: hundreds of values each doing little is fine, but many near-identical values (one per stage
   per field, say) are better as one structured value.
 
@@ -107,40 +111,46 @@ checked by recordings like the map is:
 Write the pack's `ui/layout.tsx` and its gadgets in `ui/gadgets/`, then `npm run build` and `npm test` in `src/ui`.
 See [gadgets & layouts](gadgets.md), and follow the [gadget design](gadget-design.md) language.
 
+Add a game state to the pack's `tests/states.ts` for each moment a gadget behaves differently in (a boss, a
+continue, a perfect stage), and a test that shows the layout in it ([testing the UI](packs.md#testing-the-ui)). A
+state is written as map values and `derived.js` computes the rest, so it checks the gadgets and the logic behind
+them together, at moments that are hard to reach in play, without the server or an emulator.
+
 ### The build-and-look loop
 
-To see changes as they'll really appear, run the server and the macOS overlay with snapshots on:
+To see changes as they'll really appear, run the server and the macOS overlay with snapshots on, using the CLI's
+`dev` commands ([cli.md](cli.md#development)). They start everything in the background, wait until it's ready, and
+stop it all again:
 
 ```sh
-dotnet run --project src/server/Stgadgets.Server
-STGADGETS_SNAPSHOT_PORT=5198 dotnet run --project src/host/macos/Stgadgets.Host.Mac
+stgadgets dev start --overlay            # live, from RetroArch
+stgadgets dev snapshot --width 1000      # .stgadgets/dev/snapshot.png
+stgadgets dev stop
 ```
 
 Then each change goes:
 
 1. Edit `derived.js`, the layout or a gadget.
-2. Rebuild the UI (`npm run build` in `src/ui`), and restart the server if `map.yaml` or `derived.js` changed (it
-   loads packs at startup). Then use **Reload layout** in the overlay's menu, or restart the overlay, which needs
-   nobody at the screen:
+2. `stgadgets dev restart --build-ui`: rebuilds the UI, and restarts the server (which loads packs at startup, so
+   this picks up `map.yaml` and `derived.js` changes) and the overlay, with the same options as before.
+3. `stgadgets dev snapshot`, and look at it.
 
-   ```sh
-   pkill -f Stgadgets.Host.Mac.app
-   STGADGETS_SNAPSHOT_PORT=5198 dotnet run --project src/host/macos/Stgadgets.Host.Mac
-   ```
-
-   `dotnet run` opens the app and returns. Snapshots work a few seconds later, once the port answers.
-
-   A freshly started overlay takes its size from the emulator's window, and only finds it while it's on screen. If
-   RetroArch is fullscreen (in its own Space), bring it to the front once after restarting the overlay, or snapshots
-   come out at a default 400×300. The overlay keeps that size afterwards, even while hidden.
-3. Fetch `http://127.0.0.1:5198/snapshot` (add `?width=1000` for a smaller image) and look at it.
+A freshly started overlay takes its size from the emulator's window, and only finds it while it's on screen. If
+RetroArch is fullscreen (in its own Space), bring it to the front once after restarting the overlay, or snapshots
+come out at a default 400×300. The overlay keeps that size afterwards, even while hidden.
 
 The snapshot is the layout as the overlay draws it, at the emulator window's size, with live values from the running
 game. It works while the overlay is hidden behind another app, so a Claude session can make a change and check it
 without anyone looking at the screen. It shows the layout only, not the game underneath.
 
-When a gadget needs a particular moment in the game (a boss, a death, a continue), ask whoever is playing to get
-there, or check the logic against a recording first and the look in a snapshot afterwards.
+When a gadget needs a particular moment in the game (a boss, a death, a continue), there are three ways to see it
+without asking someone to play to it:
+
+- **Replay a recording held at that moment:** `stgadgets dev start --provider replay --endpoint
+  "packs/<id>/recordings/<name>#<marker>"` ([replay provider](providers.md#replay-provider)), then `npm run
+  screenshot` in `src/ui`.
+- **Add it as a game state**, and screenshot that ([looking at game states](#looking-at-game-states)).
+- Otherwise, ask whoever is playing to get there.
 
 ### Checking other window sizes
 
@@ -162,3 +172,19 @@ whether each side fits:
 ```
 
 Firefox lays out text slightly differently from the overlay's webview, so confirm the final look in a snapshot.
+
+### Looking at game states
+
+To see the layout at a moment that's hard to reach in play, show one of the pack's game states
+([testing the UI](packs.md#testing-the-ui)) instead of the running game. It needs neither the server nor an emulator:
+
+```sh
+cd src/ui
+npm run screenshot -- --state ddonpach/bossFight    # one state, at the three default sizes
+npm run screenshot -- --state ddonpach 1512x917     # every state of the pack, at one size
+```
+
+Each picture is saved as `src/ui/screenshots/<pack>-<state>-<size>.png`. In `npm run dev`, open
+`/?state=ddonpach/bossFight` to see a state in a browser, with hot reload. Looking at every state after a change shows
+each gadget in context, and catches states whose memory doesn't match how the game plays (a kill without a shot, a
+life lost at the wrong moment).

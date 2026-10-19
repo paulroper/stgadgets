@@ -2,7 +2,7 @@
 
 Everything stgadgets knows about a game lives in its **game pack**: one folder under `packs/`. Adding a game means adding a folder, with no platform code and no C#. The platform (server, providers, hosts and UI) contains no game-specific logic. See [ADR 0010](decisions/0010-game-packs.md) for why.
 
-The first pack is [`packs/invaders/`](../packs/invaders/).
+There are two so far: [`packs/invaders/`](../packs/invaders/), the first, and [`packs/ddonpach/`](../packs/ddonpach/), the most complete, with its research in `NOTES.md`.
 
 ## What's in a pack
 
@@ -16,6 +16,10 @@ packs/<parent-romset>/
   ui/
     layout.tsx               # default export: the pack's layout (optional)
     gadgets/                 # the pack's own React components (optional)
+  tests/
+    derived/*.yaml           # scenarios for derived.js: made-up ticks and the values they must produce (optional)
+    states.ts                # game states as map values, for showing the UI without an emulator (optional)
+    *.test.tsx               # the UI's tests (optional)
   recordings/
     <name>/                  # a recording (docs/providers.md#recording-format-draft), plus:
       expected.yaml          # values the map (and derived.js) must produce from it
@@ -99,13 +103,16 @@ So that packs can later be built and distributed separately, pack UI code may im
 - `react`
 - its own files
 
-Never import from `src/ui` by relative path. The UI build fails if a pack does.
+Never import from `src/ui` by relative path. The UI build fails if a pack does. A pack's tests may also import
+`vitest`, `@testing-library/react` and `@stgadgets/testing` ([testing the UI](#testing-the-ui)).
 
 For now, pack UIs are built together with the platform's UI: `npm run build` in `src/ui` finds every `packs/*/ui/layout.tsx`, type-checks it, and builds it into its own chunk that loads on first use. `npm run dev` hot-reloads pack UIs too.
 
 ## Testing
 
-A pack's map is proven with recordings. They're **local and git-ignored** ([ADR 0011](decisions/0011-recordings-are-local.md)): make them with the `game-recording` Claude skill (`.claude/skills/game-recording/`) while onboarding or debugging a game. Each folder under `recordings/` is a recording in the [recording format](providers.md#recording-format-draft), with an `expected.yaml` beside it listing values the map must decode:
+### Testing the map
+
+A pack's map is proven with recordings. They're **local and git-ignored** ([ADR 0011](decisions/0011-recordings-are-local.md)): make them with `stgadgets recording record` ([cli.md](cli.md)), usually through the `game-recording` Claude skill (`.claude/skills/game-recording/`), while onboarding or debugging a game. Each folder under `recordings/` is a recording in the [recording format](providers.md#recording-format-draft), with an `expected.yaml` beside it listing values the map must decode:
 
 ```yaml
 at:                                         # values at one point in the recording
@@ -127,6 +134,115 @@ sequences:                                  # every distinct value, in order, ov
 
 `dotnet test src/server` replays every local recording of every pack through the pack's map and reports each mismatch (with no recordings present, there's nothing to check and it passes), for example `at 'player hit (1st death)' (tick 587): player.state is 0, expected 1`. A `stgadgets pack test <dir>` command for pack authors outside this repository is planned.
 
+### Testing derived values
+
+`derived.js` holds the game's rules, so each rule gets **scenarios**: short runs of made-up ticks of map variables,
+and the derived values they must produce. They're committed, they need no recording, and they can reach cases that
+are hard to play into (a third death with a 300-hit chain, very hard rank, a pause of exactly 30 frames). They
+describe behaviour, not the script engine, so they'd also check a port of `derived.js` to another language.
+
+Each file in `tests/derived/` covers one area of the game, such as `rank.yaml`:
+
+```yaml
+# Stage 1 on normal, solo, first credit, ship B; three lives.
+start:                       # map variables on every scenario's first tick; any not set are 0
+  game.state: 0
+  p1.flags: 0x80
+  p1.stock: 3
+  p1.continues: 0x100
+  p1.ship: 1
+  rank: 25
+add: { frame_counter: 1 }    # added on every tick after the first, in every scenario
+
+scenarios:
+  a power-up raises rank, which catches up as the stage scrolls:
+    - expect: { rank.model: 25 }
+    - set: { p1.shot_power: 1, p1.laser_power: 1 }
+      expect: { rank.model: 28, rank.heading_to: 28, rank.change_reason: ship & power +3 }
+    - set: { rank: 28 }
+      expect: { rank.heading_to: null }
+```
+
+- A scenario is a list of steps, and each step is at least one tick. **`set`** changes map variables on the step's
+  first tick; the others keep their values. **`add`** adds to map variables on each of the step's ticks, on top of the
+  file's `add` (use `-1` to cancel it, e.g. to hold a frame counter still). **`repeat`** makes the step last that many
+  ticks. **`expect`** is checked on the step's last tick, and can name map variables as well as derived values.
+- Values are as decoded: a BCD score is its decimal value, a `bool` is `true` or `false`. A fraction matches to the
+  decimal places it's written with, so `73.4` matches `73.396224`.
+- To see what a real moment looks like before writing a scenario's `start`, use `stgadgets recording values
+  <recording> --at <marker>` ([cli.md](cli.md)).
+- Every scenario starts afresh, with no previous tick. Values that compare with the previous tick, such as a hit or a
+  change in rank, need a tick before the change: start such a scenario with a step that only expects.
+- Setting a derived value, or naming a variable that doesn't exist, is reported, and so is a scenario that expects
+  nothing.
+
+`dotnet test src/server` runs every pack's scenarios, one test per file, through the same engine as the server:
+
+```
+'a power-up raises rank, which catches up as the stage scrolls' step 2 (tick 1): rank.heading_to is null, expected 28
+```
+
+### Testing the UI
+
+A pack's UI is tested against **game states**, so the overlay can be shown at any moment of the game (a boss fight,
+the continue screen, the second loop) without a server or an emulator. A state is what memory does to get there: a
+run of ticks of **map values**, in the same steps as [scenarios](#testing-derived-values). The pack's own `derived.js`
+works out everything else, tick by tick, as the server would, so a state's derived values always agree with the
+game's rules and with each other. States live in `tests/states.ts`, and are committed:
+
+```ts
+import type { GameStates } from "@stgadgets/testing";
+
+export default {
+  start: { aliens_remaining: 55, "p1.ships_reserve": 2, "game.mode": true, /* … every map variable */ },
+  states: {
+    /** A new wave, the mystery ship held until the rack drops. */
+    waveStart: [{ set: { "rack.y": 0x78 } }],
+    /** One invader left, on the last life. */
+    lastInvader: [{}, { set: { aliens_remaining: 1, "shots.count": 90, "p1.ships_reserve": 0 } }],
+  },
+} satisfies GameStates;
+```
+
+- **`start`** is memory on each state's first tick, and must list every variable in `map.yaml`, as decoded (a BCD
+  score is its decimal value). Take it from a real moment with `stgadgets recording values <recording> --at
+  <marker>` ([cli.md](cli.md)). A state that reads a name it doesn't have fails, naming it.
+- **`add`** (optional) is added to map variables on every tick after the first, such as `{ frame_counter: 1 }` for a
+  game running at full speed.
+- **Steps** work as in scenarios: `set` changes map variables on the step's first tick, `add` adds to them on each of
+  its ticks, and `repeat` makes it last that many ticks; `{}` is one tick with nothing changed. A state's values are
+  every variable, map and derived, after its last tick.
+- Model memory as the game changes it. Values that compare ticks (a hit, the latest score gain, a death) need a tick
+  before the change, and long-running ones (splits, survival time) need the ticks played: `repeat` is cheap.
+- A derived value that throws or returns something invalid fails the state, as it would fail a scenario.
+
+Tests in `tests/*.test.tsx` show the pack's whole layout in a state and check what's on screen, using
+`@stgadgets/testing`:
+
+```tsx
+import { showState, textOf } from "@stgadgets/testing";
+import { expect, it } from "vitest";
+
+it("shows the march at full speed with one invader left", async () => {
+  await showState("invaders", "lastInvader");
+
+  expect(textOf("SPEED-UP IN")).toBe("MAX");
+});
+```
+
+- `showState(pack, state)` computes the state, starts the real UI against a fake server, matches the pack and waits
+  for its layout. It returns the fake server, whose `tick(changed)` sends further ticks. `stateValues(pack, state)`
+  gives a state's values without showing it.
+- `gadget(label)` finds a gadget by its label (the whole label, or a pattern such as `/^BOSS/`); `textOf(label,
+  part)` is the text of its `.value`, or of another part such as `".note"`.
+
+To look at a state rather than test it, screenshot it with `npm run screenshot -- --state <pack>/<state>`
+([looking at game states](pack-development.md#looking-at-game-states)).
+
+Every state of every pack is also checked to render without React errors. Run the tests with `npm test` in
+`src/ui`. For now, pack tests run with the platform's tests from `src/ui`; `@stgadgets/testing` will become a
+package that pack authors install once packs can live outside this repository.
+
 ## Adding a game
 
 The steps below are the checklist. [Developing a game pack](pack-development.md) covers the workflow behind them:
@@ -137,4 +253,6 @@ where to find addresses, attribution and licensing, choosing gadgets, and the bu
 3. Record a session with markers at the events you care about, find or confirm addresses, and write its `expected.yaml`. The `game-recording` skill walks through this.
 4. Optionally, add `derived.js` for values that follow from memory plus knowledge of the game, so the layout only has to display them.
 5. Optionally, add `ui/layout.tsx`. Until then the generic layout is used.
-6. Run `dotnet test src/server` and, if you added a UI, `npm run build` and `npm test` in `src/ui`.
+6. If you added `derived.js`, add scenarios for its rules in `tests/derived/` ([testing derived values](#testing-derived-values)).
+   If you added a UI, add game states and tests for it in `tests/` ([testing the UI](#testing-the-ui)).
+7. Run `dotnet test src/server` and, if you added a UI, `npm run build` and `npm test` in `src/ui`.

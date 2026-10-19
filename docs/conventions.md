@@ -31,15 +31,16 @@ The principle applies at every scale, from the repository down to the file:
 
 | Level | Grouped by | Example |
 |---|---|---|
-| **Repository** | Module: what part of the system it is | `src/server/`, `src/host/`, `src/ui/`, `packs/`, `docs/` |
-| **Module** | Area of responsibility | `server/providers/` (one project per emulator), `host/lib/` (shared by every host), `host/macos/` |
+| **Repository** | Module: what part of the system it is | `src/server/`, `src/cli/`, `src/host/`, `src/ui/`, `src/lib/` (shared), `packs/`, `docs/` |
+| **Module** | Area of responsibility | `lib/providers/` (one project per emulator), `host/lib/` (shared by every host), `host/macos/` |
 | **Project** | Feature | `Stgadgets.Core/{Maps,Memory,Packs,Providers,Recordings}`, `Stgadgets.Server/GameState` |
-| **Tests** | Mirror of `src/` | `tests/server/Stgadgets.Core.Tests` tests `src/server/Stgadgets.Core` |
+| **Tests** | Mirror of `src/` | `tests/lib/Stgadgets.Core.Tests` tests `src/lib/Stgadgets.Core` |
 
 A few more rules for modules:
 
 - **Each module builds on its own.** It has its own solution or package, so you only need its toolchain. The server builds on any OS without Xcode.
 - **Modules talk over HTTP and WebSocket on `127.0.0.1`, never through project references.** The hosts and the UI depend on the server's API, not on its code. Shared code within a module goes in that module's `lib/`, as in `host/lib/`.
+- **Code shared between modules goes in `src/lib/`,** the one place modules may reference. It's for libraries with no running process of their own, such as `Stgadgets.Core` (packs, maps, recordings) and the emulator providers, which the server and the CLI both use. Each module that uses one includes it in its own solution, so the module still builds on its own.
 - **Tests mirror `src/`.** Tests for `src/<module>/X` live in `tests/<module>/X.Tests`. Game recordings and their expected values live in each pack's `recordings/` folder, which is local and git-ignored (`docs/packs.md#testing`).
 
 See [Architecture → Repository layout](architecture.md#repository-layout) for the current tree.
