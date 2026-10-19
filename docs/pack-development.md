@@ -112,8 +112,9 @@ Write the pack's `ui/layout.tsx` and its gadgets in `ui/gadgets/`, then `npm run
 See [gadgets & layouts](gadgets.md), and follow the [gadget design](gadget-design.md) language.
 
 Add a game state to the pack's `tests/states.ts` for each moment a gadget behaves differently in (a boss, a
-continue, a perfect stage), and a test that shows the layout in it ([testing the UI](packs.md#testing-the-ui)). This
-checks gadgets at moments that are hard to reach in play, without the server or an emulator.
+continue, a perfect stage), and a test that shows the layout in it ([testing the UI](packs.md#testing-the-ui)). A
+state is written as map values and `derived.js` computes the rest, so it checks the gadgets and the logic behind
+them together, at moments that are hard to reach in play, without the server or an emulator.
 
 ### The build-and-look loop
 
@@ -147,8 +148,13 @@ The snapshot is the layout as the overlay draws it, at the emulator window's siz
 game. It works while the overlay is hidden behind another app, so a Claude session can make a change and check it
 without anyone looking at the screen. It shows the layout only, not the game underneath.
 
-When a gadget needs a particular moment in the game (a boss, a death, a continue), add it as a game state and look
-at it without playing ([looking at game states](#looking-at-game-states)), or ask whoever is playing to get there.
+When a gadget needs a particular moment in the game (a boss, a death, a continue), there are three ways to see it
+without asking someone to play to it:
+
+- **Replay a recording held at that moment:** run the server with the [replay provider](providers.md#replay-provider)
+  and `#<marker>`, then `npm run screenshot`.
+- **Add it as a game state**, and screenshot that ([looking at game states](#looking-at-game-states)).
+- Otherwise, ask whoever is playing to get there.
 
 ### Checking other window sizes
 
@@ -184,4 +190,5 @@ npm run screenshot -- --state ddonpach 1512x917     # every state of the pack, a
 
 Each picture is saved as `src/ui/screenshots/<pack>-<state>-<size>.png`. In `npm run dev`, open
 `/?state=ddonpach/bossFight` to see a state in a browser, with hot reload. Looking at every state after a change shows
-each gadget in context, and catches states whose values don't add up.
+each gadget in context, and catches states whose memory doesn't match how the game plays (a kill without a shot, a
+life lost at the wrong moment).

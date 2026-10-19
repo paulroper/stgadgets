@@ -97,7 +97,8 @@ src/
     providers/                       # one project per emulator: the server streams from them, the CLI records from them
       Stgadgets.Providers/           # EmulatorProviders: every provider by ID, for the server's config and the CLI's --provider
       Stgadgets.Providers.RetroArch/ # network-command provider
-      (later) Stgadgets.Providers.Mame/, Stgadgets.Providers.Replay/
+      Stgadgets.Providers.Replay/    # plays a recording back as if it were an emulator
+      (later) Stgadgets.Providers.Mame/
   server/                            # Stgadgets.Server.slnx (includes lib/): any OS, plain .NET 10
     Stgadgets.Server/                # Kestrel: game loop, WebSocket, /api/emulator, serves src/ui/dist
   cli/                               # Stgadgets.Cli.slnx (includes lib/): any OS, plain .NET 10
@@ -119,7 +120,8 @@ tests/                               # mirrors src/: tests for src/<module>/X li
     Stgadgets.Cli.Tests/
   ui/                                # Vitest, run from src/ui (npm test): the app against a fake server; also runs
                                      # packs/*/tests, which import testing.ts as @stgadgets/testing
-  (later) host/lib/Stgadgets.Host.Lib.Api.Tests/, lib/providers/...
+  lib/providers/Stgadgets.Providers.Replay.Tests/
+  (later) host/lib/Stgadgets.Host.Lib.Api.Tests/
 packs/                               # game packs: everything game-specific (docs/packs.md)
   invaders/                          # pack.yaml, map.yaml, providers/, ui/, tests/, recordings/
 docs/

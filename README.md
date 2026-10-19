@@ -10,7 +10,7 @@ stgadgets runs alongside the emulator. It reads the game's memory through the em
 
 1. In `retroarch.cfg`, set `network_cmd_enable = "true"` (and turn off RetroAchievements hardcore mode). Load Space Invaders (`invaders`) or DoDonPachi (`ddonpach`, World set) with the FBNeo core.
 2. Build the UI: `cd src/ui && npm install && npm run build`
-3. Run the server: `dotnet run --project src/server/Stgadgets.Server`, then open http://127.0.0.1:5199. It reads from the emulator set by `Stgadgets:Provider` in its `appsettings.json` (`retroarch`; see [providers](docs/providers.md#choosing-a-provider))
+3. Run the server: `dotnet run --project src/server/Stgadgets.Server`, then open http://127.0.0.1:5199. It reads from the emulator set by `Stgadgets:Provider` in its `appsettings.json` (`retroarch`), or replays a recording with `replay` ([providers](docs/providers.md#choosing-a-provider))
 4. Optionally, run the macOS overlay: `dotnet run --project src/host/macos/Stgadgets.Host.Mac` (see below)
 
 For gadget development with hot reload, run `npm run dev` in `src/ui/` alongside the server and open the Vite URL instead. Without a server or an emulator, open `/?state=<pack>/<state>` there to see a pack's layout in one of its test game states ([developing a game pack](docs/pack-development.md#looking-at-game-states)).

@@ -1,6 +1,6 @@
 # Emulator providers
 
-> Early interface. `IEmulatorProvider` and the RetroArch provider exist; the replay and MAME providers and the rest of the interface sketched below are planned.
+> Early interface. `IEmulatorProvider`, the RetroArch provider and the replay provider exist; the MAME provider and the rest of the interface sketched below are planned.
 
 A provider connects stgadgets to one emulator. Its whole job is to **report what's running** and **deliver memory snapshots, using the original hardware's addresses, as close to every frame as the emulator allows**. Everything else (maps, variables, gadgets) is shared.
 
@@ -9,12 +9,13 @@ Providers contain no game-specific data. Anything a provider needs to know about
 ## Choosing a provider
 
 Every provider is listed by ID in `EmulatorProviders` (`src/lib/providers/Stgadgets.Providers`), which the server and
-the CLI share. The ID is the one packs use for their settings file (`providers/<id>.yaml`). For now there's only
-`retroarch`.
+the CLI share. The ID is the one packs use for their settings file (`providers/<id>.yaml`): `retroarch`, and
+`replay` for playing back a recording.
 
 - **Server:** `Stgadgets:Provider` in `src/server/Stgadgets.Server/appsettings.json` (`retroarch`), and optionally
   `Stgadgets:ProviderEndpoint` for where the emulator listens, in the provider's form (RetroArch: `host:port`,
-  default `127.0.0.1:55355`). Override either on the command line, e.g.
+  default `127.0.0.1:55355`; replay: a recording's folder). Relative paths are relative to the repository's root
+  (the folder holding `packs/`). Override either on the command line, e.g.
   `dotnet run --project src/server/Stgadgets.Server -- --Stgadgets:ProviderEndpoint=127.0.0.1:55356`. An unknown
   provider stops the server at startup, listing the known ones.
 - **CLI:** `--provider` and `--endpoint` on commands that talk to an emulator, such as `recording record`
@@ -119,14 +120,35 @@ How the provider works:
 
 ## Replay provider
 
-Plays back a **recording** instead of talking to an emulator. It's used for:
+Plays back a **recording** instead of talking to an emulator (`src/lib/providers/Stgadgets.Providers.Replay`), so the
+server, the browser, `npm run screenshot` and the overlay's snapshots work against real play with nobody playing.
+It's for working on layouts and gadgets, and for bug reports ("here's the recording where the accuracy counter goes
+wrong").
 
-- **Gadget development:** work on layouts against real play without running an emulator
-- **Bug reports:** "here's the recording where the accuracy counter goes wrong"
+Its endpoint is the recording's folder:
 
-Tests and tools don't need it: the core replays recordings directly for `expected.yaml` checks ([packs.md](packs.md#testing-the-map)), and the CLI searches and inspects them ([cli.md](cli.md)).
+```sh
+# play the recording at its own speed, again and again
+dotnet run --project src/server/Stgadgets.Server -- --Stgadgets:Provider=replay \
+  --Stgadgets:ProviderEndpoint=packs/ddonpach/recordings/play-01
 
-Playback follows the original timestamps by default, and can also step through frame by frame.
+# fast-forward to a moment and hold there, for a still picture of it
+dotnet run --project src/server/Stgadgets.Server -- --Stgadgets:Provider=replay \
+  "--Stgadgets:ProviderEndpoint=packs/ddonpach/recordings/play-01#chain reaches 14"
+```
+
+- **Playing:** ticks arrive at their recorded times. At the end the stream ends, and the server starts it again from
+  the first tick, with derived values starting afresh as at a new game.
+- **Holding** (`#<point>`: a marker label, a tick number, `start` or `end`): every tick up to the point is played as
+  fast as possible, so values that build up over time (splits, ages, the latest change) are what they were in play,
+  then no more ticks come until the server stops.
+- The game is the one in the recording's manifest, and the pack is matched as usual. The recording must cover every
+  address the pack's map reads; one recorded into the pack without `--range` does.
+- A recording has no window, so `/api/emulator` returns 204 and the overlay has nothing to follow. Look at the layout
+  in a browser or with `npm run screenshot`.
+
+Tests and tools don't use it: the core replays recordings directly for `expected.yaml` checks
+([packs.md](packs.md#testing-the-map)), and the CLI searches and inspects them ([cli.md](cli.md)).
 
 ### Recording format (draft)
 

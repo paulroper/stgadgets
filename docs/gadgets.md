@@ -1,6 +1,6 @@
 # Gadgets & layouts
 
-> Draft API. The SDK's hooks (`src/ui/src/sdk`), three standard gadgets (`Score`, `Counter`, `LatencyMeter`), the generic layout and pack layouts exist. Layout helpers, `useGameRect` and the replay workflow are planned.
+> Draft API. The SDK's hooks (`src/ui/src/sdk`), three standard gadgets (`Score`, `Counter`, `LatencyMeter`), the generic layout and pack layouts exist. Layout helpers and `useGameRect` are planned.
 
 Gadgets are React components. Layouts are pages that arrange gadgets for a game. The platform's own gadgets and the generic layout live in `src/ui`. A game's own layout and gadgets live in its [game pack](packs.md#ui). Both are written in TypeScript, built with Vite into static bundles, and served by stgadgets to the overlay's webview, or to OBS, or to a normal browser while you develop.
 
@@ -125,10 +125,8 @@ An input display can't come from the emulator APIs, because none of them report 
 ## Development workflow
 
 1. Run `npm run dev` in `src/ui/`. The Vite dev server proxies the WebSocket to the stgadgets server.
-2. Open the layout in a browser and edit gadgets with hot reload: live, with the server running a game, or without either at `/?state=<pack>/<state>`, which shows one of the pack's test game states ([packs.md](packs.md#testing-the-ui)).
+2. Open the layout in a browser and edit gadgets with hot reload. The server can run a live game, or replay a recording, held at a moment if you like ([replay provider](providers.md#replay-provider)). Without the server, `/?state=<pack>/<state>` shows one of the pack's test game states ([packs.md](packs.md#testing-the-ui)).
 3. Check the look in the overlay with snapshots, and at other window sizes with `npm run screenshot` ([developing a game pack](pack-development.md#the-build-and-look-loop)).
-
-A **replay provider** will later let the server play a recording instead of an emulator ([providers.md](providers.md#replay-provider)).
 
 ## Wire protocol (internal)
 

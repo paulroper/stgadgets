@@ -43,7 +43,7 @@ Generalise only what milestone 1 proved:
 
 - [x] Map loader and decoder for real (YAML, types, byte order)
 - [ ] Match maps to ROM set and hash (ROM set works; chip CRCs wait on providers reporting them)
-- [ ] Replay provider
+- [x] Replay provider ([providers](providers.md#replay-provider))
 - [x] Decode a recording and print the variables: `stgadgets recording values` and `history` ([cli.md](cli.md))
 - [x] Unit tests for decoding against the recordings
 - [x] SDK: `useGame`, `useConnection`, `useOnFrame`
@@ -146,11 +146,15 @@ that made them. Committed scenarios and layout tests now cover each pack's logic
 Found while building the DoDonPachi pack:
 
 - [x] Overlay snapshots: `STGADGETS_SNAPSHOT_PORT` makes the overlay serve a PNG of the layout, so a change can be checked without looking at the screen ([pack development](pack-development.md#the-build-and-look-loop))
-- [x] Test game states: a pack's `tests/states.ts`, shown with `/?state=` in the dev server and screenshotted with `npm run screenshot -- --state`, so a layout can be seen at any moment of the game without playing to it ([pack development](pack-development.md#looking-at-game-states))
+- [x] Test game states: a pack's `tests/states.ts`, written as ticks of map values with `derived.js` computing the rest, shown with `/?state=` in the dev server and screenshotted with `npm run screenshot -- --state`, so a layout can be seen at any moment of the game without playing to it ([pack development](pack-development.md#looking-at-game-states))
 - [x] The server's emulator is chosen in configuration (`Stgadgets:Provider`), from the same list of providers as the CLI ([providers](providers.md#choosing-a-provider))
-- [ ] Replay provider (milestone 2), so a layout can be viewed against a recording, not only live play
+- [x] Replay provider (milestone 2), so a layout can be viewed against a recording, not only live play: `Stgadgets:Provider=replay`, with a recording's folder as the endpoint, optionally `#<marker>` to hold at a moment ([providers](providers.md#replay-provider))
+- [ ] CI: a GitHub Actions workflow that runs the committed tests on every push (`dotnet test src/server`, `dotnet test src/cli`, `npm test` in `src/ui`). They need no emulator or Xcode, and recordings are local, so their checks are skipped there
 - [x] A tool to show a pack's derived values over a recording, for working out `expected.yaml` and debugging `derived.js`: `stgadgets recording history <name>` and `values` ([cli.md](cli.md))
-- [ ] Keep derived state, such as stage splits, across server restarts, or reload `map.yaml` and `derived.js` without one: changing either needs a restart, which resets the splits
+- [ ] A gadget interview: a guided conversation about what a game's players would want to see, drawing on existing packs and the game's own systems, ending in a list of gadgets to build and the data each needs ([choosing gadgets](pack-development.md#2-decide-which-gadgets-are-worth-having))
+- [ ] `/add-pack <game>`: one Claude skill that runs the whole workflow (research, recording, map, derived values, gadget interview, gadgets, game states and tests), built from the pieces above
+- [ ] Hot reload packs in the server: watch `packs/` and reload the matched pack when its `pack.yaml`, `map.yaml`, `derived.js` or provider settings change, so a `derived.js` change shows up in the overlay without restarting the server
+- [ ] Keep derived state, such as stage splits, across reloads and server restarts: today a restart resets the splits
 - [ ] Show the read → paint latency meter as idle while the overlay is hidden: a hidden overlay doesn't paint, so its numbers stop meaning anything
 
 ## Any time

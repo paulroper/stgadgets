@@ -18,7 +18,7 @@ packs/<parent-romset>/
     gadgets/                 # the pack's own React components (optional)
   tests/
     derived/*.yaml           # scenarios for derived.js: made-up ticks and the values they must produce (optional)
-    states.ts                # named game states for testing the UI without an emulator (optional)
+    states.ts                # game states as map values, for showing the UI without an emulator (optional)
     *.test.tsx               # the UI's tests (optional)
   recordings/
     <name>/                  # a recording (docs/providers.md#recording-format-draft), plus:
@@ -184,31 +184,37 @@ scenarios:
 
 ### Testing the UI
 
-A pack's UI is tested against **game states**: named sets of values, as the server would send them on one tick, so
-the overlay can be shown at any moment of the game (a boss fight, the continue screen, the second loop) without a
-server or an emulator. They live in `tests/states.ts`, and are committed:
+A pack's UI is tested against **game states**, so the overlay can be shown at any moment of the game (a boss fight,
+the continue screen, the second loop) without a server or an emulator. A state is what memory does to get there: a
+run of ticks of **map values**, in the same steps as [scenarios](#testing-derived-values). The pack's own `derived.js`
+works out everything else, tick by tick, as the server would, so a state's derived values always agree with the
+game's rules and with each other. States live in `tests/states.ts`, and are committed:
 
 ```ts
 import type { GameStates } from "@stgadgets/testing";
 
-const saucerFlying = {
-  "p1.score": 820,
-  "saucer.status": "flying",
-  // ... every variable the layout reads, map and derived alike
-} satisfies GameStates[string];
-
 export default {
-  saucerFlying,
-  /** One invader left. */
-  lastInvader: { ...saucerFlying, "fleet.aliens": 1, "saucer.status": "none" },
+  start: { aliens_remaining: 55, "p1.ships_reserve": 2, "game.mode": true, /* … every map variable */ },
+  states: {
+    /** A new wave, the mystery ship held until the rack drops. */
+    waveStart: [{ set: { "rack.y": 0x78 } }],
+    /** One invader left, on the last life. */
+    lastInvader: [{}, { set: { aliens_remaining: 1, "shots.count": 90, "p1.ships_reserve": 0 } }],
+  },
 } satisfies GameStates;
 ```
 
-- A state lists every variable the layout reads. A variable that's missing is one the map doesn't define, and its
-  gadget renders nothing; use `null` for a value the game hasn't set.
-- Start from a real moment: take one tick's values from a recording with `stgadgets recording values`
-  ([cli.md](cli.md)), then derive the other states from it by changing what that moment changes. Keep each state believable: derived values that follow from each other should
-  agree (rank's parts add up to `rank.model`, and so on).
+- **`start`** is memory on each state's first tick, and must list every variable in `map.yaml`, as decoded (a BCD
+  score is its decimal value). Take it from a real moment with `stgadgets recording values <recording> --at
+  <marker>` ([cli.md](cli.md)). A state that reads a name it doesn't have fails, naming it.
+- **`add`** (optional) is added to map variables on every tick after the first, such as `{ frame_counter: 1 }` for a
+  game running at full speed.
+- **Steps** work as in scenarios: `set` changes map variables on the step's first tick, `add` adds to them on each of
+  its ticks, and `repeat` makes it last that many ticks; `{}` is one tick with nothing changed. A state's values are
+  every variable, map and derived, after its last tick.
+- Model memory as the game changes it. Values that compare ticks (a hit, the latest score gain, a death) need a tick
+  before the change, and long-running ones (splits, survival time) need the ticks played: `repeat` is cheap.
+- A derived value that throws or returns something invalid fails the state, as it would fail a scenario.
 
 Tests in `tests/*.test.tsx` show the pack's whole layout in a state and check what's on screen, using
 `@stgadgets/testing`:
@@ -216,17 +222,17 @@ Tests in `tests/*.test.tsx` show the pack's whole layout in a state and check wh
 ```tsx
 import { showState, textOf } from "@stgadgets/testing";
 import { expect, it } from "vitest";
-import states from "./states";
 
 it("shows the march at full speed with one invader left", async () => {
-  await showState("invaders", states.lastInvader);
+  await showState("invaders", "lastInvader");
 
   expect(textOf("SPEED-UP IN")).toBe("MAX");
 });
 ```
 
-- `showState(pack, values)` starts the real UI against a fake server, matches the pack and waits for its layout. It
-  returns the fake server, whose `tick(changed)` sends further ticks.
+- `showState(pack, state)` computes the state, starts the real UI against a fake server, matches the pack and waits
+  for its layout. It returns the fake server, whose `tick(changed)` sends further ticks. `stateValues(pack, state)`
+  gives a state's values without showing it.
 - `gadget(label)` finds a gadget by its label (the whole label, or a pattern such as `/^BOSS/`); `textOf(label,
   part)` is the text of its `.value`, or of another part such as `".note"`.
 
