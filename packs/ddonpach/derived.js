@@ -56,7 +56,8 @@ const NO_MISS_BONUS = [200000, 300000, 400000, 500000, 600000, 700000, 2000000, 
 
 // Boss positions in stage.progress, stages 1-6 (RetroAchievements code notes; not yet checked).
 const BOSS_PROGRESS = [0x200, 0x160, 0x1B0, 0x200, 0x250, 0x121];
-const PROGRESS_SMOOTHING = 1 / 600;   // the scroll rate behind boss.eta, over about ten seconds
+// The scroll's cruising speed: after a burst of 1 step a frame at the start, the stage settles to 1 step every 16 frames.
+const FRAMES_PER_SCROLL_STEP = 16;
 const SCROLL_STOPPED_AFTER_TICKS = 32; // scroll steps come every 16-17 ticks at most while the stage moves
 
 // Splits: one per stage played, 1-1 to 1-6 then 2-1 to 2-7.
@@ -315,16 +316,6 @@ export default {
     description: 'How far through the stage towards the boss, 0 to 1 (1 once the boss is reached).',
     value: v => v['boss.at'] === null ? null : Math.min(Math.max(v['stage.progress'], 0) / v['boss.at'], 1),
   },
-  'stage.scroll_rate': {
-    description: 'Scroll steps per tick, averaged over about ten seconds; restarts each stage.',
-    value: (v, prev) => {
-      if (!v['game.running']) return null;
-      if (prev === null || prev['stage.scroll_rate'] === null || prev['stage.index'] !== v['stage.index']) return 1 / 16;
-      if (v['game.paused']) return prev['stage.scroll_rate'];
-      const step = Math.max(v['stage.progress'] - prev['stage.progress'], 0);
-      return prev['stage.scroll_rate'] + PROGRESS_SMOOTHING * (step - prev['stage.scroll_rate']);
-    },
-  },
   'stage.ticks_since_scroll': {
     description: 'Ticks since stage.progress last moved.',
     value: (v, prev) => {
@@ -337,11 +328,11 @@ export default {
     value: v => v['stage.ticks_since_scroll'] === null ? null : v['stage.ticks_since_scroll'] <= SCROLL_STOPPED_AFTER_TICKS,
   },
   'boss.eta': {
-    description: 'Seconds until the boss at the recent scroll rate; 0 once it\'s reached.',
+    description: 'Seconds until the boss at the cruising scroll speed; 0 once it\'s reached. Holds still while the scroll stops, and leaves out stops still to come.',
     value: v => {
-      if (v['boss.at'] === null || !(v['stage.scroll_rate'] > 0)) return null;
+      if (v['boss.at'] === null) return null;
       const remaining = Math.max(v['boss.at'] - v['stage.progress'], 0);
-      return remaining / v['stage.scroll_rate'] / FRAMES_PER_SECOND;
+      return remaining * FRAMES_PER_SCROLL_STEP / FRAMES_PER_SECOND;
     },
   },
 
