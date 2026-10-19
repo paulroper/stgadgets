@@ -118,31 +118,26 @@ them together, at moments that are hard to reach in play, without the server or 
 
 ### The build-and-look loop
 
-To see changes as they'll really appear, run the server and the macOS overlay with snapshots on:
+To see changes as they'll really appear, run the server and the macOS overlay with snapshots on, using the CLI's
+`dev` commands ([cli.md](cli.md#development)). They start everything in the background, wait until it's ready, and
+stop it all again:
 
 ```sh
-dotnet run --project src/server/Stgadgets.Server
-STGADGETS_SNAPSHOT_PORT=5198 dotnet run --project src/host/macos/Stgadgets.Host.Mac
+stgadgets dev start --overlay            # live, from RetroArch
+stgadgets dev snapshot --width 1000      # .stgadgets/dev/snapshot.png
+stgadgets dev stop
 ```
 
 Then each change goes:
 
 1. Edit `derived.js`, the layout or a gadget.
-2. Rebuild the UI (`npm run build` in `src/ui`), and restart the server if `map.yaml` or `derived.js` changed (it
-   loads packs at startup). Then use **Reload layout** in the overlay's menu, or restart the overlay, which needs
-   nobody at the screen:
+2. `stgadgets dev restart --build-ui`: rebuilds the UI, and restarts the server (which loads packs at startup, so
+   this picks up `map.yaml` and `derived.js` changes) and the overlay, with the same options as before.
+3. `stgadgets dev snapshot`, and look at it.
 
-   ```sh
-   pkill -f Stgadgets.Host.Mac.app
-   STGADGETS_SNAPSHOT_PORT=5198 dotnet run --project src/host/macos/Stgadgets.Host.Mac
-   ```
-
-   `dotnet run` opens the app and returns. Snapshots work a few seconds later, once the port answers.
-
-   A freshly started overlay takes its size from the emulator's window, and only finds it while it's on screen. If
-   RetroArch is fullscreen (in its own Space), bring it to the front once after restarting the overlay, or snapshots
-   come out at a default 400×300. The overlay keeps that size afterwards, even while hidden.
-3. Fetch `http://127.0.0.1:5198/snapshot` (add `?width=1000` for a smaller image) and look at it.
+A freshly started overlay takes its size from the emulator's window, and only finds it while it's on screen. If
+RetroArch is fullscreen (in its own Space), bring it to the front once after restarting the overlay, or snapshots
+come out at a default 400×300. The overlay keeps that size afterwards, even while hidden.
 
 The snapshot is the layout as the overlay draws it, at the emulator window's size, with live values from the running
 game. It works while the overlay is hidden behind another app, so a Claude session can make a change and check it
@@ -151,8 +146,9 @@ without anyone looking at the screen. It shows the layout only, not the game und
 When a gadget needs a particular moment in the game (a boss, a death, a continue), there are three ways to see it
 without asking someone to play to it:
 
-- **Replay a recording held at that moment:** run the server with the [replay provider](providers.md#replay-provider)
-  and `#<marker>`, then `npm run screenshot`.
+- **Replay a recording held at that moment:** `stgadgets dev start --provider replay --endpoint
+  "packs/<id>/recordings/<name>#<marker>"` ([replay provider](providers.md#replay-provider)), then `npm run
+  screenshot` in `src/ui`.
 - **Add it as a game state**, and screenshot that ([looking at game states](#looking-at-game-states)).
 - Otherwise, ask whoever is playing to get there.
 

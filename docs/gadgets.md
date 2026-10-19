@@ -126,7 +126,7 @@ An input display can't come from the emulator APIs, because none of them report 
 
 1. Run `npm run dev` in `src/ui/`. The Vite dev server proxies the WebSocket to the stgadgets server.
 2. Open the layout in a browser and edit gadgets with hot reload. The server can run a live game, or replay a recording, held at a moment if you like ([replay provider](providers.md#replay-provider)). Without the server, `/?state=<pack>/<state>` shows one of the pack's test game states ([packs.md](packs.md#testing-the-ui)).
-3. Check the look in the overlay with snapshots, and at other window sizes with `npm run screenshot` ([developing a game pack](pack-development.md#the-build-and-look-loop)).
+3. Check the look in the overlay with snapshots (`stgadgets dev snapshot`), and at other window sizes with `npm run screenshot` ([developing a game pack](pack-development.md#the-build-and-look-loop)).
 
 ## Wire protocol (internal)
 

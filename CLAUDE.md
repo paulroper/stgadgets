@@ -13,7 +13,7 @@ Emulator overlay that shows M2 ShotTriggers-style gadgets for shmups. A .NET ser
 ## Build
 
 - Server, core and tests, including packs' `derived.js` scenarios (any OS): `dotnet test src/server`
-- CLI (any OS): `dotnet test src/cli`; run it with `dotnet run --project src/cli/Stgadgets.Cli -- <command>` (`docs/cli.md`)
+- CLI (any OS): `dotnet test src/cli`; run it with `bin/stgadgets <command>`, which builds it first (`docs/cli.md`). `bin/stgadgets dev` starts and stops the server and overlay for development
 - macOS overlay (needs Xcode + `macos` workload): `dotnet build src/host/macos`
 - UI: `cd src/ui && npm run build`; tests (in `tests/ui` and `packs/*/tests`): `cd src/ui && npm test`
 

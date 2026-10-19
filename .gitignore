@@ -1,5 +1,7 @@
 ## .NET build output
 [Bb]in/
+# ...except the repository's own scripts (bin/stgadgets)
+!/bin/
 [Oo]bj/
 [Dd]ebug/
 [Rr]elease/
@@ -77,3 +79,6 @@ src/ui/screenshots/
 
 ## Game recordings: large, local working material (ADR 0011, .claude/skills/game-recording)
 packs/*/recordings/
+
+## stgadgets dev: logs and running processes (docs/cli.md)
+.stgadgets/

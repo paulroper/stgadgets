@@ -91,6 +91,7 @@ Each module has its own build, so you only need the toolchain for the part you'r
 Code is organised by what it does, not what it is: see [Code conventions](conventions.md).
 
 ```
+bin/stgadgets                        # the CLI, built from source when it's changed; on the PATH with direnv (.envrc)
 src/
   lib/                               # shared .NET libraries; the only code modules may reference
     Stgadgets.Core/                  # packs, map loader & decoder, derived values (Jint) & their scenarios, recordings & expected values, provider interface
@@ -100,9 +101,9 @@ src/
       Stgadgets.Providers.Replay/    # plays a recording back as if it were an emulator
       (later) Stgadgets.Providers.Mame/
   server/                            # Stgadgets.Server.slnx (includes lib/): any OS, plain .NET 10
-    Stgadgets.Server/                # Kestrel: game loop, WebSocket, /api/emulator, serves src/ui/dist
+    Stgadgets.Server/                # Kestrel: game loop, WebSocket, /api/emulator and /api/status, serves src/ui/dist
   cli/                               # Stgadgets.Cli.slnx (includes lib/): any OS, plain .NET 10
-    Stgadgets.Cli/                   # the stgadgets command: tools for pack development (docs/cli.md)
+    Stgadgets.Cli/                   # the stgadgets command: recording tools, and `dev` to run the server and overlay (docs/cli.md)
   host/
     lib/                             # shared by every host; plain net10.0, no OS-specific code
       Stgadgets.Host.Lib.Api/        # client for the server's HTTP API (EmulatorLocator → /api/emulator)

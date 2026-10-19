@@ -4,12 +4,17 @@
 `Stgadgets.Core` library as the server (`src/lib/`), so it decodes memory and runs `derived.js` exactly as the
 server does, without the server or an emulator.
 
-Run it from the repository with `dotnet run` (below, `stgadgets` is short for that):
+Run it as `bin/stgadgets` from anywhere in the repository. The script builds the CLI from source when it has
+changed (quietly; about a second when it hasn't) and runs it, so it's never out of date:
 
 ```sh
-dotnet run --project src/cli/Stgadgets.Cli -- <command>
-dotnet run --project src/cli/Stgadgets.Cli -- --help
+bin/stgadgets <command>
+bin/stgadgets --help
 ```
+
+With [direnv](https://direnv.net), the repository's `.envrc` puts `bin/` on your PATH whenever you're inside it, so
+it's just `stgadgets`. Once, after installing direnv: add `eval "$(direnv hook zsh)"` to `~/.zshrc` (or your shell's
+equivalent), then run `direnv allow` in the repository. Below, `stgadgets` means either.
 
 `dotnet test src/cli` builds and tests it.
 
@@ -155,6 +160,39 @@ something happened.
 
 Copies the ticks from one point to another, with their markers, to a new recording, so a long session can shrink to
 the part worth keeping. Timestamps start again from 0, and the manifest's notes say where it came from.
+
+## Development
+
+`stgadgets dev` runs stgadgets for development: the server, live or replaying, and on macOS the overlay with
+snapshots on. Each part runs as its own process, in the background, as it would for a user; the CLI launches them,
+waits until they answer, and talks to them over HTTP. Their output and the record of what's running go to
+`.stgadgets/dev/` (git-ignored). Run it from inside the repository.
+
+```sh
+stgadgets dev start --overlay                     # live from RetroArch, with the overlay
+stgadgets dev start --provider replay --endpoint "packs/ddonpach/recordings/play-01#chain reaches 14"
+stgadgets dev status
+stgadgets dev restart --build-ui                  # after a change; options not given are kept
+stgadgets dev snapshot --width 1000               # the overlay's picture, to .stgadgets/dev/snapshot.png
+stgadgets dev stop
+```
+
+| Command | |
+|---|---|
+| `start` | Starts the server, waits until it answers, then gives it a few seconds to find the game, and says what it's doing. A replay held at a point (`#<marker>`) is ready once it's there. With `--overlay`, also starts the overlay and waits for its snapshots. Refuses if something is already serving on the server's port |
+| `restart` | Stops and starts again, for a change to `map.yaml`, `derived.js` or the UI. Options not given keep their last values; a different `--provider` starts without the last endpoint |
+| `status` | What was started, what the server's doing (`GET /api/status`: state, pack, ticks sent), and whether the overlay answers |
+| `snapshot` | Saves a PNG of the layout as the overlay draws it, even while it's hidden (`--out`, `--width`) |
+| `stop` | Stops what `start` started |
+
+| Option (start, restart) | |
+|---|---|
+| `--provider`, `--endpoint` | The emulator, as in the server's configuration ([providers.md](providers.md#choosing-a-provider)); default `retroarch`. A replay's recording is relative to the repository |
+| `--overlay` | Also run the macOS overlay, with snapshots on |
+| `--snapshot-port` | The overlay's snapshot port (5198) |
+| `--build-ui` | Run `npm run build` in `src/ui` first, so the server and overlay serve the latest UI |
+
+When something doesn't start, the command says so with the end of its log.
 
 ## Planned
 

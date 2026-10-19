@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Stgadgets.Cli.Dev;
 using Stgadgets.Cli.Recordings;
 
 namespace Stgadgets.Cli;
@@ -9,6 +10,7 @@ internal static class StgadgetsCommand
     public static RootCommand Create() => new("Tools for developing stgadgets game packs.")
     {
         RecordingCommand.Create(),
+        DevCommand.Create(),
     };
 
     /// <summary>

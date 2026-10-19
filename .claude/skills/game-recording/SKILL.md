@@ -13,7 +13,7 @@ A **recording** is a game's RAM captured every frame while someone plays. The fo
 
 Recordings live in `packs/<id>/recordings/<name>/`, which is **git-ignored** (ADR 0011). They're local working material, not part of the repo. Don't try to commit them, and delete them when you're done if they're large.
 
-The tools are the `stgadgets` CLI's `recording` commands (`docs/cli.md`): `record`, then `markers`, `search`, `history`, `values`, `mark` and `trim`. Run them from the repo root with `dotnet run --project src/cli/Stgadgets.Cli -- recording <command>`; below, `stgadgets` is short for that. Add `--help` to any command for every option.
+The tools are the `stgadgets` CLI's `recording` commands (`docs/cli.md`): `record`, then `markers`, `search`, `history`, `values`, `mark` and `trim`. Run them as `bin/stgadgets recording <command>` (or `stgadgets` with direnv); below, `stgadgets` means that. Add `--help` to any command for every option.
 
 ## 1. Prerequisites
 

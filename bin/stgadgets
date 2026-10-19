@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# The stgadgets CLI (docs/cli.md), built from this repository's source: a quiet incremental build, then run it. With
+# bin/ on your PATH (direnv and .envrc do that inside the repository) it's just `stgadgets`.
+set -euo pipefail
+
+project="$(cd "$(dirname "${BASH_SOURCE[0]}")/../src/cli/Stgadgets.Cli" && pwd)"
+if ! build=$(dotnet build "$project" --nologo --verbosity quiet 2>&1); then
+  echo "$build" >&2
+  exit 1
+fi
+exec dotnet "$project/bin/Debug/net10.0/stgadgets.dll" "$@"
