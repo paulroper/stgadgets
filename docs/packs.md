@@ -169,6 +169,8 @@ scenarios:
   ticks. **`expect`** is checked on the step's last tick, and can name map variables as well as derived values.
 - Values are as decoded: a BCD score is its decimal value, a `bool` is `true` or `false`. A fraction matches to the
   decimal places it's written with, so `73.4` matches `73.396224`.
+- To see what a real moment looks like before writing a scenario's `start`, use `stgadgets recording values
+  <recording> --at <marker>` ([cli.md](cli.md)).
 - Every scenario starts afresh, with no previous tick. Values that compare with the previous tick, such as a hit or a
   change in rank, need a tick before the change: start such a scenario with a step that only expects.
 - Setting a derived value, or naming a variable that doesn't exist, is reported, and so is a scenario that expects
@@ -204,8 +206,8 @@ export default {
 
 - A state lists every variable the layout reads. A variable that's missing is one the map doesn't define, and its
   gadget renders nothing; use `null` for a value the game hasn't set.
-- Start from a real moment: take one tick's values from a recording, then derive the other states from it by
-  changing what that moment changes. Keep each state believable: derived values that follow from each other should
+- Start from a real moment: take one tick's values from a recording with `stgadgets recording values`
+  ([cli.md](cli.md)), then derive the other states from it by changing what that moment changes. Keep each state believable: derived values that follow from each other should
   agree (rank's parts add up to `rank.model`, and so on).
 
 Tests in `tests/*.test.tsx` show the pack's whole layout in a state and check what's on screen, using

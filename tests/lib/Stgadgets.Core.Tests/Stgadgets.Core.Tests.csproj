@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\server\Stgadgets.Core\Stgadgets.Core.csproj" />
+    <ProjectReference Include="..\..\..\src\lib\Stgadgets.Core\Stgadgets.Core.csproj" />
   </ItemGroup>
 
 </Project>

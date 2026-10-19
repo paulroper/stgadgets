@@ -13,10 +13,10 @@ A **recording** is a game's RAM captured every frame while someone plays. The fo
 
 Recordings live in `packs/<id>/recordings/<name>/`, which is **git-ignored** (ADR 0011). They're local working material, not part of the repo. Don't try to commit them, and delete them when you're done if they're large.
 
-The scripts are plain Python (standard library only). Always run them with `python3 -I`. Paths below are relative to the repo root.
+Paths below are relative to the repo root.
 
-- `.claude/skills/game-recording/scripts/record.py`: captures a recording from RetroArch.
-- `.claude/skills/game-recording/scripts/recording.py`: `search`, `history`, `mark` and `trim` on a recording.
+- `.claude/skills/game-recording/scripts/record.py` captures a recording from RetroArch. It's plain Python (standard library only); always run it with `python3 -I`.
+- The `stgadgets` CLI does everything else with a recording: `markers`, `search`, `history`, `values`, `mark` and `trim` (`docs/cli.md`). Run it with `dotnet run --project src/cli/Stgadgets.Cli -- recording <command>`; below, `stgadgets` is short for that.
 
 Run either with `--help` for every option.
 
@@ -50,19 +50,20 @@ python3 -I .claude/skills/game-recording/scripts/record.py \
 Use `search` to narrow down candidates. Each filter compares one byte between two points: tick numbers, `start`, `end`, or marker labels (exact or a unique prefix). Filters apply in order.
 
 ```sh
-S=".claude/skills/game-recording/scripts/recording.py"
-python3 -I $S search REC --decreased "1st death" "2nd death" --decreased "2nd death" "3rd death" --equals end 0
-python3 -I $S search REC --changed start "coin" --unchanged "coin" "start pressed"
+stgadgets recording markers REC
+stgadgets recording search REC --decreased "1st death" "2nd death" --decreased "2nd death" "3rd death" --equals end 0
+stgadgets recording search REC --changed start "coin" --unchanged "coin" "start pressed"
 ```
 
 Tips:
 
 - Combine "changed when X happened" with "unchanged when nothing relevant happened". The second kind of filter removes most of the noise.
 - Values are often stored differently from how they're shown: lives as spare ships (shown − 1), scores as BCD without the last digit, flags as single bits. Try `--equals` with a few variations.
-- 16-bit values show up as two neighbouring bytes, and on the 68000 the high byte comes first: use `u16be` and `bcdNbe` there (`bcdN` is low byte first, as on the 8080).
+- 16-bit values show up as two neighbouring bytes, and on the 68000 the high byte comes first. `history` reads an address with `--type` as `map.yaml` does (`u16`, `s16be`, `bcd2`, …), in the pack map's byte order; for a recording not in a pack yet, add `--endianness big` for 68000 games.
 - **68000 games on FBNeo** (e.g. DoDonPachi): the core returns RAM byte-swapped, so record with `--word-swapped` to store it in the hardware's order. The pack's `providers/retroarch.yaml` says `word_swapped: true` when this applies.
-- Confirm a candidate with `history REC 0xADDR --type bcd2` (or `u16be` …). Its distinct values over time should match what happened on screen.
-- Use `mark REC <tick> "<label>"` to pin events exactly once `history` shows the tick where something changed.
+- Confirm a candidate with `stgadgets recording history REC 0xADDR --type bcd2`. Its distinct values over time should match what happened on screen.
+- Once the address is in the map, `history REC <variable or derived value>` shows it through the pack: `history REC p1.lives`.
+- Use `stgadgets recording mark REC <tick> "<label>"` to pin events exactly once `history` shows the tick where something changed.
 
 For hard cases (rank, hidden timers), suggest the MAME debugger with watchpoints (`docs/memory-maps.md` → finding addresses).
 
@@ -71,7 +72,8 @@ For hard cases (rank, hidden timers), suggest the MAME debugger with watchpoints
 1. Add or fix the variables in `packs/<id>/map.yaml`, and set `verified: true` on the long-form ones you've confirmed.
 2. Write `packs/<id>/recordings/<name>/expected.yaml`. Use `at:` to give values at `start`, tick numbers or marker labels, and use the tick before a marker for "just before". Use `sequences:` to give every distinct value in order. The format is in `docs/packs.md` → Testing. Build it from `history` output, not from memory.
 3. Run `dotnet test src/server`. `PackRecordingTests` checks every local recording, and prints each mismatch.
-4. To keep a recording small enough to hold onto, use `trim REC <first> <last> --out <new>`. That keeps markers and rebases timestamps.
+   To see every decoded and derived value at a point (to check `derived.js`, or to start a game state or scenario from it), use `stgadgets recording values REC --at "<marker>"`.
+4. To keep a recording small enough to hold onto, use `stgadgets recording trim REC <first> <last> --out <new>`. That keeps markers and rebases timestamps.
 
 ## 5. Report back
 

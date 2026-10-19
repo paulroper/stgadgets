@@ -42,7 +42,7 @@ public sealed record ReadPlan(IReadOnlyList<AddressRange> Ranges);
 public sealed record Snapshot(long? EmulatedFrame, long ReceivedAtTicks, ReadOnlyMemory<byte> Data);
 ```
 
-The code (`src/server/Stgadgets.Core/Providers/IEmulatorProvider.cs`) currently implements a subset: `Process`, `GetContentAsync` and `StreamAsync(content, plan, settings)`, where `settings` is the matched pack's file for this provider (`ProviderSettings`, or null if the pack has none). Only the provider knows the file's shape; `settings.Read<T>()` deserializes it. Capabilities and watching for content changes get added when they're needed.
+The code (`src/lib/Stgadgets.Core/Providers/IEmulatorProvider.cs`) currently implements a subset: `Process`, `GetContentAsync` and `StreamAsync(content, plan, settings)`, where `settings` is the matched pack's file for this provider (`ProviderSettings`, or null if the pack has none). Only the provider knows the file's shape; `settings.Read<T>()` deserializes it. Capabilities and watching for content changes get added when they're needed.
 
 **Finding the emulator's window:** the server exposes the provider's `Process` at `GET /api/emulator` (`{ provider, appName, processId }`, or 204 when not connected). The overlay host polls it every 2 s and follows that process's window, matched by process ID, falling back to the app name. Nothing in the overlay is specific to one emulator. The RetroArch provider finds its process by name, since network commands don't say which process answered.
 

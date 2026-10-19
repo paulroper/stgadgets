@@ -214,9 +214,12 @@ Credit the source in the map's comments.
 3. **Watch** the candidates live while playing to confirm them.
 4. **MAME debugger** for the hard cases: set a watchpoint on an address to find the code that writes it, and work out what it means from there.
 
-Steps 1–3 are packaged as the `game-recording` Claude skill (`.claude/skills/game-recording/`): `record.py` records with live markers and watched addresses, and `recording.py search` / `history` do the filtering and confirming. Recordings are local and git-ignored ([ADR 0011](decisions/0011-recordings-are-local.md)).
+Steps 1–3 are packaged as the `game-recording` Claude skill (`.claude/skills/game-recording/`): `record.py` records with live markers and watched addresses, and the `stgadgets` CLI's `recording search` / `history` do the filtering and confirming ([cli.md](cli.md)). Recordings are local and git-ignored ([ADR 0011](decisions/0011-recordings-are-local.md)).
 
-## Tooling (planned)
+## Tooling
+
+The `stgadgets` CLI ([cli.md](cli.md)) has started: `stgadgets recording values` shows every value at points in a
+recording. Planned:
 
 - `stgadgets pack check packs/invaders`: check the pack against the schema
 - `stgadgets pack test packs/invaders`: replay the pack's recordings and check their `expected.yaml` (the same harness `dotnet test src/server` runs today; see [packs.md](packs.md#testing))

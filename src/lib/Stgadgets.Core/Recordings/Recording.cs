@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Globalization;
 using System.Text.Json;
 using Stgadgets.Core.Memory;
 using Stgadgets.Core.Packs;
@@ -79,4 +80,14 @@ public sealed class Recording
     }
 
     public IEnumerable<Snapshot> Snapshots => Enumerable.Range(0, Count).Select(i => this[i]);
+
+    /// <summary>The tick a point names: a tick number, a marker label, or "start" (tick 0); null if there's no such tick.</summary>
+    public int? FindTick(string point)
+    {
+        if (point == "start")
+            return 0;
+        if (int.TryParse(point, CultureInfo.InvariantCulture, out var tick))
+            return tick >= 0 && tick < Count ? tick : null;
+        return Manifest.Markers?.FirstOrDefault(m => m.Label == point)?.Tick;
+    }
 }

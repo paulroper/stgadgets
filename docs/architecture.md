@@ -91,13 +91,15 @@ Code is organised by what it does, not what it is: see [Code conventions](conven
 
 ```
 src/
-  server/                            # Stgadgets.Server.slnx: any OS, plain .NET 10
+  lib/                               # shared .NET libraries; the only code modules may reference
     Stgadgets.Core/                  # packs, map loader & decoder, derived values (Jint) & their scenarios, recordings & expected values, provider interface
+  server/                            # Stgadgets.Server.slnx (includes lib/): any OS, plain .NET 10
     Stgadgets.Server/                # Kestrel: game loop, WebSocket, /api/emulator, serves src/ui/dist
     providers/                       # one project per emulator
       Stgadgets.Providers.RetroArch/ # network-command provider
       (later) Stgadgets.Providers.Mame/, Stgadgets.Providers.Replay/
-    (later) Stgadgets.Tools/
+  cli/                               # Stgadgets.Cli.slnx (includes lib/): any OS, plain .NET 10
+    Stgadgets.Cli/                   # the stgadgets command: tools for pack development (docs/cli.md)
   host/
     lib/                             # shared by every host; plain net10.0, no OS-specific code
       Stgadgets.Host.Lib.Api/        # client for the server's HTTP API (EmulatorLocator → /api/emulator)
@@ -109,8 +111,10 @@ src/
     src/gadgets/                     # standard gadgets (@stgadgets/gadgets)
     src/layouts/                     # generic layout, and loading pack layouts
 tests/                               # mirrors src/: tests for src/<module>/X live in tests/<module>/X.Tests
-  server/
-    Stgadgets.Core.Tests/            # part of the server solution; also runs packs/*/tests/derived and local recordings
+  lib/
+    Stgadgets.Core.Tests/            # in the server and CLI solutions; also runs packs/*/tests/derived and local recordings
+  cli/
+    Stgadgets.Cli.Tests/
   ui/                                # Vitest, run from src/ui (npm test): the app against a fake server; also runs
                                      # packs/*/tests, which import testing.ts as @stgadgets/testing
   (later) host/lib/Stgadgets.Host.Lib.Api.Tests/, server/providers/...
@@ -119,7 +123,7 @@ packs/                               # game packs: everything game-specific (doc
 docs/
 ```
 
-The modules only talk to each other over HTTP and WebSocket on `127.0.0.1`, never through project references: the hosts and the UI talk to the server, and the hosts load the UI from the server.
+The modules only talk to each other over HTTP and WebSocket on `127.0.0.1`, never through project references: the hosts and the UI talk to the server, and the hosts load the UI from the server. The exception is `src/lib/`: libraries with no module of their own, which any .NET module may reference and include in its solution. `Stgadgets.Core` is there so the server and the CLI share the code that understands packs and recordings.
 
 Packs are data plus optional UI code. The server loads them from `packs/` (config `Stgadgets:PacksPath`), and the UI build compiles their `ui/` folders, which may import only `@stgadgets/sdk`, `@stgadgets/gadgets` and `react`.
 

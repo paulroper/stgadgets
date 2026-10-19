@@ -45,24 +45,21 @@ public sealed record ExpectedValues(
     public IReadOnlyList<string> Check(Recording recording, MapDecoder decoder, DerivedScript? derived = null)
     {
         var failures = new List<string>();
-        var ticks = recording.Snapshots.Select(decoder.Decode).ToList();
-        if (derived is not null)
+        var failed = new HashSet<string>();
+        var ticks = new List<Dictionary<string, object?>>();
+        foreach (var (tick, values, errors) in RecordingReplay.Run(recording, decoder, derived))
         {
-            using var evaluator = derived.CreateEvaluator(decoder.Map, DerivedScript.ReplayTickLimit);
-            var failed = new HashSet<string>();
-            for (var tick = 0; tick < ticks.Count; tick++)
+            ticks.Add(values);
+            foreach (var error in errors)
             {
-                foreach (var error in evaluator.Evaluate(ticks[tick]))
-                {
-                    if (failed.Add(error.Name))   // report each value's first failure only
-                        failures.Add($"tick {tick}: derived '{error.Name}' failed: {error.Message}");
-                }
+                if (failed.Add(error.Name))   // report each value's first failure only
+                    failures.Add($"tick {tick}: derived '{error.Name}' failed: {error.Message}");
             }
         }
 
         foreach (var (point, values) in At)
         {
-            if (FindTick(point, recording) is not { } tick)
+            if (recording.FindTick(point) is not { } tick)
             {
                 failures.Add($"at '{point}': no such tick or marker");
                 continue;
@@ -89,15 +86,6 @@ public sealed record ExpectedValues(
         }
 
         return failures;
-    }
-
-    private static int? FindTick(string point, Recording recording)
-    {
-        if (point == "start")
-            return 0;
-        if (int.TryParse(point, CultureInfo.InvariantCulture, out var tick))
-            return tick >= 0 && tick < recording.Count ? tick : null;
-        return recording.Manifest.Markers?.FirstOrDefault(m => m.Label == point)?.Tick;
     }
 
     /// <summary>Consecutive duplicates removed.</summary>

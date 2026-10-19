@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
-    <ProjectReference Include="..\Stgadgets.Core\Stgadgets.Core.csproj" />
+    <ProjectReference Include="..\..\lib\Stgadgets.Core\Stgadgets.Core.csproj" />
     <ProjectReference Include="..\providers\Stgadgets.Providers.RetroArch\Stgadgets.Providers.RetroArch.csproj" />
   </ItemGroup>
 

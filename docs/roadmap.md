@@ -56,7 +56,7 @@ Generalise only what milestone 1 proved:
 
 Before tackling harder games, build tools to find addresses (see [memory-maps.md](memory-maps.md#finding-addresses)):
 
-- [x] RAM search on recordings (changed, unchanged, went up, went down, equals a value): `recording.py search` in the `game-recording` skill
+- [x] RAM search on recordings (changed, unchanged, went up, went down, equals a value): `stgadgets recording search` ([cli.md](cli.md)), used by the `game-recording` skill
 - [ ] Watch view: show chosen addresses live while playing
 - [ ] Import helpers for MAME cheat files
 
@@ -99,13 +99,16 @@ without it.
 Recordings stay local ([ADR 0011](decisions/0011-recordings-are-local.md)), so today a pack has no committed tests:
 its checks only run on the machine that made its recordings.
 
-- [ ] Committed tests for a pack's logic that don't need a recording: hand-written ticks of map values in,
-  expected derived values out, kept in the pack
+- [x] Committed tests for a pack's logic that don't need a recording: scenarios of hand-written ticks of map values
+  in, expected derived values out, in the pack's `tests/derived/` ([packs.md](packs.md#testing-derived-values))
+- [x] The `stgadgets` CLI (`src/cli/`), on `Stgadgets.Core` moved to `src/lib/`: `recording markers` and
+  `recording values`, to start game states and scenarios from real play ([cli.md](cli.md))
 - [ ] `stgadgets pack check <dir>`: check a pack against the schema (pack.yaml, map.yaml, derived.js, and the UI's
   imports)
-- [ ] `stgadgets pack test <dir>`: the recording checks that `dotnet test src/server` runs today, for a pack anywhere
-  on disk
-- [ ] Testing a pack's layout: render it with given values, and compare against an expected snapshot
+- [ ] `stgadgets pack test <dir>`: the scenario and recording checks that `dotnet test src/server` runs today, for a
+  pack anywhere on disk
+- [x] Testing a pack's layout: show it in named game states and check what's on screen, without snapshots
+  ([packs.md](packs.md#testing-the-ui))
 
 ### Documentation
 
