@@ -19,7 +19,8 @@ public sealed record RecordingManifest(
     int Ticks,
     IReadOnlyList<RecordingRegion> Regions,
     IReadOnlyList<RecordingMarker>? Markers,
-    string? Notes);
+    string? Notes,
+    DateTimeOffset? CapturedAt = null);
 
 /// <summary>A captured run of memory snapshots. Format: docs/providers.md#recording-format-draft.</summary>
 public sealed class Recording

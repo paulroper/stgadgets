@@ -20,7 +20,17 @@ public sealed record EmulatorProcessInfo(string AppName, int? ProcessId);
 public sealed record ProviderSettings(string Path, string Yaml)
 {
     /// <summary>Deserializes the settings with the usual pack conventions (<see cref="PackYaml"/>).</summary>
-    public T Read<T>() => PackYaml.LoadFile(Path, _ => PackYaml.Deserialize<T>(Yaml));
+    public T Read<T>()
+    {
+        try
+        {
+            return PackYaml.Deserialize<T>(Yaml);
+        }
+        catch (Exception ex) when (ex is FormatException or YamlDotNet.Core.YamlException)
+        {
+            throw new FormatException($"{Path}: {ex.Message}", ex);
+        }
+    }
 }
 
 /// <summary>Connects stgadgets to one emulator. See docs/providers.md.</summary>

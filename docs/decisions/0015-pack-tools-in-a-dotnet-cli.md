@@ -22,20 +22,27 @@ The server's `Stgadgets.Core` held that code, but modules may not reference each
   System.CommandLine ([cli.md](../cli.md)).
 - **`Stgadgets.Core` moves to `src/lib/`,** a home for libraries shared between modules. It's the one place modules
   may reference; each module that uses a library includes it in its solution, so modules still build on their own.
-- **The recording analysis tools move into the CLI:** `recording markers`, `search`, `history`, `values`, `mark`
-  and `trim` replace the skill's `recording.py`. `history` reads addresses with the map's type names and byte
-  order, and can follow map variables and derived values through the pack.
-- **Capture stays in the skill for now.** `record.py` talks to RetroArch directly while someone plays. Moving it
-  would mean sharing the RetroArch provider's client, which lives in the server module.
+- **The emulator providers move to `src/lib/providers/`** for the same reason: the server streams from them, and
+  the CLI records from them.
+- **The recording tools move into the CLI,** replacing the skill's Python scripts. `recording record` captures
+  through the provider interface, taking the core profile from the pack's provider settings as the server does, so
+  it isn't tied to RetroArch's protocol. `markers`, `search`, `history`, `values`, `mark` and `trim` work on the
+  result. `history` and `--watch` read addresses with the map's type names and byte order, and can follow map
+  variables (and, for `history`, derived values) through the pack.
 - The `game-recording` skill keeps the workflow (what to record, how to search, when to mark) and calls the CLI.
 
 ## Consequences
 
-- Recording analysis uses the same decoding and `derived.js` engine as the server and the tests, so what the CLI
-  shows is what the overlay would show.
+- Recording and analysis use the same provider, decoding and `derived.js` engine as the server and the tests, so a
+  recording is what the server would have seen, and what the CLI shows is what the overlay would show. The
+  CLI isn't tied to one emulator: `recording record` takes `--provider` and passes the provider its own endpoint and
+  settings without interpreting them, so adding an emulator (MAME) means adding its provider to the CLI's list.
 - The tools are tested with the rest of the .NET code (`dotnet test src/cli`) and work outside Claude, for pack
   authors as well as Claude sessions.
-- Using them needs the .NET SDK rather than only Python, which every contributor to this repository has anyway.
+- Using them needs the .NET SDK instead of Python, which every contributor to this repository has anyway.
+- Recordings made by the CLI also carry `capturedAt` in the manifest, which `RecordingManifest` now models.
 - `src/lib/` is an exception to "modules never reference each other". It's limited to libraries with no process of
-  their own; anything that runs talks to the server over HTTP.
+  their own; anything that runs talks to the server over HTTP. Two processes can now talk to RetroArch at once (the
+  server and a recorder); both only read, so they can share it, but each takes its own share of RetroArch's
+  one-command-per-frame budget.
 - Recordings stay local and git-ignored; the rest of ADR 0011 stands.

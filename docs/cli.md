@@ -16,8 +16,45 @@ dotnet run --project src/cli/Stgadgets.Cli -- --help
 ## Recordings
 
 Recordings are local and git-ignored ([ADR 0011](decisions/0011-recordings-are-local.md)); the `game-recording`
-Claude skill makes them and explains the workflow. These commands read one from its folder. Inside a pack
+Claude skill explains the workflow. `record` makes one; the other commands read one from its folder. Inside a pack
 (`packs/<id>/recordings/<name>`) they use the pack's map and `derived.js` too.
+
+### `stgadgets recording record <recording>`
+
+Records memory from an emulator every frame while someone plays, into a new recording folder. `--provider` picks
+the emulator, by the platform's provider IDs; for now that's `retroarch`. Into a pack's `recordings/` folder, it
+uses the pack's map and its settings for that provider (`providers/<id>.yaml`; for RetroArch, the core profile), as
+the server does:
+
+```sh
+stgadgets recording record packs/invaders/recordings/play-02 --provider retroarch --range work_ram=0x2000:0x400 \
+  --watch p1.score --watch 0x21FF:u8:spare_ships --seconds 300
+```
+
+```
+Recording work_ram 0x2000..0x23FF from fb_alpha, invaders: 1,024 bytes a tick, about 3.7 MB a minute.
+Stop with Ctrl+C or `touch …/play-02/STOP`; mark with `echo "label" > …/play-02/MARK`.
+182 ticks in 3.0 s (TimeUp); interval p50 16.5 ms, p95 17.9 ms; 1 marker(s)
+```
+
+| Option | |
+|---|---|
+| `--provider <id>` | The emulator to record from (required): `retroarch` |
+| `--endpoint` | Where the emulator listens, in the provider's form. RetroArch: `host:port`, by default `127.0.0.1:55355` |
+| `--settings <file>` | The provider's settings, shaped like a pack's `providers/<id>.yaml`: for a game whose pack has none yet, or to try different ones ([providers.md](providers.md)) |
+| `--range [name=]start:size` | Memory to record; repeat for several regions. Without it, what the pack's map reads: small, and enough to check the map against play. Give the work RAM to hunt for new addresses |
+| `--watch <name or address[:type[:name]]>` | Logs a value to `changes.log` each time it changes: a map variable, or an address read as a `map.yaml` type (`u8` by default) in the map's byte order (`--endianness` to override) |
+| `--seconds` | Stops after this long (600) |
+| `--notes` | What happens in the recording, for the manifest |
+
+If the provider can't read the game as set up (for RetroArch, with no core profile for the running core), it says
+so and no recording is made. While it runs, writing a label to a file named `MARK` in the recording's folder marks the latest tick, and creating
+a file named `STOP` ends the recording, so another process (such as a Claude session) can mark and stop it. It also
+stops on Ctrl+C, when the game changes, or when RetroArch stops answering. The manifest is written when it stops.
+The interval between snapshots should be about a frame (16.7 ms); much more means frames were missed.
+
+The server can run at the same time: both only read, but each costs RetroArch commands, which it answers once a
+frame.
 
 A **point** in a recording is a tick number, `start`, `end`, or a marker label: exact, or a prefix that only one
 label starts with.

@@ -80,7 +80,7 @@ network_cmd_enable = "true"
 network_cmd_port = "55355"
 ```
 
-Implemented in `src/server/providers/Stgadgets.Providers.RetroArch`. What we learned in the spike (RetroArch 1.22.2 on macOS, FBNeo core, Space Invaders):
+Implemented in `src/lib/providers/Stgadgets.Providers.RetroArch`, used by the server and the CLI's recorder. What we learned in the spike (RetroArch 1.22.2 on macOS, FBNeo core, Space Invaders):
 
 | Need | Command | Notes |
 |---|---|---|

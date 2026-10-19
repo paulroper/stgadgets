@@ -24,7 +24,7 @@ One game, one variable, one gadget, on screen, with latency measured.
 
 - [x] Set up the .NET solution (`src/`, `tests/`) on .NET 10
 - [x] The chosen provider, streaming work RAM
-- [x] Capture recordings: `record.py` in the `game-recording` skill ([ADR 0011](decisions/0011-recordings-are-local.md)) in the [recording format](providers.md#recording-format-draft)
+- [x] Capture recordings: `stgadgets recording record` ([cli.md](cli.md)), used by the `game-recording` skill ([ADR 0011](decisions/0011-recordings-are-local.md)) in the [recording format](providers.md#recording-format-draft)
 - [x] Capture fixture recordings (`invaders/play-01`: mystery ship, deaths, game over; still to capture: inserting a coin, clearing a wave): attract mode, inserting a coin, scoring, losing a life, clearing a wave
 - [x] Check the draft addresses in [memory-maps.md](memory-maps.md) against the recordings
 - [x] Minimal decoding of `p1.score` (BCD), with the map hardcoded or very minimal

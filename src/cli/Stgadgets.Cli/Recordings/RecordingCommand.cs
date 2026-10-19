@@ -10,7 +10,7 @@ namespace Stgadgets.Cli.Recordings;
 /// </summary>
 internal static class RecordingCommand
 {
-    public static Command Create() => new("recording", "Find addresses in, inspect, mark and trim recordings.")
+    public static Command Create() => new("recording", "Record a game's memory, then find addresses in, inspect, mark and trim the recording.")
     {
         MarkersCommand.Create(),
         SearchCommand.Create(),
@@ -18,6 +18,7 @@ internal static class RecordingCommand
         ValuesCommand.Create(),
         MarkCommand.Create(),
         TrimCommand.Create(),
+        RecordCommand.Create(),
     };
 
     public static Argument<DirectoryInfo> Argument() => new("recording")

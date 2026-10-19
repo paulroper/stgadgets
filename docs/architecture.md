@@ -93,11 +93,11 @@ Code is organised by what it does, not what it is: see [Code conventions](conven
 src/
   lib/                               # shared .NET libraries; the only code modules may reference
     Stgadgets.Core/                  # packs, map loader & decoder, derived values (Jint) & their scenarios, recordings & expected values, provider interface
-  server/                            # Stgadgets.Server.slnx (includes lib/): any OS, plain .NET 10
-    Stgadgets.Server/                # Kestrel: game loop, WebSocket, /api/emulator, serves src/ui/dist
-    providers/                       # one project per emulator
+    providers/                       # one project per emulator: the server streams from them, the CLI records from them
       Stgadgets.Providers.RetroArch/ # network-command provider
       (later) Stgadgets.Providers.Mame/, Stgadgets.Providers.Replay/
+  server/                            # Stgadgets.Server.slnx (includes lib/): any OS, plain .NET 10
+    Stgadgets.Server/                # Kestrel: game loop, WebSocket, /api/emulator, serves src/ui/dist
   cli/                               # Stgadgets.Cli.slnx (includes lib/): any OS, plain .NET 10
     Stgadgets.Cli/                   # the stgadgets command: tools for pack development (docs/cli.md)
   host/
@@ -117,13 +117,13 @@ tests/                               # mirrors src/: tests for src/<module>/X li
     Stgadgets.Cli.Tests/
   ui/                                # Vitest, run from src/ui (npm test): the app against a fake server; also runs
                                      # packs/*/tests, which import testing.ts as @stgadgets/testing
-  (later) host/lib/Stgadgets.Host.Lib.Api.Tests/, server/providers/...
+  (later) host/lib/Stgadgets.Host.Lib.Api.Tests/, lib/providers/...
 packs/                               # game packs: everything game-specific (docs/packs.md)
   invaders/                          # pack.yaml, map.yaml, providers/, ui/, tests/, recordings/
 docs/
 ```
 
-The modules only talk to each other over HTTP and WebSocket on `127.0.0.1`, never through project references: the hosts and the UI talk to the server, and the hosts load the UI from the server. The exception is `src/lib/`: libraries with no module of their own, which any .NET module may reference and include in its solution. `Stgadgets.Core` is there so the server and the CLI share the code that understands packs and recordings.
+The modules only talk to each other over HTTP and WebSocket on `127.0.0.1`, never through project references: the hosts and the UI talk to the server, and the hosts load the UI from the server. The exception is `src/lib/`: libraries with no module of their own, which any .NET module may reference and include in its solution. `Stgadgets.Core` and the providers are there so the server and the CLI share the code that understands packs, recordings and emulators.
 
 Packs are data plus optional UI code. The server loads them from `packs/` (config `Stgadgets:PacksPath`), and the UI build compiles their `ui/` folders, which may import only `@stgadgets/sdk`, `@stgadgets/gadgets` and `react`.
 

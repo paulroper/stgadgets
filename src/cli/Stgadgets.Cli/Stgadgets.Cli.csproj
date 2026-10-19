@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\lib\Stgadgets.Core\Stgadgets.Core.csproj" />
+    <ProjectReference Include="..\..\lib\providers\Stgadgets.Providers.RetroArch\Stgadgets.Providers.RetroArch.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -28,6 +28,22 @@ internal static class StgadgetsCommand
             return 1;
         }
     };
+
+    /// <inheritdoc cref="Handle"/>
+    public static Func<ParseResult, CancellationToken, Task<int>> HandleAsync(Func<ParseResult, CancellationToken, Task> action) =>
+        async (result, cancellationToken) =>
+        {
+            try
+            {
+                await action(result, cancellationToken);
+                return 0;
+            }
+            catch (Exception ex) when (ex is UsageException or FormatException or IOException or TimeoutException)
+            {
+                await result.InvocationConfiguration.Error.WriteLineAsync(ex.Message);
+                return 1;
+            }
+        };
 }
 
 /// <summary>Something wrong with what the user asked for, such as a marker that doesn't exist.</summary>
