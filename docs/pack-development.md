@@ -107,6 +107,10 @@ checked by recordings like the map is:
 Write the pack's `ui/layout.tsx` and its gadgets in `ui/gadgets/`, then `npm run build` and `npm test` in `src/ui`.
 See [gadgets & layouts](gadgets.md), and follow the [gadget design](gadget-design.md) language.
 
+Add a game state to the pack's `tests/states.ts` for each moment a gadget behaves differently in (a boss, a
+continue, a perfect stage), and a test that shows the layout in it ([testing the UI](packs.md#testing-the-ui)). This
+checks gadgets at moments that are hard to reach in play, without the server or an emulator.
+
 ### The build-and-look loop
 
 To see changes as they'll really appear, run the server and the macOS overlay with snapshots on:

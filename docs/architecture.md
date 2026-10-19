@@ -111,10 +111,11 @@ src/
 tests/                               # mirrors src/: tests for src/<module>/X live in tests/<module>/X.Tests
   server/
     Stgadgets.Core.Tests/            # part of the server solution
-  ui/                                # Vitest, run from src/ui (npm test): the app against a fake server
+  ui/                                # Vitest, run from src/ui (npm test): the app against a fake server; also runs
+                                     # packs/*/tests, which import testing.ts as @stgadgets/testing
   (later) host/lib/Stgadgets.Host.Lib.Api.Tests/, server/providers/...
 packs/                               # game packs: everything game-specific (docs/packs.md)
-  invaders/                          # pack.yaml, map.yaml, providers/, ui/, recordings/
+  invaders/                          # pack.yaml, map.yaml, providers/, ui/, tests/, recordings/
 docs/
 ```
 
