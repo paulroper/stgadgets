@@ -6,6 +6,22 @@ A provider connects stgadgets to one emulator. Its whole job is to **report what
 
 Providers contain no game-specific data. Anything a provider needs to know about a game, such as where a core puts its RAM, comes from the matched [game pack](packs.md#provider-settings): `packs/<id>/providers/<provider id>.yaml`.
 
+## Choosing a provider
+
+Every provider is listed by ID in `EmulatorProviders` (`src/lib/providers/Stgadgets.Providers`), which the server and
+the CLI share. The ID is the one packs use for their settings file (`providers/<id>.yaml`). For now there's only
+`retroarch`.
+
+- **Server:** `Stgadgets:Provider` in `src/server/Stgadgets.Server/appsettings.json` (`retroarch`), and optionally
+  `Stgadgets:ProviderEndpoint` for where the emulator listens, in the provider's form (RetroArch: `host:port`,
+  default `127.0.0.1:55355`). Override either on the command line, e.g.
+  `dotnet run --project src/server/Stgadgets.Server -- --Stgadgets:ProviderEndpoint=127.0.0.1:55356`. An unknown
+  provider stops the server at startup, listing the known ones.
+- **CLI:** `--provider` and `--endpoint` on commands that talk to an emulator, such as `recording record`
+  ([cli.md](cli.md)).
+
+Adding an emulator means writing its provider in `src/lib/providers/` and adding it to `EmulatorProviders`.
+
 ## Being a good citizen
 
 Providers use each emulator's **official, supported interfaces**: network commands, scripting APIs, plugin systems. Not injection, and not reading another process's memory. That keeps stgadgets stable across emulator updates and avoids needing extra OS permissions. It also means we never interfere with the emulator, which is essential for [latency requirement L1](requirements.md#l1-no-added-lag-in-the-game). See [ADR 0004](decisions/0004-providers-use-official-emulator-apis.md).

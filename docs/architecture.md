@@ -94,6 +94,7 @@ src/
   lib/                               # shared .NET libraries; the only code modules may reference
     Stgadgets.Core/                  # packs, map loader & decoder, derived values (Jint) & their scenarios, recordings & expected values, provider interface
     providers/                       # one project per emulator: the server streams from them, the CLI records from them
+      Stgadgets.Providers/           # EmulatorProviders: every provider by ID, for the server's config and the CLI's --provider
       Stgadgets.Providers.RetroArch/ # network-command provider
       (later) Stgadgets.Providers.Mame/, Stgadgets.Providers.Replay/
   server/                            # Stgadgets.Server.slnx (includes lib/): any OS, plain .NET 10

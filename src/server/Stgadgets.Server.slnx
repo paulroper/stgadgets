@@ -1,6 +1,7 @@
 <Solution>
   <Project Path="../lib/Stgadgets.Core/Stgadgets.Core.csproj" />
   <Project Path="../../tests/lib/Stgadgets.Core.Tests/Stgadgets.Core.Tests.csproj" />
+  <Project Path="../lib/providers/Stgadgets.Providers/Stgadgets.Providers.csproj" />
   <Project Path="../lib/providers/Stgadgets.Providers.RetroArch/Stgadgets.Providers.RetroArch.csproj" />
   <Project Path="Stgadgets.Server/Stgadgets.Server.csproj" />
 </Solution>

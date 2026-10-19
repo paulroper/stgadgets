@@ -1,10 +1,10 @@
 using System.CommandLine;
 using System.Runtime.CompilerServices;
-using Stgadgets.Cli.Providers;
 using Stgadgets.Cli.Recordings;
 using Stgadgets.Core.Memory;
 using Stgadgets.Core.Providers;
 using Stgadgets.Core.Recordings;
+using Stgadgets.Providers;
 
 namespace Stgadgets.Cli.Tests.Recordings;
 

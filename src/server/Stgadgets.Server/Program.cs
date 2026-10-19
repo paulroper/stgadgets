@@ -1,7 +1,7 @@
 using Microsoft.Extensions.FileProviders;
 using Stgadgets.Core.Packs;
 using Stgadgets.Core.Providers;
-using Stgadgets.Providers.RetroArch;
+using Stgadgets.Providers;
 using Stgadgets.Server.GameState;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,7 +12,12 @@ builder.WebHost.UseUrls("http://127.0.0.1:5199");
 string RepoPath(string key) => Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, builder.Configuration[key]!));
 
 builder.Services.AddSingleton(PackCatalog.LoadDirectory(RepoPath("Stgadgets:PacksPath")));
-builder.Services.AddSingleton<IEmulatorProvider, RetroArchProvider>();
+// The emulator to read from (docs/providers.md): Stgadgets:Provider, and optionally where it listens.
+var providerId = builder.Configuration["Stgadgets:Provider"]
+    ?? throw new InvalidOperationException($"Set Stgadgets:Provider to one of: {string.Join(", ", EmulatorProviders.All.Keys)}");
+if (!EmulatorProviders.All.ContainsKey(providerId))
+    throw new InvalidOperationException($"Stgadgets:Provider is '{providerId}'; it must be one of: {string.Join(", ", EmulatorProviders.All.Keys)}");
+builder.Services.AddSingleton(_ => EmulatorProviders.Connect(providerId, builder.Configuration["Stgadgets:ProviderEndpoint"]));
 builder.Services.AddSingleton<VariableBroadcaster>();
 builder.Services.AddHostedService<GameStateService>();
 

@@ -23,7 +23,8 @@ The server's `Stgadgets.Core` held that code, but modules may not reference each
 - **`Stgadgets.Core` moves to `src/lib/`,** a home for libraries shared between modules. It's the one place modules
   may reference; each module that uses a library includes it in its solution, so modules still build on their own.
 - **The emulator providers move to `src/lib/providers/`** for the same reason: the server streams from them, and
-  the CLI records from them.
+  the CLI records from them. `Stgadgets.Providers` lists them all by ID, and neither the server nor the CLI names
+  one in code: the server's configuration picks one (`Stgadgets:Provider`), and so does the CLI's `--provider`.
 - **The recording tools move into the CLI,** replacing the skill's Python scripts. `recording record` captures
   through the provider interface, taking the core profile from the pack's provider settings as the server does, so
   it isn't tied to RetroArch's protocol. `markers`, `search`, `history`, `values`, `mark` and `trim` work on the
@@ -34,9 +35,9 @@ The server's `Stgadgets.Core` held that code, but modules may not reference each
 ## Consequences
 
 - Recording and analysis use the same provider, decoding and `derived.js` engine as the server and the tests, so a
-  recording is what the server would have seen, and what the CLI shows is what the overlay would show. The
-  CLI isn't tied to one emulator: `recording record` takes `--provider` and passes the provider its own endpoint and
-  settings without interpreting them, so adding an emulator (MAME) means adding its provider to the CLI's list.
+  recording is what the server would have seen, and what the CLI shows is what the overlay would show. Neither
+  is tied to one emulator: they pass the chosen provider its own endpoint and settings without interpreting them,
+  so adding an emulator (MAME) means writing its provider and adding it to `EmulatorProviders`.
 - The tools are tested with the rest of the .NET code (`dotnet test src/cli`) and work outside Claude, for pack
   authors as well as Claude sessions.
 - Using them needs the .NET SDK instead of Python, which every contributor to this repository has anyway.
