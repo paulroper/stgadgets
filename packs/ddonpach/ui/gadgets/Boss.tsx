@@ -16,8 +16,8 @@ export function Boss() {
       <div className="value small">
         {progress === null ? "-" : reached ? "HERE!" : eta != null ? `in ~${Math.ceil(eta)} s` : `${Math.round(progress * 100)}%`}
       </div>
-      <div className="boss-bar">
-        <div className="boss-bar-fill" style={{ width: `${(progress ?? 0) * 100}%` }} />
+      <div className="bar">
+        <div className="bar-fill" style={{ width: `${(progress ?? 0) * 100}%` }} />
         <span className="boss-marker" />
       </div>
     </div>

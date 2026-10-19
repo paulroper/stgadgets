@@ -7,7 +7,7 @@ function Level({ label, level, strong }: { label: string; level: number | null; 
   return (
     <div className={strong ? "power-row power-strong" : "power-row"}>
       <span className="power-name">{label}</span>
-      <span className="power-pips">
+      <span className="pips">
         {Array.from({ length: MAX_LEVEL }, (_, i) => (
           <span key={i} className={level !== null && i < level ? "power-pip on" : "power-pip"} />
         ))}

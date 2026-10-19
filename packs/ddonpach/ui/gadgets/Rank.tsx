@@ -40,38 +40,38 @@ export function Rank() {
       <div className="label">RANK</div>
       <div className="value">
         {shown ?? "-"}
-        <span className="rank-unit"> / {RANK_MAX}</span>
+        <span className="unit"> / {RANK_MAX}</span>
         {pending && <span className="rank-pending"> → {headingTo}</span>}
       </div>
-      <div className="rank-bar">
+      <div className="bar">
         {parts.map(({ name, value }) =>
-          value ? <div key={name} className={`rank-part ${name.replace(".", "-")}`} style={{ width: `${(value / RANK_MAX) * 100}%` }} /> : null,
+          value ? <div key={name} className={`bar-fill ${name.replace(".", "-")}`} style={{ width: `${(value / RANK_MAX) * 100}%` }} /> : null,
         )}
       </div>
-      {recent && (
-        <div className={change > 0 ? "rank-change up" : "rank-change down"}>
-          {change > 0 ? "+" : ""}
-          {change} <span className="dim">{reason}</span>
-        </div>
-      )}
-      {timePoint != null && shown !== null && shown < RANK_MAX && (
-        <div className="rank-timer dim">
-          survival +1 in <span className="rank-timer-value">{Math.ceil(timePoint)} s</span>
-        </div>
-      )}
-      {model !== null && (
-        <ul className="rank-parts">
-          {parts.map(({ name, label, value }) =>
-            value ? (
-              <li key={name}>
-                <span className={`rank-key ${name.replace(".", "-")}`} />
-                {label}
-                <span className="rank-part-value">{value}</span>
-              </li>
-            ) : null,
-          )}
-        </ul>
-      )}
+      <div className="note">
+        {recent && (
+          <span className={change > 0 ? "rank-change up" : "rank-change down"}>
+            {change > 0 ? "+" : ""}
+            {change} <span className="dim">{reason}</span>
+          </span>
+        )}
+      </div>
+      <div className="note">
+        {timePoint != null && shown !== null && shown < RANK_MAX && (
+          <>
+            survival +1 in <span className="rank-timer-value">{Math.ceil(timePoint)} s</span>
+          </>
+        )}
+      </div>
+      <ul className="rank-parts">
+        {parts.map(({ name, label, value }) => (
+          <li key={name} className={value ? "" : "rank-part-none"}>
+            <span className={`rank-key ${name.replace(".", "-")}`} />
+            {label}
+            <span className="rank-part-value">{model === null || value == null ? "-" : value}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

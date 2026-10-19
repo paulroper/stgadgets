@@ -57,6 +57,7 @@ See [Architecture](docs/architecture.md) for the full picture.
 - [Developing a game pack](docs/pack-development.md): the workflow, from research to gadgets
 - [Memory maps](docs/memory-maps.md): the per-game map format
 - [Gadgets & layouts](docs/gadgets.md): the React SDK
+- [Gadget design](docs/gadget-design.md): how gadgets look and feel
 - [Emulator providers](docs/providers.md): the provider interface, RetroArch, and recordings for replay
 - [Roadmap](docs/roadmap.md): from Space Invaders to DoDonPachi
 - [Latency measurements](docs/latency.md)

@@ -73,6 +73,7 @@ local/
 ## Web
 node_modules/
 src/ui/dist/
+src/ui/screenshots/
 
 ## Game recordings: large, local working material (ADR 0011, .claude/skills/game-recording)
 packs/*/recordings/

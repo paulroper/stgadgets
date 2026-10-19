@@ -13,12 +13,12 @@ export function Chain() {
       <div className="label">CHAIN</div>
       <div className="value">
         {chain ?? "-"}
-        <span className="chain-unit"> HIT</span>
+        <span className="unit"> HIT</span>
       </div>
-      <div className="chain-bar">
-        <div className="chain-bar-fill" style={{ width: `${(gauge ?? 0) * 100}%` }} />
+      <div className="bar">
+        <div className="bar-fill" style={{ width: `${(gauge ?? 0) * 100}%` }} />
       </div>
-      {chain !== null && best != null && <div className="chain-note dim">best {best}</div>}
+      <div className="note">{chain !== null && best != null && `best ${best}`}</div>
     </div>
   );
 }

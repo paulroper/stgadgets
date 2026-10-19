@@ -201,8 +201,11 @@ The results code (`0xF24`, `0x10CA`) pays:
 frame during the fly-in, about every 16 frames after). RA gives the bosses at 0x200, 0x160, 0x1B0, 0x200, 0x250 and
 0x121 for stages 1-6. During the stage 1 boss fight, progress was at or past 0x200; the others are unchecked, and
 stage 7's isn't known.
-`boss.eta` divides what's left by the scroll rate over the last ten seconds or so, so it's rough while the scroll
-speed changes.
+The scroll speed isn't steady. In stage 1, progress went from -40 to 208 at 1 step a frame (about 4 s, 40% of the way
+to the boss), slowed through 2, 4 and 8 frames a step, then cruised at 1 step every 16 frames from 240 on, with stops
+of 2-3 s at 264, 291, 311 and 339. Other stages are unchecked. `boss.eta` uses the cruising speed: it falls fast
+through the opening burst, then counts down in real time and holds during stops (which it can't foresee). An earlier
+version averaged the recent step rate, but the opening burst inflated that average, so the estimate barely moved.
 
 ## Slowdown
 

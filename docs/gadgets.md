@@ -102,6 +102,10 @@ export default defineLayout({
 - **`GameSpace`** is a container that uses the game's own coordinates, with rotation and scaling applied. It's for things drawn over the action, such as hitboxes or markers.
 - **Requirements:** gadgets can declare which variables they need. A generic layout hides any gadget whose variables the current map doesn't provide.
 
+## Design
+
+Gadgets follow one design language: a consistent look built from shared parts and tokens, icons before words, no game assets, and small touches of fun. Layouts use the platform's grid of panels beside the game. See [gadget design](gadget-design.md).
+
 ## Keeping gadgets fast
 
 Gadgets are part of the latency budget (see [requirements](requirements.md#l2-the-overlay-must-keep-up-with-the-game)). Each tick should reach the screen at the webview's next paint.
@@ -141,5 +145,4 @@ The SDK handles this, but for reference:
 ## Open questions
 
 - **Packaging third-party packs:** separately built pack UIs loaded at runtime as ES modules, with the SDK, gadgets and React shared through an import map. Needs its own decision on SDK versioning and trust ([ADR 0010](decisions/0010-game-packs.md)).
-- **Styling:** each layout styles itself freely, or the SDK provides shared design tokens so gadgets look consistent?
 - **Configuration:** user-tweakable settings for each layout, such as colours, which gadgets to show, and scale.

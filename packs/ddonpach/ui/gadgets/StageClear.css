@@ -1,10 +1,5 @@
 .stage-clear .value {
-  color: #6be08a;
-}
-
-.stage-clear-parts {
-  margin-top: 2px;
-  font-size: var(--label-size);
+  color: var(--good);
 }
 
 .stage-clear-lost {

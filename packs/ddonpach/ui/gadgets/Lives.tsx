@@ -12,17 +12,15 @@ export function Lives() {
     <div className="gadget">
       <div className="label">LIVES</div>
       <div className="value">{lives ?? "-"}</div>
-      {more != null && (
-        <div className="lives-next dim">
-          {more && nextAt != null ? (
-            <>
-              next at <span className="lives-next-score">{nextAt.toLocaleString("en")}</span>
-            </>
-          ) : (
-            "no more extends"
-          )}
-        </div>
-      )}
+      <div className="note">
+        {more == null ? null : more && nextAt != null ? (
+          <>
+            next at <span className="lives-next-score">{nextAt.toLocaleString("en")}</span>
+          </>
+        ) : (
+          "no more extends"
+        )}
+      </div>
     </div>
   );
 }

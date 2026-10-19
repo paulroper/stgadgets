@@ -14,12 +14,14 @@ export function StageClear() {
     <div className="gadget stage-clear">
       <div className="label">STAGE CLEAR</div>
       <div className="value small">{total === null ? "-" : `+${points(total)}`}</div>
-      {total !== null && noMiss != null && stars != null && (
-        <div className="stage-clear-parts dim">
-          {noMiss ? `no miss ${points(noMiss)}` : <span className="stage-clear-lost">no miss lost</span>}
-          {" · "}stars {points(stars)}
-        </div>
-      )}
+      <div className="note">
+        {total !== null && noMiss != null && stars != null && (
+          <>
+            {noMiss ? `no miss ${points(noMiss)}` : <span className="stage-clear-lost">no miss lost</span>}
+            {" · "}stars {points(stars)}
+          </>
+        )}
+      </div>
     </div>
   );
 }

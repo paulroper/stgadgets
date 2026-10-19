@@ -1,8 +1,7 @@
 .power-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 6px;
+  gap: 0.5rem;
   font-size: var(--value-small-size);
 }
 
@@ -15,24 +14,19 @@
   color: var(--text);
 }
 
-.power-pips {
-  display: flex;
-  gap: 3px;
-}
-
 .power-pip {
-  width: 14px;
-  height: 10px;
-  border-radius: 2px;
-  background: rgb(255 255 255 / 0.12);
+  width: 0.875rem;
+  height: 0.625rem;
+  border-radius: 0.125rem;
+  background: var(--track);
 }
 
 .power-pip.on {
-  background: #ff8a3d;
+  background: var(--orange);
 }
 
 .power-row:not(.power-strong) .power-pip.on {
-  background: #4ab8ff;
+  background: var(--blue);
 }
 
 .power-level {

@@ -1,40 +1,19 @@
-.march-unit {
-  font-size: var(--value-small-size);
-  color: var(--dim);
-}
-
-.march-bar {
-  margin-top: 6px;
-  height: 6px;
-  background: rgb(255 255 255 / 0.1);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.march-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--label), #ffd24a 70%, #ff5a4a);
+.march-fill {
+  background: linear-gradient(90deg, var(--label), var(--live) 70%, var(--bad));
   transition: width 120ms linear;
 }
 
-.march-catching-up {
-  margin-top: 4px;
-  font-size: var(--label-size);
-}
-
 .march-pips {
-  display: flex;
-  gap: 5px;
-  margin-top: 6px;
+  min-height: 0.5rem; /* a pip's height, so the row keeps its space when empty */
 }
 
 .march-pip {
-  width: 12px;
-  height: 8px;
+  width: 0.75rem;
+  height: 0.5rem;
   background: var(--label);
   clip-path: polygon(15% 0, 85% 0, 100% 50%, 85% 100%, 15% 100%, 0 50%);
 }
 
 .march-pip.next {
-  background: #ffd24a;
+  background: var(--live);
 }
