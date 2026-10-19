@@ -94,11 +94,14 @@ Write the ideas down, and put the ones you don't build yet in the pack's `NOTES.
 ### Derived values first
 
 Put the game logic in the pack's `derived.js`, not in the gadgets
-([memory maps → derived values](memory-maps.md#derived-values)). Gadgets then only display values, and the logic is
-checked by recordings like the map is:
+([memory maps → derived values](memory-maps.md#derived-values)). Gadgets then only display values, and the logic can
+be tested on its own:
 
 - Gate everything on `game.running`, and use the standard names where they fit.
-- Add the new values to a recording's `expected.yaml`, and run `dotnet test src/server`.
+- Write scenarios for each rule in `tests/derived/` ([testing derived values](packs.md#testing-derived-values)),
+  including its edges: the tick a threshold is crossed, outside play, the second player. Write them from the rule
+  (the routine in the ROM, or the write-up), not from what `derived.js` happens to return.
+- Add the new values to a recording's `expected.yaml` too, so real play checks them. Run `dotnet test src/server`.
 - Keep an eye on cost: hundreds of values each doing little is fine, but many near-identical values (one per stage
   per field, say) are better as one structured value.
 

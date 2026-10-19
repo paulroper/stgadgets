@@ -92,7 +92,7 @@ Code is organised by what it does, not what it is: see [Code conventions](conven
 ```
 src/
   server/                            # Stgadgets.Server.slnx: any OS, plain .NET 10
-    Stgadgets.Core/                  # packs, map loader & decoder, derived values (Jint), recordings & expected values, provider interface
+    Stgadgets.Core/                  # packs, map loader & decoder, derived values (Jint) & their scenarios, recordings & expected values, provider interface
     Stgadgets.Server/                # Kestrel: game loop, WebSocket, /api/emulator, serves src/ui/dist
     providers/                       # one project per emulator
       Stgadgets.Providers.RetroArch/ # network-command provider
@@ -110,7 +110,7 @@ src/
     src/layouts/                     # generic layout, and loading pack layouts
 tests/                               # mirrors src/: tests for src/<module>/X live in tests/<module>/X.Tests
   server/
-    Stgadgets.Core.Tests/            # part of the server solution
+    Stgadgets.Core.Tests/            # part of the server solution; also runs packs/*/tests/derived and local recordings
   ui/                                # Vitest, run from src/ui (npm test): the app against a fake server; also runs
                                      # packs/*/tests, which import testing.ts as @stgadgets/testing
   (later) host/lib/Stgadgets.Host.Lib.Api.Tests/, server/providers/...

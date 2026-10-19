@@ -37,11 +37,11 @@ describe("DoDonPachi overlay", () => {
       [...row.querySelectorAll("td")].map((cell) => cell.textContent),
     );
     expect(rows.slice(0, 5)).toEqual([
-      ["1-1", "2:26", "3,120,400", "0", "0", "4%"],
-      ["1-2", "2:36", "6,870,150", "0", "1", "11%"],
-      ["1-3", "2:48", "9,902,410", "1", "2", "8%"],
-      ["1-4", "2:05", "4,922,340", "0", "0", "13%"],
-      ["1-5", "-", "-", "-", "-", "-"],
+      ["1-1", "2:26", "3,120,400", "0", "0", "0", "4%"],
+      ["1-2", "2:36", "6,870,150", "0", "1", "0", "11%"],
+      ["1-3", "2:48", "9,902,410", "1", "2", "0", "8%"],
+      ["1-4", "2:05", "4,922,340", "0", "0", "0", "13%"],
+      ["1-5", "-", "-", "-", "-", "-", "-"],
     ]);
   });
 
@@ -72,6 +72,16 @@ describe("DoDonPachi overlay", () => {
 
     expect(textOf("SCORE")).toBe("---------");
     expect(textOf("2ND LOOP")).toBe("ON TRACK");
+    expect(textOf("BOSS")).toBe("-");
+    const current = gadget("SPLITS").querySelector(".splits-current");
+    expect([...current!.querySelectorAll("td")].map((cell) => cell.textContent)).toEqual(["1-1", "0:34", "55,800", "3", "1", "0", "0%"]);
+  });
+
+  it("counts continues in the splits", async () => {
+    await showState("ddonpach", states.continued);
+
+    const row = [...gadget("SPLITS").querySelectorAll("tbody tr")][3];
+    expect([...row.querySelectorAll("td")].map((cell) => cell.textContent)).toEqual(["1-4", "2:41", "4,204,330", "2", "3", "1", "13%"]);
   });
 
   it("says when the game is paused", async () => {

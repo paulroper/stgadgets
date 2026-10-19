@@ -32,10 +32,10 @@ public sealed record ExpectedValues(
         return new ExpectedValues(
             dto.At.ToDictionary(
                 point => point.Key,
-                IReadOnlyDictionary<string, object?> (point) => point.Value.ToDictionary(v => v.Key, v => ParseValue(v.Value))),
+                IReadOnlyDictionary<string, object?> (point) => point.Value.ToDictionary(v => v.Key, v => PackYaml.ParseValue(v.Value))),
             dto.Sequences.ToDictionary(
                 sequence => sequence.Key,
-                IReadOnlyList<object?> (sequence) => sequence.Value.Select(ParseValue).ToList()));
+                IReadOnlyList<object?> (sequence) => sequence.Value.Select(PackYaml.ParseValue).ToList()));
     }
 
     /// <summary>
@@ -48,7 +48,7 @@ public sealed record ExpectedValues(
         var ticks = recording.Snapshots.Select(decoder.Decode).ToList();
         if (derived is not null)
         {
-            using var evaluator = derived.CreateEvaluator(decoder.Map);
+            using var evaluator = derived.CreateEvaluator(decoder.Map, DerivedScript.ReplayTickLimit);
             var failed = new HashSet<string>();
             for (var tick = 0; tick < ticks.Count; tick++)
             {
@@ -72,7 +72,7 @@ public sealed record ExpectedValues(
                 if (!ticks[tick].TryGetValue(name, out var actual))
                     failures.Add($"at '{point}': the map has no variable '{name}'");
                 else if (!Equals(expected, actual))
-                    failures.Add($"at '{point}' (tick {tick}): {name} is {Format(actual)}, expected {Format(expected)}");
+                    failures.Add($"at '{point}' (tick {tick}): {name} is {PackYaml.FormatValue(actual)}, expected {PackYaml.FormatValue(expected)}");
             }
         }
 
@@ -85,7 +85,7 @@ public sealed record ExpectedValues(
             }
             var actual = Distinct(ticks.Select(t => t[name]));
             if (!actual.SequenceEqual(expected))
-                failures.Add($"sequences: {name} is [{string.Join(", ", actual.Select(Format))}], expected [{string.Join(", ", expected.Select(Format))}]");
+                failures.Add($"sequences: {name} is [{string.Join(", ", actual.Select(PackYaml.FormatValue))}], expected [{string.Join(", ", expected.Select(PackYaml.FormatValue))}]");
         }
 
         return failures;
@@ -111,31 +111,6 @@ public sealed record ExpectedValues(
         }
         return distinct;
     }
-
-    /// <summary>Values as the decoder produces them: <see cref="long"/>, <see cref="bool"/> or null. Derived values can also be strings or fractions.</summary>
-    private static object? ParseValue(string? text) => text switch
-    {
-        null or "null" or "~" => null,
-        "true" => true,
-        "false" => false,
-        _ when text.StartsWith('-') && IsNumber(text[1..]) => -(long)PackYaml.ParseNumber(text[1..]),
-        _ when IsNumber(text) => (long)PackYaml.ParseNumber(text),
-        _ when double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) => d,
-        _ => text,
-    };
-
-    private static bool IsNumber(string text) =>
-        text.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
-            ? uint.TryParse(text.AsSpan(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out _)
-            : uint.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out _);
-
-    private static string Format(object? value) => value switch
-    {
-        null => "null",
-        bool b => b ? "true" : "false",
-        string s => $"'{s}'",
-        _ => Convert.ToString(value, CultureInfo.InvariantCulture)!,
-    };
 
     // YAML shape. Values are read as strings so hex like 0xFF parses the same everywhere.
     private sealed class ExpectedDto

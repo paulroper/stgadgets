@@ -1,0 +1,57 @@
+# Distance to the boss, whether the stage is scrolling, and the stage clear bonus.
+
+# Stage 1, solo, first credit; the stage is scrolling.
+start:
+  game.state: 0
+  game.flags: 0xE0
+  frame_counter: 1000
+  p1.flags: 0x80
+  p1.stock: 3
+  p1.continues: 0x100
+add: { frame_counter: 1 }
+
+scenarios:
+  distance to the boss:
+    - set: { stage.progress: 248 }
+      expect: { boss.at: 512, boss.progress: 0.484375, boss.eta: 73.4 }
+    - set: { stage.progress: 512 }
+      expect: { boss.progress: 1, boss.eta: 0 }
+    - set: { stage.progress: 600 }
+      expect: { boss.progress: 1, boss.eta: 0 }
+
+  stage 7's boss position isn't known:
+    - set: { loop: 1, stage.index: 6, stage.progress: 100 }
+      expect: { boss.at: null, boss.progress: null, boss.eta: null }
+
+  the scroll stops for more than 32 ticks:
+    - expect: { stage.ticks_since_scroll: 0, stage.scrolling: true }
+    - repeat: 32
+      expect: { stage.ticks_since_scroll: 32, stage.scrolling: true }
+    - expect: { stage.ticks_since_scroll: 33, stage.scrolling: false }
+    - set: { stage.progress: 1 }
+      expect: { stage.ticks_since_scroll: 0, stage.scrolling: true }
+
+  the stage clear bonus:
+    - expect: { p1.no_miss_bonus: 200000, p1.star_bonus: 0, p1.stage_clear_bonus: 200000 }
+    - set: { p1.stars_large: 3, p1.stars_small: 2 }
+      expect: { p1.star_bonus: 4000, p1.stage_clear_bonus: 204000 }
+    - set: { p1.deaths_stage: 1 }
+      expect: { p1.no_miss_bonus: 0, p1.stage_clear_bonus: 4000 }
+
+  the no-miss bonus by stage:
+    - set: { stage.index: 5 }
+      expect: { p1.no_miss_bonus: 700000, split.stage: 1-6 }
+    - set: { loop: 1, stage.index: 0 }
+      expect: { p1.no_miss_bonus: 2000000, split.stage: 2-1 }
+    - set: { stage.index: 6 }
+      expect: { p1.no_miss_bonus: 8000000, split.stage: 2-7 }
+
+  loop 1's ending isn't a stage:
+    - set: { stage.index: 5 }
+      expect: { p1.no_miss_bonus: 700000 }
+    - set: { stage.index: 6 }
+      expect: { p1.no_miss_bonus: null, p1.stage_clear_bonus: null }
+
+  nothing outside play:
+    - set: { game.state: 11, stage.progress: 248 }
+      expect: { boss.at: null, boss.progress: null, stage.scrolling: null, p1.stage_clear_bonus: null }

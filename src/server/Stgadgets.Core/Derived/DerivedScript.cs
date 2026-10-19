@@ -46,7 +46,7 @@ public sealed class DerivedScript
         var source = File.ReadAllText(path);
         try
         {
-            using var engine = CreateEngine(out var deadline);
+            using var engine = CreateEngine(TickLimit, out var deadline);
             var values = Functions(engine, deadline, source).Select(f => f.Value).ToList();
             return new DerivedScript(path, source, values);
         }
@@ -61,9 +61,11 @@ public sealed class DerivedScript
     /// made-up <paramref name="map"/> variables before it's returned, because the first calls into the engine cost
     /// several milliseconds, and that belongs at game start, not in the first ticks.
     /// </summary>
-    public DerivedEvaluator CreateEvaluator(MemoryMap map)
+    /// <param name="tickLimit">The most a tick may take: <see cref="TickLimit"/> in the game loop, or
+    /// <see cref="ReplayTickLimit"/> where timing doesn't matter.</param>
+    public DerivedEvaluator CreateEvaluator(MemoryMap map, TimeSpan? tickLimit = null)
     {
-        var engine = CreateEngine(out var deadline);
+        var engine = CreateEngine(tickLimit ?? TickLimit, out var deadline);
         var evaluator = new DerivedEvaluator(engine, Functions(engine, deadline, Source));
         foreach (byte fill in (byte[])[0x00, 0x01, 0x11, 0x01])   // vary the values so scripts take more of their branches
         {
@@ -76,9 +78,9 @@ public sealed class DerivedScript
 
     // Sandboxed: no .NET access and no I/O. Time, memory and recursion are bounded for each tick so a runaway script
     // can't stall the game loop: one frame is the most a tick may spend, and real scripts take microseconds.
-    private static Engine CreateEngine(out Deadline deadline)
+    private static Engine CreateEngine(TimeSpan tickLimit, out Deadline deadline)
     {
-        var limit = new Deadline(TickLimit);
+        var limit = new Deadline(tickLimit);
         deadline = limit;
         return new(options => options
             .Strict()
@@ -87,7 +89,14 @@ public sealed class DerivedScript
             .LimitRecursion(256));
     }
 
-    private static readonly TimeSpan TickLimit = TimeSpan.FromMilliseconds(16);
+    /// <summary>The most a tick may take in the game loop: one frame.</summary>
+    public static readonly TimeSpan TickLimit = TimeSpan.FromMilliseconds(16);
+
+    /// <summary>
+    /// The most a tick may take when replaying recordings or scenarios, where timing doesn't matter. It still stops a
+    /// runaway script, but a busy machine (tests running in parallel) can't fail a tick that's merely slow.
+    /// </summary>
+    public static readonly TimeSpan ReplayTickLimit = TimeSpan.FromSeconds(1);
 
     // Loading parses and runs the whole module, once, before the game loop uses it. Cold (the first script in the
     // process, while .NET is still compiling Jint) that takes tens of milliseconds, so it gets more time than a tick.
@@ -96,6 +105,7 @@ public sealed class DerivedScript
     private static List<(DerivedValue Value, Function Function)> Functions(Engine engine, Deadline deadline, string source)
     {
         engine.Modules.Add("derived", source);
+        var tickLimit = deadline.Limit;
         deadline.Limit = LoadLimit;
         deadline.Reset();
         JsValue module;
@@ -105,7 +115,7 @@ public sealed class DerivedScript
         }
         finally
         {
-            deadline.Limit = TickLimit;
+            deadline.Limit = tickLimit;
         }
         if (module is not ObjectInstance exports)
             throw new FormatException("must 'export default' an object of functions: { name: (v, prev) => value }");

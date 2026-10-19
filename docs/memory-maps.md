@@ -162,7 +162,7 @@ The list will grow as we add games.
 
 ## Derived values
 
-Some values follow from memory plus knowledge of the game: a table in ROM, a rule from the disassembly, or what happened on earlier frames. The map stays raw data, and these values go in the pack's `derived.js`. The server computes them each tick, straight after decoding, and publishes them like any other variable. Layouts just display them, and recordings check them in `expected.yaml` ([ADR 0012](decisions/0012-derived-values-in-javascript.md)).
+Some values follow from memory plus knowledge of the game: a table in ROM, a rule from the disassembly, or what happened on earlier frames. The map stays raw data, and these values go in the pack's `derived.js`. The server computes them each tick, straight after decoding, and publishes them like any other variable. Layouts just display them. Scenarios in the pack's `tests/derived/` check the rules ([testing derived values](packs.md#testing-derived-values)), and recordings check them against real play in `expected.yaml` ([ADR 0012](decisions/0012-derived-values-in-javascript.md)).
 
 `derived.js` default-exports an object. Each entry is a function `(v, prev) => value`, or `{ description, value }` when it's worth explaining (the description is shown in tooling, like a map variable's):
 

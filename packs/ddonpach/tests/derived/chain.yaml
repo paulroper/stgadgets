@@ -1,0 +1,51 @@
+# The chain, its gauge, and the points from each hit.
+
+# Stage 1, solo, first credit, ship B; no chain yet.
+start:
+  game.state: 0
+  game.flags: 0xE0
+  frame_counter: 1000
+  p1.flags: 0x80
+  p1.stock: 3
+  p1.continues: 0x100
+  p1.ship: 1
+  p1.score_digits: 1050
+  chain.timer_reload: 56
+add: { frame_counter: 1 }
+
+scenarios:
+  a hit starts a chain, and the gauge runs down:
+    - expect: { p1.chain: 0, p1.chain_gauge: 0, p1.hit_now: false, p1.hit_gain: null, p1.score_popup: null }
+    - set: { p1.hit_timer: 55, p1.hits: 1, p1.score_digits: 1060 }
+      expect: { p1.chain: 1, p1.chain_gauge: 1, p1.hit_now: true, p1.hit_recent: true, p1.hit_gain: 100, p1.hit_gain_age: 0, p1.score_popup: 100 }
+    - add: { p1.hit_timer: -1 }
+      repeat: 10
+      expect: { p1.chain: 1, p1.chain_gauge: 0.818, p1.hit_now: false, p1.hit_recent: false, p1.hit_gain: 100, p1.hit_gain_age: 10 }
+    - add: { p1.hit_timer: -1 }
+      repeat: 45
+      expect: { p1.hit_timer: 0, p1.chain: 0, p1.chain_gauge: 0, p1.max_hits: 0 }
+
+  the latest hit's points show for about a second, and are kept until the next:
+    - expect: { p1.score_popup: null }
+    - set: { p1.hit_timer: 55, p1.hits: 1, p1.score_digits: 1060 }
+      expect: { p1.score_popup: 100 }
+    - repeat: 59
+      expect: { p1.hit_gain_age: 59, p1.score_popup: 100 }
+    - expect: { p1.hit_gain_age: 60, p1.score_popup: null, p1.hit_gain: 100 }
+    - set: { p1.hit_timer: 56, p1.hits: 2, p1.score_digits: 1080 }
+      expect: { p1.hit_gain: 200, p1.hit_gain_age: 0, p1.score_popup: 200 }
+
+  points that land on the tick after the hit still count:
+    - expect: { p1.hit_gain: null }
+    - set: { p1.hit_timer: 55, p1.hits: 1 }
+      expect: { p1.hit_now: true, p1.hit_gain: null }
+    - set: { p1.hit_timer: 54, p1.score_digits: 1060 }
+      expect: { p1.hit_now: false, p1.hit_recent: true, p1.hit_gain: 100 }
+
+  points without a hit aren't a hit's:
+    - set: { p1.score_digits: 1100 }
+      expect: { p1.hit_gain: null, p1.score_popup: null }
+
+  nothing outside play:
+    - set: { game.state: 11, p1.hit_timer: 55, p1.hits: 1 }
+      expect: { p1.chain: null, p1.chain_gauge: null, p1.hit_now: null, p1.hit_gain: null }

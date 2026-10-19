@@ -36,4 +36,33 @@ public static class PackYaml
         text.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
             ? uint.Parse(text.AsSpan(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture)
             : uint.Parse(text, CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// A value in a pack's test files, as the decoder and derived.js produce them: <see cref="long"/>, <see cref="bool"/>
+    /// or null. Derived values can also be strings or fractions (<see cref="double"/>).
+    /// </summary>
+    public static object? ParseValue(string? text) => text switch
+    {
+        null or "null" or "~" => null,
+        "true" => true,
+        "false" => false,
+        _ when text.StartsWith('-') && IsNumber(text[1..]) => -(long)ParseNumber(text[1..]),
+        _ when IsNumber(text) => (long)ParseNumber(text),
+        _ when double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) => d,
+        _ => text,
+    };
+
+    /// <summary>A value for a message, in the form <see cref="ParseValue"/> reads.</summary>
+    public static string FormatValue(object? value) => value switch
+    {
+        null => "null",
+        bool b => b ? "true" : "false",
+        string s => $"'{s}'",
+        _ => Convert.ToString(value, CultureInfo.InvariantCulture)!,
+    };
+
+    private static bool IsNumber(string text) =>
+        text.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+            ? uint.TryParse(text.AsSpan(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out _)
+            : uint.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out _);
 }

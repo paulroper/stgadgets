@@ -36,4 +36,14 @@ public sealed record Pack(
             return Directory.Exists(path) ? Directory.EnumerateDirectories(path).Order() : [];
         }
     }
+
+    /// <summary>The files under tests/derived/, each a set of scenarios for derived.js.</summary>
+    public IEnumerable<string> DerivedScenarios
+    {
+        get
+        {
+            var path = Path.Combine(DirectoryPath, "tests", "derived");
+            return Directory.Exists(path) ? Directory.EnumerateFiles(path, "*.yaml").Order() : [];
+        }
+    }
 }

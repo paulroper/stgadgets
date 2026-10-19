@@ -1,0 +1,53 @@
+# Bees: the count this stage, what the next is worth, perfect stages, and each stage's count this loop.
+
+# Stage 1, solo, first credit; no bees yet.
+start:
+  game.state: 0
+  game.flags: 0xE0
+  frame_counter: 1000
+  p1.flags: 0x80
+  p1.stock: 3
+  p1.continues: 0x100
+add: { frame_counter: 1 }
+
+scenarios:
+  the next bee's value:
+    - expect: { bees.collected: 0, bees.total: 13, bees.next_value: 100, bees.perfect_possible: true, bees.perfect: 0 }
+    - set: { bees.stage: 3 }
+      expect: { bees.collected: 3, bees.next_value: 800 }
+    - set: { bees.perfect_stages: 2 }
+      expect: { bees.next_value: 2000 }
+    - set: { bees.stage: 12, bees.perfect_stages: 15 }
+      expect: { bees.next_value: 1000000 }
+
+  a perfect stage:
+    - set: { bees.stage: 13 }
+      expect: { bees.collected: 13, bees.next_value: null, bees.perfect_possible: true }
+
+  a death resets the count and rules out a perfect, until the next stage:
+    - set: { bees.stage: 5 }
+      expect: { bees.perfect_possible: true }
+    - set: { bees.stage: 0 }
+      expect: { bees.perfect_possible: false }
+    - set: { bees.stage: 1 }
+      expect: { bees.perfect_possible: false }
+    - set: { stage.index: 1, bees.stage: 0 }
+      expect: { bees.perfect_possible: true }
+
+  each stage's count is kept for the loop:
+    - set: { bees.stage: 13 }
+      expect: { bees.stage1: 13, bees.stage2: null }
+    - set: { stage.index: 1, bees.stage: 0 }
+      expect: { bees.stage1: 13, bees.stage2: 0, bees.stage3: null }
+    - set: { bees.stage: 7 }
+      expect: { bees.stage1: 13, bees.stage2: 7 }
+    - set: { game.state: 8 }
+      expect: { bees.collected: null, bees.stage1: 13, bees.stage2: 7 }
+    - set: { game.state: 0, loop: 1, stage.index: 0, bees.stage: 2 }
+      expect: { bees.stage1: 2, bees.stage2: null }
+
+  the counts are forgotten after the credit:
+    - set: { bees.stage: 13 }
+      expect: { bees.stage1: 13 }
+    - set: { game.state: 11 }
+      expect: { bees.stage1: null, bees.perfect: null, bees.collected: null }

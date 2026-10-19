@@ -1,0 +1,44 @@
+# The mystery ship: when it comes, and what the next hit scores (table at 0x1D54).
+
+# A wave in progress, player 1 up, the rack below its starting height.
+start:
+  game.mode: true
+  game.moving: true
+  player.data: 0x21
+  player.state: 0xFF
+  aliens_remaining: 55
+  rack.y: 0x70
+  saucer.timer: 0x600
+  saucer.score_ptr: 0x54
+
+scenarios:
+  counting down, held until the rack drops:
+    - set: { rack.y: 0x78 }
+      expect: { saucer.status: paused, saucer.appears_in: 1536 }
+    - set: { rack.y: 0x70, saucer.timer: 100 }
+      expect: { saucer.status: counting, saucer.appears_in: 100 }
+
+  due, then flying:
+    - set: { saucer.due: true }
+      expect: { saucer.status: due, saucer.appears_in: 0 }
+    - set: { saucer.active: true }
+      expect: { saucer.status: flying, saucer.appears_in: null }
+
+  no more mystery ships under 8 aliens:
+    - set: { aliens_remaining: 7 }
+      expect: { saucer.status: none, saucer.appears_in: null }
+
+  the next hit's score and the shot that scores 300:
+    - expect: { saucer.next_score: 50, saucer.shots_to_300: 8 }
+    - set: { saucer.score_ptr: 0x5B }
+      expect: { saucer.next_score: 300, saucer.shots_to_300: 1 }
+    - set: { saucer.score_ptr: 0x5C }
+      expect: { saucer.next_score: 100, saucer.shots_to_300: 15 }
+    - set: { saucer.score_ptr: 0x62 }
+      expect: { saucer.next_score: 100, saucer.shots_to_300: 9 }
+
+  a pointer outside the table, or no play:
+    - set: { saucer.score_ptr: 0x40 }
+      expect: { saucer.next_score: null, saucer.shots_to_300: null }
+    - set: { saucer.score_ptr: 0x54, game.mode: false }
+      expect: { saucer.status: null, saucer.next_score: null }

@@ -3,15 +3,26 @@
 
 import type { GameStates } from "@stgadgets/testing";
 
-const splits = (...done: { stage: string; frames: number; slow: number; points: number; deaths: number; bombs: number }[]) =>
+interface Split {
+  stage: string;
+  frames: number;
+  slow: number;
+  points: number;
+  deaths: number;
+  bombs: number;
+  continues?: number;
+}
+
+const splits = (...done: Split[]) =>
   JSON.stringify(
-    done.map(({ stage, frames, slow, points, deaths, bombs }) => ({
+    done.map(({ stage, frames, slow, points, deaths, bombs, continues = 0 }) => ({
       stage,
       frames,
       game_frames: Math.round(frames * (1 - slow)),
       points,
       deaths,
       bombs,
+      continues,
     })),
   );
 
@@ -86,6 +97,7 @@ const chaining = {
   "split.points": 10500,
   "split.deaths": 0,
   "split.bombs": 0,
+  "split.continues": 0,
 } satisfies GameStates[string];
 
 /** Nothing in play: derived values are null, and memory holds the last game's leftovers. */
@@ -201,6 +213,13 @@ export default {
     "loop2.possible": false,
     "loop2.by_deaths": false,
     "split.stage": "1-5",
+    "split.done": splits(
+      { stage: "1-1", frames: 8410, slow: 0.04, points: 3120400, deaths: 1, bombs: 0 },
+      { stage: "1-2", frames: 9022, slow: 0.11, points: 5870150, deaths: 1, bombs: 1 },
+      { stage: "1-3", frames: 9675, slow: 0.08, points: 4902410, deaths: 0, bombs: 2 },
+      { stage: "1-4", frames: 9320, slow: 0.13, points: 4204330, deaths: 2, bombs: 3, continues: 1 },
+    ),
+    "split.continues": 0,
   },
 
   /** The continue screen after the last life: values that last the whole credit are kept. */
@@ -222,12 +241,14 @@ export default {
     "loop2.by_hits": false,
     "loop2.by_score": false,
     "loop2.by_bees": false,
+    "split.stage": "1-1",
     "split.done": "[]",
     "split.frames": 1981,
     "split.game_frames": 1981,
     "split.points": 55800,
     "split.deaths": 3,
     "split.bombs": 1,
+    "split.continues": 0,
   },
 
   /** Paused, in the game or the emulator. */

@@ -17,6 +17,7 @@ packs/<parent-romset>/
     layout.tsx               # default export: the pack's layout (optional)
     gadgets/                 # the pack's own React components (optional)
   tests/
+    derived/*.yaml           # scenarios for derived.js: made-up ticks and the values they must produce (optional)
     states.ts                # named game states for testing the UI without an emulator (optional)
     *.test.tsx               # the UI's tests (optional)
   recordings/
@@ -133,6 +134,52 @@ sequences:                                  # every distinct value, in order, ov
 
 `dotnet test src/server` replays every local recording of every pack through the pack's map and reports each mismatch (with no recordings present, there's nothing to check and it passes), for example `at 'player hit (1st death)' (tick 587): player.state is 0, expected 1`. A `stgadgets pack test <dir>` command for pack authors outside this repository is planned.
 
+### Testing derived values
+
+`derived.js` holds the game's rules, so each rule gets **scenarios**: short runs of made-up ticks of map variables,
+and the derived values they must produce. They're committed, they need no recording, and they can reach cases that
+are hard to play into (a third death with a 300-hit chain, very hard rank, a pause of exactly 30 frames). They
+describe behaviour, not the script engine, so they'd also check a port of `derived.js` to another language.
+
+Each file in `tests/derived/` covers one area of the game, such as `rank.yaml`:
+
+```yaml
+# Stage 1 on normal, solo, first credit, ship B; three lives.
+start:                       # map variables on every scenario's first tick; any not set are 0
+  game.state: 0
+  p1.flags: 0x80
+  p1.stock: 3
+  p1.continues: 0x100
+  p1.ship: 1
+  rank: 25
+add: { frame_counter: 1 }    # added on every tick after the first, in every scenario
+
+scenarios:
+  a power-up raises rank, which catches up as the stage scrolls:
+    - expect: { rank.model: 25 }
+    - set: { p1.shot_power: 1, p1.laser_power: 1 }
+      expect: { rank.model: 28, rank.heading_to: 28, rank.change_reason: ship & power +3 }
+    - set: { rank: 28 }
+      expect: { rank.heading_to: null }
+```
+
+- A scenario is a list of steps, and each step is at least one tick. **`set`** changes map variables on the step's
+  first tick; the others keep their values. **`add`** adds to map variables on each of the step's ticks, on top of the
+  file's `add` (use `-1` to cancel it, e.g. to hold a frame counter still). **`repeat`** makes the step last that many
+  ticks. **`expect`** is checked on the step's last tick, and can name map variables as well as derived values.
+- Values are as decoded: a BCD score is its decimal value, a `bool` is `true` or `false`. A fraction matches to the
+  decimal places it's written with, so `73.4` matches `73.396224`.
+- Every scenario starts afresh, with no previous tick. Values that compare with the previous tick, such as a hit or a
+  change in rank, need a tick before the change: start such a scenario with a step that only expects.
+- Setting a derived value, or naming a variable that doesn't exist, is reported, and so is a scenario that expects
+  nothing.
+
+`dotnet test src/server` runs every pack's scenarios, one test per file, through the same engine as the server:
+
+```
+'a power-up raises rank, which catches up as the stage scrolls' step 2 (tick 1): rank.heading_to is null, expected 28
+```
+
 ### Testing the UI
 
 A pack's UI is tested against **game states**: named sets of values, as the server would send them on one tick, so
@@ -198,5 +245,6 @@ where to find addresses, attribution and licensing, choosing gadgets, and the bu
 3. Record a session with markers at the events you care about, find or confirm addresses, and write its `expected.yaml`. The `game-recording` skill walks through this.
 4. Optionally, add `derived.js` for values that follow from memory plus knowledge of the game, so the layout only has to display them.
 5. Optionally, add `ui/layout.tsx`. Until then the generic layout is used.
-6. If you added a UI, add game states and tests for it in `tests/` ([testing the UI](#testing-the-ui)).
+6. If you added `derived.js`, add scenarios for its rules in `tests/derived/` ([testing derived values](#testing-derived-values)).
+   If you added a UI, add game states and tests for it in `tests/` ([testing the UI](#testing-the-ui)).
 7. Run `dotnet test src/server` and, if you added a UI, `npm run build` and `npm test` in `src/ui`.

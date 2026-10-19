@@ -1,0 +1,32 @@
+# The march tempo (tables at 0x1A11 and 0x1A21), and kills until it speeds up.
+
+# A wave in progress, player 1 up.
+start:
+  game.mode: true
+  game.moving: true
+  player.data: 0x21
+  player.state: 0xFF
+  aliens_remaining: 55
+  rack.y: 0x70
+
+scenarios:
+  the march speeds up as aliens are killed:
+    - expect: { fleet.tempo: 52, fleet.speedup_in: 6 }
+    - set: { aliens_remaining: 50 }
+      expect: { fleet.tempo: 52, fleet.speedup_in: 1 }
+    - set: { aliens_remaining: 49 }
+      expect: { fleet.tempo: 46, fleet.speedup_in: 7 }
+    - set: { aliens_remaining: 8 }
+      expect: { fleet.tempo: 16, fleet.speedup_in: 1 }
+    - set: { aliens_remaining: 2 }
+      expect: { fleet.tempo: 7, fleet.speedup_in: 1 }
+
+  the last alien is the fastest:
+    - set: { aliens_remaining: 1 }
+      expect: { fleet.tempo: 5, fleet.speedup_in: null }
+
+  no tempo with no aliens, or outside play:
+    - set: { aliens_remaining: 0 }
+      expect: { fleet.tempo: null, fleet.speedup_in: null }
+    - set: { aliens_remaining: 55, game.moving: false }
+      expect: { fleet.tempo: null, fleet.speedup_in: null }
