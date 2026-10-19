@@ -166,3 +166,18 @@ whether each side fits:
 ```
 
 Firefox lays out text slightly differently from the overlay's webview, so confirm the final look in a snapshot.
+
+### Looking at game states
+
+To see the layout at a moment that's hard to reach in play, show one of the pack's game states
+([testing the UI](packs.md#testing-the-ui)) instead of the running game. It needs neither the server nor an emulator:
+
+```sh
+cd src/ui
+npm run screenshot -- --state ddonpach/bossFight    # one state, at the three default sizes
+npm run screenshot -- --state ddonpach 1512x917     # every state of the pack, at one size
+```
+
+Each picture is saved as `src/ui/screenshots/<pack>-<state>-<size>.png`. In `npm run dev`, open
+`/?state=ddonpach/bossFight` to see a state in a browser, with hot reload. Looking at every state after a change shows
+each gadget in context, and catches states whose values don't add up.

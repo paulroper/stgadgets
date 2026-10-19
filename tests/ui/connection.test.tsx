@@ -1,4 +1,4 @@
-import { act, screen } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { root, startApp } from "./fakeServer";
 
@@ -78,6 +78,21 @@ describe("losing the server", () => {
 
     server.startGame("no-such-pack", { "p1.score": 300 });
     expect(screen.getByText("0300")).toBeDefined();
+  });
+});
+
+describe("showing a game state in development", () => {
+  it("shows a pack's game state without connecting to the server", async () => {
+    const server = await startApp("/?state=invaders/lastInvader");
+
+    await waitFor(() => expect(screen.getByText("NO MORE")).toBeDefined());
+    expect(server.sockets).toHaveLength(0);
+  });
+
+  it("lists the pack's game states when there's no such state", async () => {
+    await startApp("/?state=invaders/noSuchState");
+
+    await waitFor(() => expect(root().textContent).toMatch(/^No game state 'invaders\/noSuchState'\. Try invaders\/saucerFlying, /));
   });
 });
 

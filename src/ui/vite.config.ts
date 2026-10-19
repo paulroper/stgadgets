@@ -3,19 +3,25 @@ import path from "node:path";
 import { defineConfig, searchForWorkspaceRoot, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 
-const packsDir = path.resolve(import.meta.dirname, "../../packs");
-const testsDir = path.resolve(import.meta.dirname, "../../tests/ui");
+const repoDir = path.resolve(import.meta.dirname, "../..");
+const packsDir = path.join(repoDir, "packs");
+const testsDir = path.join(repoDir, "tests/ui");
 
 // What a pack's UI may import besides its own files (docs/packs.md). Keep in sync with tsconfig.json.
 const packApi = {
   "@stgadgets/sdk": path.resolve(import.meta.dirname, "src/sdk/index.ts"),
   "@stgadgets/gadgets": path.resolve(import.meta.dirname, "src/gadgets/index.ts"),
 };
-const allowedInPacks = new Set(["react", "react/jsx-runtime", "react/jsx-dev-runtime", ...Object.keys(packApi)]);
+const allowedInPackUi = ["react", "react/jsx-runtime", "react/jsx-dev-runtime", ...Object.keys(packApi)];
+
+// What a pack's tests (packs/<id>/tests) may import besides that. @stgadgets/testing stands in for the test package
+// pack authors will install once packs can live outside this repository.
+const testingApi = { "@stgadgets/testing": path.join(testsDir, "testing.ts") };
+const allowedInPackTests = [...allowedInPackUi, "vitest", "@testing-library/react", ...Object.keys(testingApi)];
 
 /**
- * Fails the build when a pack's UI imports anything else, such as platform code by relative path, so packs stay
- * separable from the platform.
+ * Fails the build when a pack's UI or tests import anything else, such as platform code by relative path, so packs
+ * stay separable from the platform.
  */
 function packImportRule(): Plugin {
   return {
@@ -26,18 +32,21 @@ function packImportRule(): Plugin {
       if (!importerPath?.startsWith(packsDir + path.sep)) return null;
 
       // packs/<id>/...
-      const packRoot = path.join(packsDir, path.relative(packsDir, importerPath).split(path.sep)[0]);
+      const [pack, folder] = path.relative(packsDir, importerPath).split(path.sep);
+      const packRoot = path.join(packsDir, pack);
+      const allowedHere = folder === "tests" ? allowedInPackTests : allowedInPackUi;
+      const aliases = folder === "tests" ? { ...packApi, ...testingApi } : packApi;
       const target = path.resolve(path.dirname(importerPath), source);
       const allowed =
-        allowedInPacks.has(source) ||
-        Object.values(packApi).includes(source) ||   // already resolved by the alias
+        allowedHere.includes(source) ||
+        Object.values(aliases).includes(source) ||   // already resolved by the alias
         source.startsWith("\0") ||                    // Vite and plugin internals
         source.startsWith("/@") ||
         target.startsWith(packRoot + path.sep);       // its own files
       if (!allowed) {
         this.error(
-          `${path.relative(packsDir, importerPath)} imports "${source}". Pack UIs may import only ` +
-            `${[...allowedInPacks].join(", ")} and their own files.`,
+          `${path.relative(packsDir, importerPath)} imports "${source}". It may import only ` +
+            `${allowedHere.join(", ")} and its pack's own files.`,
         );
       }
       return null;
@@ -49,7 +58,7 @@ function packImportRule(): Plugin {
 export default defineConfig({
   plugins: [packImportRule(), react()],
   resolve: {
-    alias: packApi,
+    alias: { ...packApi, ...testingApi },
     // Packs and tests live outside this folder; give them our copies.
     dedupe: ["react", "react-dom", "vitest", "@testing-library/react", "@testing-library/dom"],
   },
@@ -58,9 +67,10 @@ export default defineConfig({
     proxy: { "/ws": { target: "ws://127.0.0.1:5199", ws: true } },
     fs: { allow: [searchForWorkspaceRoot(process.cwd()), packsDir, testsDir] },
   },
-  // UI tests live in tests/ui, mirroring src/ (docs/conventions.md).
+  // UI tests live in tests/ui, mirroring src/ (docs/conventions.md), and each pack's in packs/<id>/tests.
   test: {
-    dir: testsDir,
+    dir: repoDir,
+    include: ["tests/ui/**/*.test.{ts,tsx}", "packs/*/tests/**/*.test.{ts,tsx}"],
     environment: "jsdom",
   },
 });

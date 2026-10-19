@@ -33,7 +33,8 @@ export interface TickInfo {
 
 export type FrameListener = (vars: Vars, prev: Vars, info: TickInfo) => void;
 
-type Message =
+/** What the server sends. */
+export type ServerMessage =
   | { type: "status"; state: ConnectionState; detail?: string | null }
   | { type: "hello"; pack: string; game: GameInfo; values: Record<string, Value> }
   | { type: "tick"; seq: number; readAt: number; changed: Record<string, Value> };
@@ -55,7 +56,7 @@ export class StgadgetsClient {
   connect(url: string) {
     const socket = new WebSocket(url);
     this.socket = socket;
-    socket.onmessage = (event) => this.handle(JSON.parse(event.data) as Message);
+    socket.onmessage = (event) => this.receive(JSON.parse(event.data) as ServerMessage);
     socket.onclose = () => {
       this.update({ state: "disconnected", detail: "Can't reach the stgadgets server" });
       setTimeout(() => this.connect(url), RECONNECT_DELAY_MS);
@@ -79,7 +80,8 @@ export class StgadgetsClient {
     return () => void this.frameListeners.delete(listener);
   }
 
-  private handle(message: Message) {
+  /** Handles a message from the server. Also called directly to show a game state without one (src/devStates.ts). */
+  receive(message: ServerMessage) {
     switch (message.type) {
       case "status":
         this.update({ state: message.state, detail: message.detail ?? null });
