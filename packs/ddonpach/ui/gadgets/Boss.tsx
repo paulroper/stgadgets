@@ -12,7 +12,7 @@ export function Boss() {
 
   return (
     <div className={reached ? "gadget boss boss-here" : "gadget boss"}>
-      <div className="label">BOSS{stage ? ` · ${stage}` : ""}</div>
+      <div className="label">BOSS{stage && progress !== null ? ` · ${stage}` : ""}</div>
       <div className="value small">
         {progress === null ? "-" : reached ? "HERE!" : eta != null ? `in ~${Math.ceil(eta)} s` : `${Math.round(progress * 100)}%`}
       </div>

@@ -201,7 +201,8 @@ const players = Object.fromEntries(['p1', 'p2'].flatMap(p => [
   }],
 ]));
 
-// Per-stage splits for player 1: what to count each tick while the stage is being played.
+// Per-stage splits for player 1: what to count each tick. Most count only while the stage is being played, not on
+// the continue screen or loop 1's ending.
 const SPLIT_FIELDS = {
   // Counted when frame_counter moves, so ticks spent paused don't count.
   frames: { description: 'frames played', count: (v, prev) => v['game.frame_advance'] === 0 ? 0 : 1 + slowdownFrames(prev) },
@@ -209,18 +210,20 @@ const SPLIT_FIELDS = {
   points: { description: 'points scored', count: (v, prev) => prev['p1.score'] === null || v['p1.score'] === null ? 0 : Math.max(v['p1.score'] - prev['p1.score'], 0) },
   deaths: { description: 'deaths', count: v => v['p1.died'] ? 1 : 0 },
   bombs: { description: 'bombs used', count: v => v['p1.bombed'] ? 1 : 0 },
+  // Counted on the continue screen too, where the credit is taken.
+  continues: { description: 'continues used', anytime: true, count: (v, prev) => v['p1.continues'] > prev['p1.continues'] ? 1 : 0 },
 };
 
-// The current stage's split, one value per field. Each restarts at 0 when a new stage starts.
-const currentSplit = Object.fromEntries(Object.entries(SPLIT_FIELDS).map(([field, { description, count }]) => [
+// The open split's fields, one value per field. Each restarts at 0 when a new stage starts.
+const currentSplit = Object.fromEntries(Object.entries(SPLIT_FIELDS).map(([field, { description, anytime, count }]) => [
   `split.${field}`,
   {
-    description: `This stage's ${description}; kept through the continue screen. null outside play.`,
+    description: `The open split's ${description}, kept through continues. null outside a credit.`,
     value: (v, prev) => {
-      if (!v['game.in_progress']) return null;
-      const before = prev?.[`split.${field}`] ?? null;
-      if (v['split.stage'] === null || v['split.stage'] !== prev?.['split.stage']) return v['split.stage'] === null ? before : 0;
-      return before === null ? 0 : before + count(v, prev);
+      if (v['split.stage'] === null) return null;
+      if (v['split.stage'] !== prev?.['split.stage']) return 0;
+      const counting = anytime || (v['game.running'] && stageKey(v) !== null);
+      return prev[`split.${field}`] + (counting ? count(v, prev) : 0);
     },
   },
 ]));
@@ -339,8 +342,11 @@ export default {
   // --- Splits ------------------------------------------------------------------------------------------------------
 
   'split.stage': {
-    description: "The split being timed: '1-1' to '1-6', then '2-1' to '2-7'. null outside the stages.",
-    value: v => v['game.running'] ? stageKey(v) : null,
+    description: "The split being timed: '1-1' to '1-6', then '2-1' to '2-7'. It's open from the stage's start until the next stage starts, through continues and loop 1's ending. null outside a credit.",
+    value: (v, prev) => {
+      if (!v['game.in_progress']) return null;
+      return (v['game.running'] ? stageKey(v) : null) ?? prev?.['split.stage'] ?? null;
+    },
   },
   'p1.died': {
     description: 'Player 1 was hit this tick.',
@@ -352,12 +358,12 @@ export default {
   },
   ...currentSplit,
   'split.done': {
-    description: "Finished stages this credit, as JSON: [{ stage: '1-1', frames, game_frames, points, deaths, bombs }, ...]. A stage is added when the next one starts.",
+    description: "Finished stages this credit, as JSON: [{ stage: '1-1', frames, game_frames, points, deaths, bombs, continues }, ...]. A stage is added when the next one starts.",
     value: (v, prev) => {
       if (!v['game.in_progress']) return '[]';
       const done = prev?.['split.done'] ?? '[]';
       const finished = prev?.['split.stage'];
-      if (!finished || v['split.stage'] === finished || v['split.stage'] === null) return done;
+      if (!finished || v['split.stage'] === finished) return done;
       const split = { stage: finished };
       for (const field of Object.keys(SPLIT_FIELDS)) split[field] = prev[`split.${field}`];
       return JSON.stringify([...JSON.parse(done), split]);
