@@ -1,16 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { showState, type GameStates } from "./testing";
+import { gameStates, packsWithStates } from "../../src/ui/src/gameStates";
+import { showState } from "./testing";
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// Every pack's game states for tests (packs/<id>/tests/states.ts).
-const packStates = Object.entries(
-  import.meta.glob<GameStates>("../../packs/*/tests/states.ts", { eager: true, import: "default" }),
-).flatMap(([path, states]) =>
-  Object.entries(states).map(([state, values]) => ({ pack: path.split("/").at(-3)!, state, values })),
-);
+// Every game state of every pack (packs/<id>/tests/states.ts), computed with the pack's derived.js.
+const packStates = (
+  await Promise.all(packsWithStates.map(async (pack) => Object.entries(await gameStates(pack)).map(([state, values]) => ({ pack, state, values }))))
+).flat();
 
 describe.each(packStates)("pack state: $pack $state", ({ pack, values }) => {
   it("renders the pack's layout without errors", async () => {

@@ -1,30 +1,38 @@
-// What pack tests (packs/<id>/tests) import as @stgadgets/testing: show a pack's overlay in a given game state without
-// a server or an emulator, and find gadgets in it. It stands in for a test package that pack authors will install once
-// packs can live outside this repository.
+// What pack tests (packs/<id>/tests) import as @stgadgets/testing: show a pack's overlay in one of its game states
+// (packs/<id>/tests/states.ts) without a server or an emulator, and find gadgets in it. It stands in for a test package
+// that pack authors will install once packs can live outside this repository.
 
 import { waitFor } from "@testing-library/react";
+import { gameStates } from "../../src/ui/src/gameStates";
 import type { Vars } from "../../src/ui/src/sdk";
 import { root, startApp, type FakeServer } from "./fakeServer";
 
-export { root, startApp, type FakeServer };
+export type { GameStates, GameStateStep } from "../../src/ui/src/gameStates";
+export { gameStates, root, startApp, type FakeServer };
 
 /**
- * Named game states for a pack's tests (packs/<id>/tests/states.ts): each is every variable the overlay reads, map
- * and derived alike, as the server would send them on one tick.
+ * Starts the UI, has the fake server match `pack` with a game state's values on its first tick, and waits for the
+ * pack's layout to load. `state` is the name of one of the pack's states, or the values themselves. Further ticks can
+ * be sent with the returned server.
  */
-export type GameStates = Record<string, Vars>;
-
-/**
- * Starts the UI, has the fake server match `pack` with `values` on its first tick, and waits for the pack's layout
- * to load. Further ticks can be sent with the returned server.
- */
-export async function showState(pack: string, values: Vars) {
+export async function showState(pack: string, state: string | Vars) {
+  const values = typeof state === "string" ? await stateValues(pack, state) : state;
   const server = await startApp();
   server.startGame(pack, values);
   await waitFor(() => {
     if (!root().querySelector(".layout")) throw new Error(`The layout for ${pack} didn't load`);
   });
   return server;
+}
+
+/** Every variable in one of a pack's game states, computed from its map values with the pack's derived.js. */
+export async function stateValues(pack: string, state: string): Promise<Vars> {
+  const states = await gameStates(pack);
+  return states[state] ?? failWith(`No game state '${state}' for ${pack}. States: ${Object.keys(states).join(", ")}`);
+}
+
+function failWith(message: string): never {
+  throw new Error(message);
 }
 
 /**

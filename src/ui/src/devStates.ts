@@ -1,19 +1,23 @@
 // Shows a pack's game state (packs/<id>/tests/states.ts) without a server or an emulator, so a layout can be looked
 // at in any moment of the game: `?state=ddonpach/bossFight` in the dev server. Development only (main.tsx).
 
-import { client, type Vars } from "./sdk/client";
-
-const packStates = import.meta.glob<Record<string, Vars>>("../../../packs/*/tests/states.ts", { import: "default" });
+import { gameStates } from "./gameStates";
+import { client } from "./sdk/client";
 
 /** Does what the server does when it matches a game, with `spec` ("<pack>/<state>") as the first tick's values. */
 export async function showGameState(spec: string) {
   const [pack, name] = spec.split("/");
-  const load = packStates[`../../../packs/${pack}/tests/states.ts`];
-  const states = load ? await load() : {};
+  let states;
+  try {
+    states = await gameStates(pack);
+  } catch (error) {
+    client.receive({ type: "status", state: "no-pack", detail: (error as Error).message });
+    return;
+  }
+
   const values = name ? states[name] : undefined;
   if (!values) {
-    const known = Object.keys(states).map((state) => `${pack}/${state}`);
-    const detail = `No game state '${spec}'. ${known.length > 0 ? `Try ${known.join(", ")}` : `No states for '${pack}'`}`;
+    const detail = `No game state '${spec}'. Try ${Object.keys(states).map((state) => `${pack}/${state}`).join(", ")}`;
     client.receive({ type: "status", state: "no-pack", detail });
     return;
   }

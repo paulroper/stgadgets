@@ -29,7 +29,7 @@ public sealed class RecordCommandTests : IDisposable
 
     private (int ExitCode, string Output, string Error) Record(params string[] args)
     {
-        var providers = new Dictionary<string, ConnectProvider> { ["fake"] = endpoint => _emulator.Connect(endpoint) };
+        var providers = new Dictionary<string, ConnectProvider> { ["fake"] = (endpoint, _) => _emulator.Connect(endpoint) };
         var root = new RootCommand { new Command("recording") { RecordCommand.Create(providers) } };
         var (output, error) = (new StringWriter(), new StringWriter());
         var exitCode = root.Parse(["recording", "record", "--provider", "fake", .. args]).Invoke(new InvocationConfiguration { Output = output, Error = error });

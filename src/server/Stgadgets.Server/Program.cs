@@ -11,13 +11,16 @@ builder.WebHost.UseUrls("http://127.0.0.1:5199");
 
 string RepoPath(string key) => Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, builder.Configuration[key]!));
 
-builder.Services.AddSingleton(PackCatalog.LoadDirectory(RepoPath("Stgadgets:PacksPath")));
-// The emulator to read from (docs/providers.md): Stgadgets:Provider, and optionally where it listens.
+var packsPath = RepoPath("Stgadgets:PacksPath");
+builder.Services.AddSingleton(PackCatalog.LoadDirectory(packsPath));
+// The emulator to read from (docs/providers.md): Stgadgets:Provider, and optionally where it listens. Relative paths
+// in the endpoint, such as a recording to replay, are relative to the folder holding packs/: the repository's root.
 var providerId = builder.Configuration["Stgadgets:Provider"]
     ?? throw new InvalidOperationException($"Set Stgadgets:Provider to one of: {string.Join(", ", EmulatorProviders.All.Keys)}");
 if (!EmulatorProviders.All.ContainsKey(providerId))
     throw new InvalidOperationException($"Stgadgets:Provider is '{providerId}'; it must be one of: {string.Join(", ", EmulatorProviders.All.Keys)}");
-builder.Services.AddSingleton(_ => EmulatorProviders.Connect(providerId, builder.Configuration["Stgadgets:ProviderEndpoint"]));
+builder.Services.AddSingleton(_ =>
+    EmulatorProviders.Connect(providerId, builder.Configuration["Stgadgets:ProviderEndpoint"], Path.GetDirectoryName(packsPath)));
 builder.Services.AddSingleton<VariableBroadcaster>();
 builder.Services.AddHostedService<GameStateService>();
 

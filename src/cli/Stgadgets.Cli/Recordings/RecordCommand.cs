@@ -80,7 +80,7 @@ internal static class RecordCommand
                 ? new ProviderSettings(file.FullName, await File.ReadAllTextAsync(file.FullName, cancellationToken))
                 : pack?.ProviderSettings.GetValueOrDefault(providerId);
 
-            await using var emulator = providers[providerId](result.GetValue(endpoint));
+            await using var emulator = providers[providerId](result.GetValue(endpoint), Directory.GetCurrentDirectory());
             var content = await emulator.GetContentAsync(cancellationToken) ?? throw new UsageException($"{providerId}: no game loaded");
             if (pack is not null && !pack.Matches(content))
                 console.Error.WriteLine($"warning: {providerId} is running '{content.Romset}', which isn't {pack.Id}");

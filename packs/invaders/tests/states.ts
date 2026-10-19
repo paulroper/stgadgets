@@ -1,94 +1,52 @@
-// Game states for the overlay's tests: every variable the layout reads, as the server sends them (map and derived.js
-// alike). `saucerFlying` was taken from real play; the others start from it and change what that moment changes.
+// Game states for the overlay's tests and for looking at the layout (docs/packs.md#testing-the-ui). Each is a run of
+// ticks of map values; the pack's derived.js works out everything else, as the server would.
 
 import type { GameStates } from "@stgadgets/testing";
 
-/** Mid-wave with 15 invaders left: the mystery ship is flying and was just hit for 100. */
-const saucerFlying = {
-  "p1.score": 820,
-  "p1.score_popup": 100,
-  hiscore: 0,
-  credits: 1,
-  "p1.lives": 3,
-  "p1.kills": 40,
-  "p1.shots": 58,
-  "p1.accuracy": 40 / 58,
-  "fleet.aliens": 15,
-  "fleet.tempo": 21,
-  "fleet.sound_delay": 21,
-  "fleet.speedup_in": 3,
-  "saucer.status": "flying",
-  "saucer.appears_in": null,
-  "saucer.next_score": 100,
-  "saucer.shots_to_300": 9,
-} satisfies GameStates[string];
-
 export default {
-  saucerFlying,
-
-  /** A new wave: 55 invaders at the slowest march, and the mystery ship held until the rack drops. */
-  waveStart: {
-    ...saucerFlying,
+  // A new wave, with player 1 up and the rack just below its starting height.
+  start: {
+    hiscore: 0,
     "p1.score": 0,
-    "p1.score_popup": null,
-    "p1.kills": 0,
-    "p1.shots": 0,
-    "p1.accuracy": null,
-    "fleet.aliens": 55,
-    "fleet.tempo": 52,
-    "fleet.sound_delay": 52,
-    "fleet.speedup_in": 6,
-    "saucer.status": "paused",
-    "saucer.appears_in": 1536,
-    "saucer.next_score": 50,
-    "saucer.shots_to_300": 8,
-  },
-
-  /** The next shot scores 300 if it hits the mystery ship, which is due any moment. */
-  saucerJackpot: {
-    ...saucerFlying,
-    "p1.score_popup": null,
-    "fleet.aliens": 22,
-    "fleet.tempo": 28,
-    "fleet.sound_delay": 34,
-    "fleet.speedup_in": 1,
-    "saucer.status": "due",
-    "saucer.appears_in": 0,
-    "saucer.next_score": 300,
-    "saucer.shots_to_300": 1,
-  },
-
-  /** One invader left: the march is at full speed and no more mystery ships come this wave. */
-  lastInvader: {
-    ...saucerFlying,
-    "p1.score_popup": null,
-    "p1.lives": 1,
-    "fleet.aliens": 1,
-    "fleet.tempo": 5,
-    "fleet.sound_delay": 5,
-    "fleet.speedup_in": null,
-    "saucer.status": "none",
-    "saucer.next_score": 150,
-    "saucer.shots_to_300": 11,
-  },
-
-  /** Game over: derived values are null outside play; the score and high score stay on screen. */
-  gameOver: {
-    "p1.score": 960,
-    "p1.score_popup": null,
-    hiscore: 960,
+    "p2.score": 0,
     credits: 1,
-    "p1.lives": null,
-    "p1.kills": 7,
-    "p1.shots": 12,
-    "p1.accuracy": 7 / 12,
-    "fleet.aliens": null,
-    "fleet.tempo": null,
-    "fleet.sound_delay": 16,
-    "fleet.speedup_in": null,
-    "saucer.status": null,
-    "saucer.appears_in": null,
-    "saucer.next_score": null,
-    "saucer.shots_to_300": null,
+    aliens_remaining: 55,
+    "p1.ships_reserve": 2,
+    "player.state": 0xff,
+    "player.data": 0x21,
+    "fleet.sound_delay": 52,
+    "rack.y": 0x70,
+    "saucer.timer": 0x600,
+    "saucer.due": false,
+    "saucer.active": false,
+    "saucer.score_ptr": 0x54,
+    "game.mode": true,
+    "game.moving": true,
+    "shots.count": 0,
+  },
+
+  states: {
+    /** 15 invaders left: 40 hit with 58 shots, and the mystery ship is flying and was just hit for 100. */
+    saucerFlying: [
+      {},
+      { set: { aliens_remaining: 15, "shots.count": 58, "p1.score": 720, "fleet.sound_delay": 21, "saucer.score_ptr": 0x56, "saucer.active": true }, repeat: 30 },
+      { set: { "p1.score": 820 } },
+    ],
+
+    /** A new wave: the slowest march, and the mystery ship held until the rack drops. */
+    waveStart: [{ set: { "rack.y": 0x78 } }],
+
+    /** The next shot scores 300 if it hits the mystery ship, which is due any moment; the march has just sped up. */
+    saucerJackpot: [{}, { set: { aliens_remaining: 22, "shots.count": 45, "fleet.sound_delay": 34, "saucer.due": true, "saucer.score_ptr": 0x5b } }],
+
+    /** One invader left, on the last life: the march is at full speed and no more mystery ships come this wave. */
+    lastInvader: [{}, { set: { aliens_remaining: 1, "shots.count": 90, "p1.ships_reserve": 0, "fleet.sound_delay": 5 } }],
+
+    /** Game over: play is held still, and the score and the new high score stay on screen. */
+    gameOver: [
+      {},
+      { set: { aliens_remaining: 40, "shots.count": 25, "p1.score": 960 }, repeat: 120 },
+      { set: { "game.moving": false, hiscore: 960, "p1.ships_reserve": 0 } },
+    ],
   },
 } satisfies GameStates;

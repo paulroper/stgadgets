@@ -27,7 +27,7 @@ async function gameStatePages(spec: string, vite: ViteDevServer): Promise<Page[]
   const [pack, state] = spec.split("/");
   const file = path.resolve(import.meta.dirname, "../../packs", pack, "tests/states.ts");
   if (!existsSync(file)) throw new Error(`No game states for '${pack}' (${file})`);
-  const states = Object.keys((await vite.ssrLoadModule(file)).default as Record<string, unknown>);
+  const states = Object.keys(((await vite.ssrLoadModule(file)).default as { states: Record<string, unknown> }).states);
   if (state && !states.includes(state)) throw new Error(`No game state '${spec}'. Try ${states.map((s) => `${pack}/${s}`).join(", ")}`);
 
   const base = vite.resolvedUrls!.local[0];

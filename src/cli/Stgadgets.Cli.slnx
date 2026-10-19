@@ -3,6 +3,8 @@
   <Project Path="../../tests/lib/Stgadgets.Core.Tests/Stgadgets.Core.Tests.csproj" />
   <Project Path="../lib/providers/Stgadgets.Providers/Stgadgets.Providers.csproj" />
   <Project Path="../lib/providers/Stgadgets.Providers.RetroArch/Stgadgets.Providers.RetroArch.csproj" />
+  <Project Path="../lib/providers/Stgadgets.Providers.Replay/Stgadgets.Providers.Replay.csproj" />
+  <Project Path="../../tests/lib/providers/Stgadgets.Providers.Replay.Tests/Stgadgets.Providers.Replay.Tests.csproj" />
   <Project Path="Stgadgets.Cli/Stgadgets.Cli.csproj" />
   <Project Path="../../tests/cli/Stgadgets.Cli.Tests/Stgadgets.Cli.Tests.csproj" />
 </Solution>
