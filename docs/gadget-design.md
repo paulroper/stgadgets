@@ -1,6 +1,6 @@
 # Gadget design language
 
-How gadgets should look and feel. This applies to the standard gadgets in `src/ui` and to the gadgets that ship in packs. [Gadgets & layouts](gadgets.md) covers the API, and [Keeping gadgets fast](gadgets.md#keeping-gadgets-fast) still comes first: nothing here is worth a frame of lag.
+How gadgets should look and feel ([ADR 0013](decisions/0013-no-game-assets-in-gadgets.md), [ADR 0014](decisions/0014-gadget-styling-and-layout.md)). This applies to the standard gadgets in `src/ui` and to the gadgets that ship in packs. [Gadgets & layouts](gadgets.md) covers the API, and [Keeping gadgets fast](gadgets.md#keeping-gadgets-fast) still comes first: nothing here is worth a frame of lag.
 
 Four principles:
 
@@ -44,6 +44,7 @@ A gadget's own classes are prefixed with its name (`.bees-stage`, `.rank-key`) a
 ### Styling rules
 
 - **Plain CSS and custom properties.** No CSS framework. Pack UIs will one day be built separately and loaded at runtime, and variables cross that boundary with no build step: a third-party pack just writes `var(--good)`.
+- **Size everything in `rem`**, so it scales with the layout. Only hairlines (1px borders and outlines) use `px`. Use `em` only for something that should follow the text it sits in, like the score gain popup.
 - **Use tokens, never raw values.** Colours, sizes, spacing, corner radii and animation timing are variables in `styles.css`. If a gadget needs a value no token covers, add a token rather than a literal. Tints of a token use `color-mix()`, e.g. `color-mix(in srgb, var(--live) 40%, transparent)`.
 - **The platform sets the layout's look for every pack.** Text sizes, spacing and side widths are global tokens, so every layout matches. A pack overrides one only when its game really needs it, by setting the token on its layout's root element. It doesn't override `.panel` or `.gadget` rules.
 - **Packs win.** The platform's styles are in `@layer platform`. A pack's CSS is unlayered, so it always beats the platform's, whatever order the files load in.
@@ -68,7 +69,8 @@ A layout puts panels of gadgets beside the game picture and never over it. Verti
 ```
 
 - **The page is a grid:** `left game right`. The game's column takes the space that's left and stays empty.
-- **Panels on one side share its width**, so their edges line up. Each side is at least `--left-min-width` or `--right-min-width` wide (275px), and grows if a gadget needs more.
+- **Panels on one side share its width**, so their edges line up. Each side is at least `--left-min-width` or `--right-min-width` wide (about 17rem), and grows if a gadget needs more.
+- **The layout scales with the window's height**, which is what sizes a vertical game's picture. The root font size is `clamp(12px, 1.75vh, 24px)`, so 1rem is 16px in a 917px-tall window, and everything sized in rem follows. Check other sizes with `npm run screenshot` ([pack development](pack-development.md#checking-other-window-sizes)).
 - **Group gadgets into panels by topic:** scoring in one, the game's systems (rank, chain, bees) in another, timing and debug in a third.
 - **Put what you read most at the top**, and timing and debug gadgets at the bottom.
 
@@ -114,8 +116,8 @@ The overlay sits beside a game that needs the player's full attention. Anything 
 - **Size a gadget for everything it can show, not what it shows now.** Its size is decided by the game, not by the current frame.
 - **Lines don't come and go.** A note, a change indicator or a status line that is only sometimes shown keeps its space when it's empty. Leave the element in place with no text, or hide it with `visibility: hidden`, never by not rendering it.
 - **Values keep a fixed width.** Use tabular figures (the platform's `.value` does) and pad numbers to their maximum digits, as `Score` does. Text that swaps between states, such as `PAUSED` and `100%`, gets a `min-width` that fits the longest.
-- **Draw every pip, and fill some.** Bees draw all 13 and fill the collected ones, and power draws all 4 levels. A row whose length changes, such as kills until the next speed-up, draws its maximum and dims the rest.
-- **Lists reserve their rows.** If a game has 6 stages, a splits table has 6 rows from the start, with `-` in the ones not reached.
+- **Draw every pip, and fill some.** Bees draw all 13 and fill the collected ones, and power draws all 4 levels. A row that counts down, such as kills until the next speed-up, may shrink along its line, but the row keeps its height when it's empty (a `min-height` of one pip).
+- **Lists reserve their rows.** DoDonPachi's splits table has a row for every stage a credit can reach, 1-1 to 2-7, from the start, with `-` in the ones not reached. Rank lists all its parts, dimming those that are 0.
 - **Bars are always drawn**, empty when there's nothing to show.
 - **Animate with `transform` and `opacity` only.** They don't move anything else on the page.
 - **The exception:** a gadget whose variable isn't in the game's map renders nothing at all. That's decided once, when the game loads, not from frame to frame.
@@ -124,6 +126,7 @@ The overlay sits beside a game that needs the player's full attention. Anything 
 
 - [ ] Built from the platform's parts: `.gadget`, `.label`, `.value`, and `.unit`, `.bar`, `.pips` and `.note` where they fit
 - [ ] Only tokens in its CSS, no raw colours or sizes, and colours used for their shared meanings
+- [ ] Sizes in `rem` (only hairlines in `px`)
 - [ ] Shows `-` for a null value, and renders nothing if the variable isn't in the map
 - [ ] Reserves its full size up front: nothing appears, disappears or changes width while the game runs
 - [ ] Uses an icon wherever one reads faster than words, with an accessible name

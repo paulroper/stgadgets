@@ -129,6 +129,10 @@ Then each change goes:
    ```
 
    `dotnet run` opens the app and returns. Snapshots work a few seconds later, once the port answers.
+
+   A freshly started overlay takes its size from the emulator's window, and only finds it while it's on screen. If
+   RetroArch is fullscreen (in its own Space), bring it to the front once after restarting the overlay, or snapshots
+   come out at a default 400×300. The overlay keeps that size afterwards, even while hidden.
 3. Fetch `http://127.0.0.1:5198/snapshot` (add `?width=1000` for a smaller image) and look at it.
 
 The snapshot is the layout as the overlay draws it, at the emulator window's size, with live values from the running
@@ -137,3 +141,24 @@ without anyone looking at the screen. It shows the layout only, not the game und
 
 When a gadget needs a particular moment in the game (a boss, a death, a continue), ask whoever is playing to get
 there, or check the logic against a recording first and the look in a snapshot afterwards.
+
+### Checking other window sizes
+
+The layout scales with the window's height ([gadget design](gadget-design.md#layout)), so check it fits in small and
+large windows too, without resizing the emulator. With the server running a game:
+
+```sh
+cd src/ui
+npx playwright install firefox     # once
+npm run screenshot                  # 1024x600, 1512x917 and 2560x1440
+npm run screenshot -- 1280x720      # or any sizes
+```
+
+It opens the layout in a headless Firefox at each size, saves `src/ui/screenshots/<size>.png` (git-ignored), and prints
+whether each side fits:
+
+```
+1024x600: 1rem = 12px; layout-left 206px wide, overflows by 45px; layout-right 206px wide, fits
+```
+
+Firefox lays out text slightly differently from the overlay's webview, so confirm the final look in a snapshot.
