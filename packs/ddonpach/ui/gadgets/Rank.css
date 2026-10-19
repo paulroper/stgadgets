@@ -4,7 +4,7 @@
 }
 
 .rank-change {
-  font-size: var(--value-small-size);
+  display: inline-block;
   animation: rise-in var(--motion);
 }
 
@@ -29,6 +29,10 @@
   align-items: center;
   gap: 0.375rem;
   line-height: 1.6;
+}
+
+.rank-part-none {
+  opacity: 0.5;
 }
 
 .rank-part-value {

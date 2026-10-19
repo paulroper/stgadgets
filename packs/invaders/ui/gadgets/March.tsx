@@ -25,20 +25,18 @@ export function March() {
         <div className="bar">
           <div className="bar-fill march-fill" style={{ width: `${Math.max(speed, 0.03) * 100}%` }} />
         </div>
-        {gameDelay != null && gameDelay !== tempo && <div className="note">game catching up: {gameDelay}</div>}
+        <div className="note">{gameDelay != null && gameDelay !== tempo && `game catching up: ${gameDelay}`}</div>
       </div>
       <div className="gadget">
         <div className="label">SPEED-UP IN</div>
         <div className="value">
           {speedupIn !== null ? `${speedupIn} ${speedupIn === 1 ? "KILL" : "KILLS"}` : tempo !== null ? "MAX" : "-"}
         </div>
-        {speedupIn !== null && (
-          <div className="pips">
-            {Array.from({ length: speedupIn }, (_, i) => (
-              <span key={i} className={i === 0 ? "march-pip next" : "march-pip"} />
-            ))}
-          </div>
-        )}
+        <div className="pips march-pips">
+          {Array.from({ length: speedupIn ?? 0 }, (_, i) => (
+            <span key={i} className={i === 0 ? "march-pip next" : "march-pip"} />
+          ))}
+        </div>
       </div>
     </>
   );

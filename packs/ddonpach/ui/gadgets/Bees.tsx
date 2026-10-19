@@ -15,7 +15,7 @@ function useStageBees() {
   } as Record<number, number | null | undefined>;
 }
 
-/** Bees this stage out of 13, what the next is worth, and each stage's count this loop. */
+/** Bees this stage out of 13, what the next is worth, and each stage's count this loop (stage 7 is loop 2's). */
 export function Bees() {
   const collected = useVar<number | null>("bees.collected");
   const total = useVar<number | null>("bees.total");
@@ -40,15 +40,20 @@ export function Bees() {
           <span key={i} className={collected !== null && i < collected ? "bee on" : "bee"} />
         ))}
       </div>
-      {collected !== null && (
-        <div className="note">
-          {collected >= of ? "PERFECT!" : possible === false ? "no perfect this stage" : next != null ? `next +${next.toLocaleString("en")}` : ""}
-        </div>
-      )}
+      <div className="note">
+        {collected === null
+          ? ""
+          : collected >= of
+            ? "PERFECT!"
+            : possible === false
+              ? "no perfect this stage"
+              : next != null
+                ? `next +${next.toLocaleString("en")}`
+                : ""}
+      </div>
       <div className="bees-stages">
         {STAGES.map((n) => {
           const count = byStage[n];
-          if (count == null && n === 7) return null;
           return (
             <span
               key={n}
@@ -61,7 +66,7 @@ export function Bees() {
           );
         })}
       </div>
-      {perfect != null && <div className="note">perfect stages {perfect}</div>}
+      <div className="note">{perfect != null && `perfect stages ${perfect}`}</div>
     </div>
   );
 }

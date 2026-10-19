@@ -21,6 +21,10 @@
   padding-left: 0;
 }
 
+.splits-ahead td {
+  color: var(--dim);
+}
+
 .splits-current td {
   color: var(--live);
 }

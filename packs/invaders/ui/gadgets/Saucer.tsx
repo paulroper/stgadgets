@@ -28,13 +28,13 @@ export function Saucer() {
   const appearsIn = useVar<number | null>("saucer.appears_in");
   const nextScore = useVar<number | null>("saucer.next_score");
   const shotsTo300 = useVar<number | null>("saucer.shots_to_300");
-  if (status === undefined || status === null) return null;
+  if (status === undefined) return null;
 
   const counting = (status === "counting" || status === "paused") && appearsIn != null;
 
   return (
     <>
-      <div className={`gadget saucer saucer-${status}`}>
+      <div className={`gadget saucer saucer-${status ?? "unknown"}`}>
         <div className="label">MYSTERY SHIP</div>
         <div className="value saucer-headline">
           {counting ? (
@@ -42,29 +42,29 @@ export function Saucer() {
               {(appearsIn / FRAMES_PER_SECOND).toFixed(1)}
               <span className="unit"> s</span>
             </>
+          ) : status === null ? (
+            "-"
           ) : (
             headline[status]
           )}
         </div>
-        {counting && (
-          <div className="bar">
-            <div className="bar-fill" style={{ width: `${Math.min(appearsIn / TIMER_RELOAD, 1) * 100}%` }} />
-          </div>
-        )}
-        {note[status] && <div className="note">{note[status]}</div>}
-      </div>
-      {nextScore != null && shotsTo300 != null && (
-        <div className="gadget">
-          <div className="label">NEXT HIT</div>
-          <div className={nextScore === 300 ? "value saucer-300" : "value"}>{nextScore}</div>
-          <div className="note">{shotsTo300 === 1 ? "300 on this shot!" : `300 on shot ${shotsTo300}`}</div>
-          <div className="pips saucer-shots">
-            {Array.from({ length: shotsTo300 }, (_, i) => (
-              <span key={i} className={i === shotsTo300 - 1 ? "saucer-shot jackpot" : "saucer-shot"} />
-            ))}
-          </div>
+        <div className="bar">
+          {counting && <div className="bar-fill" style={{ width: `${Math.min(appearsIn / TIMER_RELOAD, 1) * 100}%` }} />}
         </div>
-      )}
+        <div className="note">{status && note[status]}</div>
+      </div>
+      <div className="gadget">
+        <div className="label">NEXT HIT</div>
+        <div className={nextScore === 300 ? "value saucer-300" : "value"}>{nextScore ?? "-"}</div>
+        <div className="note">
+          {shotsTo300 == null ? "" : shotsTo300 === 1 ? "300 on this shot!" : `300 on shot ${shotsTo300}`}
+        </div>
+        <div className="pips saucer-shots">
+          {Array.from({ length: shotsTo300 ?? 0 }, (_, i) => (
+            <span key={i} className={i === shotsTo300! - 1 ? "saucer-shot jackpot" : "saucer-shot"} />
+          ))}
+        </div>
+      </div>
     </>
   );
 }

@@ -12,8 +12,9 @@ import { StageClear } from "./gadgets/StageClear";
 import "./layout.css";
 
 /**
- * DoDonPachi, either side of the vertical game. Left: score and chain, the ship, rank, bees and the second loop.
- * Right: distance to the boss at the top; game speed beside the overlay's own latency, then stage splits, at the bottom.
+ * DoDonPachi, either side of the vertical game. Left: score and chain, the ship, rank and bees.
+ * Right: distance to the boss and the second loop at the top; game speed beside the overlay's own latency, then stage
+ * splits, at the bottom.
  */
 export default function DoDonPachi() {
   return (
@@ -32,12 +33,14 @@ export default function DoDonPachi() {
         <div className="panel">
           <Rank />
           <Bees />
-          <SecondLoop />
         </div>
       </div>
       <div className="layout-right">
         <div className="panel">
           <Boss />
+        </div>
+        <div className="panel">
+          <SecondLoop />
         </div>
         <div className="layout-bottom">
           <div className="panel ddonpach-timing">

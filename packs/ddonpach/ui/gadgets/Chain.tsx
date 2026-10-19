@@ -18,7 +18,7 @@ export function Chain() {
       <div className="bar">
         <div className="bar-fill" style={{ width: `${(gauge ?? 0) * 100}%` }} />
       </div>
-      {chain !== null && best != null && <div className="note">best {best}</div>}
+      <div className="note">{chain !== null && best != null && `best ${best}`}</div>
     </div>
   );
 }

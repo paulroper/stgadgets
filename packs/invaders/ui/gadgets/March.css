@@ -3,6 +3,10 @@
   transition: width 120ms linear;
 }
 
+.march-pips {
+  min-height: 0.5rem; /* a pip's height, so the row keeps its space when empty */
+}
+
 .march-pip {
   width: 0.75rem;
   height: 0.5rem;

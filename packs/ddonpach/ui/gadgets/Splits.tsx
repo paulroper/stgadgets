@@ -4,6 +4,9 @@ import "./Splits.css";
 
 const FRAMES_PER_SECOND = 15625 / 271.5; // the board's refresh rate
 
+// Every stage a credit can reach, so the table has a row for each from the start (split.stage in derived.js).
+const STAGES = ["1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "2-1", "2-2", "2-3", "2-4", "2-5", "2-6", "2-7"];
+
 interface Split {
   stage: string;
   frames: number | null;
@@ -34,7 +37,7 @@ function parse(json: string | null | undefined): Split[] {
 
 function Row({ split, current }: { split: Split; current?: boolean }) {
   return (
-    <tr className={current ? "splits-current" : ""}>
+    <tr className={current ? "splits-current" : split.frames === null ? "splits-ahead" : ""}>
       <td>{split.stage}</td>
       <td>{time(split.frames)}</td>
       <td>{split.points === null ? "-" : split.points.toLocaleString("en")}</td>
@@ -45,6 +48,8 @@ function Row({ split, current }: { split: Split; current?: boolean }) {
   );
 }
 
+const ahead = (stage: string): Split => ({ stage, frames: null, game_frames: null, points: null, deaths: null, bombs: null });
+
 /** Player 1's stage splits this credit: time, points, deaths, bombs and slowdown, with the current stage live. */
 export function Splits() {
   const stage = useVar<string | null>("split.stage");
@@ -54,7 +59,7 @@ export function Splits() {
   const points = useVar<number | null>("split.points");
   const deaths = useVar<number | null>("split.deaths");
   const bombs = useVar<number | null>("split.bombs");
-  const finished = useMemo(() => parse(done), [done]);
+  const finished = useMemo(() => new Map(parse(done).map((split) => [split.stage, split])), [done]);
   if (stage === undefined || done === undefined) return null;
 
   const current: Split | null =
@@ -75,13 +80,15 @@ export function Splits() {
           </tr>
         </thead>
         <tbody>
-          {finished.map((split) => (
-            <Row key={split.stage} split={split} />
-          ))}
-          {current && <Row split={current} current />}
+          {STAGES.map((name) =>
+            current?.stage === name ? (
+              <Row key={name} split={current} current />
+            ) : (
+              <Row key={name} split={finished.get(name) ?? ahead(name)} />
+            ),
+          )}
         </tbody>
       </table>
-      {!current && finished.length === 0 && <div className="note">starts with stage 1</div>}
     </div>
   );
 }

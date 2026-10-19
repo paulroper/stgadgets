@@ -18,6 +18,7 @@
 
 .saucer-shots {
   max-width: 11.25rem;
+  min-height: 0.625rem; /* a shot's height, so the row keeps its space when empty */
 }
 
 .saucer-shot {

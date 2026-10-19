@@ -39,15 +39,13 @@ export function SecondLoop() {
     <div className={`gadget loop2 ${possible ? "loop2-on" : eligible === false ? "loop2-off" : ""}`}>
       <div className="label">2ND LOOP</div>
       <div className="value loop2-headline">{headline}</div>
-      {eligible === false && <div className="note">needs one credit, solo</div>}
-      {eligible && (
-        <ul className="loop2-conditions">
-          <Condition met={byDeaths} label="deaths" progress={`${deaths ?? "-"} / ${DEATHS_ALLOWED}`} />
-          <Condition met={byHits} label="max chain" progress={`${maxHits ?? "-"} / ${hitsNeeded ?? "-"}`} />
-          <Condition met={byScore} label="score" progress={`${score == null ? "-" : (score / 1e6).toFixed(1)}M / ${SCORE_NEEDED / 1e6}M`} />
-          <Condition met={byBees} label="perfect bees" progress={`${perfect ?? "-"} / ${PERFECT_NEEDED}`} />
-        </ul>
-      )}
+      <div className="note">{eligible === false && "needs one credit, solo"}</div>
+      <ul className="loop2-conditions">
+        <Condition met={eligible && byDeaths} label="deaths" progress={`${deaths ?? "-"} / ${DEATHS_ALLOWED}`} />
+        <Condition met={eligible && byHits} label="max chain" progress={`${maxHits ?? "-"} / ${hitsNeeded ?? "-"}`} />
+        <Condition met={eligible && byScore} label="score" progress={`${score == null ? "-" : (score / 1e6).toFixed(1)}M / ${SCORE_NEEDED / 1e6}M`} />
+        <Condition met={eligible && byBees} label="perfect bees" progress={`${perfect ?? "-"} / ${PERFECT_NEEDED}`} />
+      </ul>
     </div>
   );
 }

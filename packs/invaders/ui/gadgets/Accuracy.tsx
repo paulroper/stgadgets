@@ -11,7 +11,7 @@ export function Accuracy() {
     <div className="gadget">
       <div className="label">ACCURACY</div>
       <div className="value">{accuracy === null ? "-" : `${Math.round(accuracy * 100)}%`}</div>
-      {kills != null && shots != null && <div className="note">{kills} hits / {shots} shots</div>}
+      <div className="note">{kills != null && shots != null && `${kills} hits / ${shots} shots`}</div>
     </div>
   );
 }

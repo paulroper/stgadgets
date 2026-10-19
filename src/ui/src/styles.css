@@ -147,6 +147,11 @@
     color: var(--dim);
   }
 
+  /* An empty note keeps its line, so a gadget doesn't change height when the note comes and goes. */
+  .note:empty::before {
+    content: "\a0";
+  }
+
   /* A bar: a track with one fill, or several fills side by side. A gadget colours its fills. */
   .bar {
     position: relative;
