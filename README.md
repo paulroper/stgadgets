@@ -89,3 +89,7 @@ See [Architecture](docs/architecture.md) for the full picture.
 ## Not affiliated
 
 stgadgets is a fan project and is not affiliated with M2, Taito, Cave, or the RetroArch project. It does not include or distribute ROMs.
+
+## License
+
+[MIT](LICENSE)
