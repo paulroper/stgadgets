@@ -1,6 +1,6 @@
 # Gadgets & layouts
 
-> Draft API. The SDK (`src/ui/src/sdk`), a few gadgets, the generic layout and pack layouts exist; the rest is planned.
+> Draft API. The SDK's hooks (`src/ui/src/sdk`), three standard gadgets (`Score`, `Counter`, `LatencyMeter`), the generic layout and pack layouts exist. Layout helpers, `useGameRect` and the replay workflow are planned.
 
 Gadgets are React components. Layouts are pages that arrange gadgets for a game. The platform's own gadgets and the generic layout live in `src/ui`. A game's own layout and gadgets live in its [game pack](packs.md#ui). Both are written in TypeScript, built with Vite into static bundles, and served by stgadgets to the overlay's webview, or to OBS, or to a normal browser while you develop.
 
@@ -36,7 +36,7 @@ Hooks:
 | `usePack()` | The matched pack's ID, e.g. `'invaders'`, or `null` |
 | `useConnection()` | `{ state, detail }`; `state` is `'connected' \| 'no-emulator' \| 'no-content' \| 'no-pack' \| 'disconnected'` and a few more |
 | `useOnFrame(fn)` | Calls `fn(vars, prev, info)` for **every** tick, in order. This is the building block for trackers |
-| `useGameRect()` | Where the game picture sits in the overlay, plus helpers to convert game coordinates into overlay coordinates |
+| `useGameRect()` | *Planned:* where the game picture sits in the overlay, plus helpers to convert game coordinates into overlay coordinates |
 
 ### Globals, for code that isn't React
 
@@ -44,7 +44,7 @@ The same data is available as a plain global, for quick experiments or other fra
 
 ```js
 window.stgadgets.vars['p1.score'];          // current value
-window.stgadgets.subscribe((vars, prev) => { … });
+const unsubscribe = window.stgadgets.subscribe(() => { … });   // after any change; read window.stgadgets.vars
 ```
 
 Globals don't trigger React re-renders, so React gadgets should use the hooks.
@@ -53,22 +53,25 @@ Globals don't trigger React re-renders, so React gadgets should use the hooks.
 
 Many of the most interesting ShotTriggers-style stats aren't stored in memory. They're worked out by watching variables over time: shots fired, accuracy, time per stage, score per stage, when lives were lost.
 
-Trackers live in the SDK as ordinary hooks built on `useOnFrame`, so gadget authors never need to touch .NET:
+**Game logic like this belongs in the pack's `derived.js`**, not in gadgets ([ADR 0012](decisions/0012-derived-values-in-javascript.md)): there it's tested by scenarios and recordings, and everything that reads variables gets it. Invaders' shots and accuracy and DoDonPachi's splits are derived values. `useOnFrame` is for what only the display needs, such as a flash when a value changes:
 
 ```tsx
-// Count rising edges: e.g. player-shot-active going false → true
-export function useRisingEdges(name: string) {
-  const [count, setCount] = useState(0);
+// Flash a gadget for a moment whenever a value goes up
+export function useFlashOnRise(name: string, ms = 300) {
+  const [flashing, setFlashing] = useState(false);
   useOnFrame((vars, prev) => {
-    if (vars[name] && !prev[name]) setCount(c => c + 1);
+    if ((vars[name] ?? 0) > (prev[name] ?? 0)) {
+      setFlashing(true);
+      setTimeout(() => setFlashing(false), ms);
+    }
   });
-  return count;
+  return flashing;
 }
 ```
 
-The core sends every tick in order, so trackers don't miss changes because React rendered late. They can still miss things that happened between two polls. See [architecture](architecture.md#polling-isnt-frame-synced).
+The core sends every tick in order, so `useOnFrame` doesn't miss changes because React rendered late. It can still miss things that happened between two polls. See [architecture](architecture.md#polling-isnt-frame-synced).
 
-If a tracker turns out to be expensive or widely shared, it can move into the core later without changing its hook API.
+
 
 ## Layouts
 
@@ -121,9 +124,11 @@ An input display can't come from the emulator APIs, because none of them report 
 
 ## Development workflow
 
-1. Run stgadgets with the **replay provider** pointed at a recording (see [providers.md](providers.md#replay-provider)). You don't need an emulator.
-2. Run `npm run dev` in `src/ui/`. The Vite dev server proxies the WebSocket to stgadgets.
-3. Open the layout in a browser and edit gadgets with hot reload.
+1. Run `npm run dev` in `src/ui/`. The Vite dev server proxies the WebSocket to the stgadgets server.
+2. Open the layout in a browser and edit gadgets with hot reload: live, with the server running a game, or without either at `/?state=<pack>/<state>`, which shows one of the pack's test game states ([packs.md](packs.md#testing-the-ui)).
+3. Check the look in the overlay with snapshots, and at other window sizes with `npm run screenshot` ([developing a game pack](pack-development.md#the-build-and-look-loop)).
+
+A **replay provider** will later let the server play a recording instead of an emulator ([providers.md](providers.md#replay-provider)).
 
 ## Wire protocol (internal)
 
@@ -133,13 +138,14 @@ The SDK handles this, but for reference:
 // server → client, on connect and whenever the game changes
 { "type": "hello", "pack": "invaders",
   "game": { "title": "Space Invaders", "manufacturer": "Taito", "year": 1978, "romset": "invaders", "screen": { … } },
-  "variables": { "p1.score": { "type": "bcd2" }, … }, "values": { "p1.score": 0, … } }
+  "variables": { "p1.score": { "type": "bcd2", "description": "…" }, "p1.accuracy": { "type": "derived", … }, … },
+  "values": { "p1.score": 0, … } }
 
-// server → client, every tick (changed values only)
-{ "type": "tick", "seq": 18234, "frames": 1, "changed": { "p1.score": 150 } }
+// server → client, every tick (changed values only); readAt and sentAt are Unix ms, for the latency meter
+{ "type": "tick", "seq": 18234, "readAt": 1760900000123.4, "sentAt": 1760900000123.7, "changed": { "p1.score": 150 } }
 
 // server → client
-{ "type": "status", "state": "no-emulator" }
+{ "type": "status", "state": "no-emulator", "detail": "…" }
 ```
 
 ## Open questions

@@ -4,22 +4,28 @@ A platform for adding M2 ShotTriggers-style gadgets to shmups (STGs) running in 
 
 stgadgets runs alongside the emulator. It reads the game's memory through the emulator's own APIs, turns it into named variables, and draws gadgets in a transparent window over the game. The game, the emulator and the ROMs are never modified.
 
-> **Status:** early spike. Space Invaders' score streams from RetroArch to React gadgets, shown in the browser or in a transparent macOS overlay on top of the emulator.
+> **Status:** early, but playable. Packs for Space Invaders and DoDonPachi stream from RetroArch to React gadgets (DoDonPachi's include rank, chain, bees, the second loop, slowdown and stage splits), shown in the browser or in a transparent macOS overlay on top of the emulator.
 
 ## Running it
 
-1. In `retroarch.cfg`, set `network_cmd_enable = "true"` (and turn off RetroAchievements hardcore mode). Load Space Invaders (`invaders`) with the FBNeo core.
+1. In `retroarch.cfg`, set `network_cmd_enable = "true"` (and turn off RetroAchievements hardcore mode). Load Space Invaders (`invaders`) or DoDonPachi (`ddonpach`, World set) with the FBNeo core.
 2. Build the UI: `cd src/ui && npm install && npm run build`
-3. Run the server: `dotnet run --project src/server/Stgadgets.Server`, then open http://127.0.0.1:5199
+3. Run the server: `dotnet run --project src/server/Stgadgets.Server`, then open http://127.0.0.1:5199. It reads from the emulator set by `Stgadgets:Provider` in its `appsettings.json` (`retroarch`; see [providers](docs/providers.md#choosing-a-provider))
 4. Optionally, run the macOS overlay: `dotnet run --project src/host/macos/Stgadgets.Host.Mac` (see below)
 
-For gadget development with hot reload, run `npm run dev` in `src/ui/` alongside the server and open the Vite URL instead.
+For gadget development with hot reload, run `npm run dev` in `src/ui/` alongside the server and open the Vite URL instead. Without a server or an emulator, open `/?state=<pack>/<state>` there to see a pack's layout in one of its test game states ([developing a game pack](docs/pack-development.md#looking-at-game-states)).
 
-Tests: `dotnet test src/server`, and `npm test` in `src/ui/` for the UI (tests in `tests/ui/`). Each pack's map is also checked against any local recordings in `packs/<id>/recordings/`; these are git-ignored and made with the `game-recording` Claude skill.
+Tests:
+
+- `dotnet test src/server`: the core, and every pack's `derived.js` scenarios (`packs/<id>/tests/derived/`) and local recordings (`packs/<id>/recordings/`, git-ignored)
+- `dotnet test src/cli`: the CLI
+- `npm test` in `src/ui/`: the UI (`tests/ui/`) and each pack's layout tests (`packs/<id>/tests/`)
 
 | Module | Path | Build |
 |---|---|---|
-| Server (core, providers, server, tests) | `src/server/` | `dotnet build src/server` (any OS) |
+| Shared libraries (core, emulator providers) | `src/lib/` | Built by the modules that use them |
+| Server | `src/server/` | `dotnet build src/server` (any OS) |
+| CLI: recording and pack tools ([docs/cli.md](docs/cli.md)) | `src/cli/` | `dotnet build src/cli` (any OS) |
 | macOS overlay | `src/host/macos/` | `dotnet build src/host/macos` (needs Xcode) |
 | UI (SDK, gadgets, layouts; builds pack UIs too) | `src/ui/` | `npm run build` |
 | Game packs | `packs/` | Data, plus UI built with `src/ui` |
@@ -36,7 +42,7 @@ The overlay host needs Xcode and the .NET macOS workload (`sudo dotnet workload 
 
 | Extension point | What it is | Written in |
 |---|---|---|
-| **[Game packs](docs/packs.md)** | Everything about one game: match a ROM set (`ddonpach`) to named variables (`hiscore: bcd4 @ 0x...`), plus provider settings, an optional layout and test recordings | YAML (+ React for a layout) |
+| **[Game packs](docs/packs.md)** | Everything about one game: match a ROM set (`ddonpach`) to named variables (`hiscore: bcd4 @ 0x...`), plus provider settings, the game's rules as derived values, an optional layout, and tests | YAML, JavaScript for derived values (+ React for a layout) |
 | **[Gadgets & layouts](docs/gadgets.md)** | UI components that draw those variables | React + TypeScript |
 | **[Emulator providers](docs/providers.md)** | Connect to an emulator and read memory | C# / .NET |
 
@@ -58,7 +64,8 @@ See [Architecture](docs/architecture.md) for the full picture.
 - [Memory maps](docs/memory-maps.md): the per-game map format
 - [Gadgets & layouts](docs/gadgets.md): the React SDK
 - [Gadget design](docs/gadget-design.md): how gadgets look and feel
-- [Emulator providers](docs/providers.md): the provider interface, RetroArch, and recordings for replay
+- [Emulator providers](docs/providers.md): the provider interface, RetroArch, and the recording format
+- [The stgadgets CLI](docs/cli.md): recording a game, finding addresses, and inspecting recordings
 - [Roadmap](docs/roadmap.md): from Space Invaders to DoDonPachi
 - [Latency measurements](docs/latency.md)
 - [Code conventions](docs/conventions.md): organise code by what it does, not what it is

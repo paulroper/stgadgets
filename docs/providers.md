@@ -1,6 +1,6 @@
 # Emulator providers
 
-> Early interface. `IEmulatorProvider` and the RetroArch provider exist; the rest is planned.
+> Early interface. `IEmulatorProvider` and the RetroArch provider exist; the replay and MAME providers and the rest of the interface sketched below are planned.
 
 A provider connects stgadgets to one emulator. Its whole job is to **report what's running** and **deliver memory snapshots, using the original hardware's addresses, as close to every frame as the emulator allows**. Everything else (maps, variables, gadgets) is shared.
 
@@ -121,10 +121,10 @@ How the provider works:
 
 Plays back a **recording** instead of talking to an emulator. It's used for:
 
-- **Tests:** fixed input for checking map decoding and trackers. Packs keep theirs in `recordings/`, with an `expected.yaml` ([packs.md](packs.md#testing))
-- **Gadget development:** work on layouts without running an emulator
-- **Map authoring:** RAM search works on recordings (see [memory-maps.md](memory-maps.md#finding-addresses))
+- **Gadget development:** work on layouts against real play without running an emulator
 - **Bug reports:** "here's the recording where the accuracy counter goes wrong"
+
+Tests and tools don't need it: the core replays recordings directly for `expected.yaml` checks ([packs.md](packs.md#testing-the-map)), and the CLI searches and inspects them ([cli.md](cli.md)).
 
 Playback follows the original timestamps by default, and can also step through frame by frame.
 
@@ -143,9 +143,9 @@ packs/invaders/recordings/attract-01/
 ```jsonc
 {
   "schema": 1,
-  "content": { "romset": "invaders", "provider": "mame", "emulatorVersion": "…" },
+  "content": { "romset": "invaders", "core": "fb_alpha", "provider": "retroarch" },
   "capturedAt": "2026-10-16T19:30:00Z",
-  "frameSynced": true,
+  "frameSynced": false,
   "ticks": 3600,
   "regions": [
     { "name": "work_ram", "start": "0x2000", "size": "0x400", "file": "work_ram.bin" }
@@ -155,7 +155,7 @@ packs/invaders/recordings/attract-01/
 }
 ```
 
-Raw region files are simple to write, read and compare, but large: about 3.6 MB per minute for each KB recorded. Recordings are therefore local and git-ignored ([ADR 0011](decisions/0011-recordings-are-local.md)). They're made and analysed with the `game-recording` skill (`.claude/skills/game-recording/`). Record only the ranges you need, and trim afterwards.
+Raw region files are simple to write, read and compare, but large: about 3.6 MB per minute for each KB recorded. Recordings are therefore local and git-ignored ([ADR 0011](decisions/0011-recordings-are-local.md)). They're made and analysed with the `stgadgets` CLI's `recording` commands ([cli.md](cli.md)), usually through the `game-recording` Claude skill (`.claude/skills/game-recording/`). Record only the ranges you need, and trim afterwards.
 
 ## Future providers
 

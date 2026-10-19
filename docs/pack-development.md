@@ -50,11 +50,12 @@ trusting one:
 
 ### Record and verify
 
-Record play with the `game-recording` Claude skill (`.claude/skills/game-recording/`) and a short script of events:
-start a credit, lose a life, use a bomb, and so on. Then:
+Record play with the `game-recording` Claude skill (`.claude/skills/game-recording/`), which drives the `stgadgets`
+CLI ([cli.md](cli.md)), and a short script of events: start a credit, lose a life, use a bomb, and so on. Then:
 
-- Search the recording for addresses the research didn't have.
-- Confirm each variable's values over time, and set `verified: true` on the ones that check out.
+- Search the recording for addresses the research didn't have (`stgadgets recording search`).
+- Confirm each variable's values over time (`recording history`), and set `verified: true` on the ones that check
+  out.
 - Write the recording's `expected.yaml`, so `dotnet test src/server` checks the map (and `derived.js`) against it.
 
 Recordings are local working material and are never committed ([ADR 0011](decisions/0011-recordings-are-local.md)).
@@ -146,8 +147,8 @@ The snapshot is the layout as the overlay draws it, at the emulator window's siz
 game. It works while the overlay is hidden behind another app, so a Claude session can make a change and check it
 without anyone looking at the screen. It shows the layout only, not the game underneath.
 
-When a gadget needs a particular moment in the game (a boss, a death, a continue), ask whoever is playing to get
-there, or check the logic against a recording first and the look in a snapshot afterwards.
+When a gadget needs a particular moment in the game (a boss, a death, a continue), add it as a game state and look
+at it without playing ([looking at game states](#looking-at-game-states)), or ask whoever is playing to get there.
 
 ### Checking other window sizes
 

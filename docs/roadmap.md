@@ -42,13 +42,13 @@ One game, one variable, one gadget, on screen, with latency measured.
 Generalise only what milestone 1 proved:
 
 - [x] Map loader and decoder for real (YAML, types, byte order)
-- [ ] Match maps to ROM set and hash
+- [ ] Match maps to ROM set and hash (ROM set works; chip CRCs wait on providers reporting them)
 - [ ] Replay provider
-- [ ] `stgadgets map test`: decode a recording and print the variables
+- [x] Decode a recording and print the variables: `stgadgets recording values` and `history` ([cli.md](cli.md))
 - [x] Unit tests for decoding against the recordings
-- [ ] SDK: `useGame`, `useConnection`, `useOnFrame`
-- [ ] Gadgets: lives, aliens remaining. Tracker: shots fired and accuracy
-- [ ] Overlay follows the emulator window; menu bar app
+- [x] SDK: `useGame`, `useConnection`, `useOnFrame`
+- [x] Gadgets: lives, aliens remaining. Shots fired and accuracy (as derived values, [ADR 0012](decisions/0012-derived-values-in-javascript.md))
+- [x] Overlay follows the emulator window; menu bar app
 
 **Done when** a live score and accuracy panel sit next to a game of Space Invaders and stay correct, and the same layout runs in a browser against a recording.
 
@@ -57,7 +57,7 @@ Generalise only what milestone 1 proved:
 Before tackling harder games, build tools to find addresses (see [memory-maps.md](memory-maps.md#finding-addresses)):
 
 - [x] RAM search on recordings (changed, unchanged, went up, went down, equals a value): `stgadgets recording search` ([cli.md](cli.md)), used by the `game-recording` skill
-- [ ] Watch view: show chosen addresses live while playing
+- [ ] Watch view: show chosen addresses live while playing (for now, `recording record --watch` logs them to `changes.log`)
 - [ ] Import helpers for MAME cheat files
 
 ## 4. Fill out the format (early 80s and 16-bit era)
@@ -96,13 +96,14 @@ without it.
 
 ### Pack test framework
 
-Recordings stay local ([ADR 0011](decisions/0011-recordings-are-local.md)), so today a pack has no committed tests:
-its checks only run on the machine that made its recordings.
+Recordings stay local ([ADR 0011](decisions/0011-recordings-are-local.md)), so their checks only run on the machine
+that made them. Committed scenarios and layout tests now cover each pack's logic and UI wherever it's checked out.
 
 - [x] Committed tests for a pack's logic that don't need a recording: scenarios of hand-written ticks of map values
   in, expected derived values out, in the pack's `tests/derived/` ([packs.md](packs.md#testing-derived-values))
-- [x] The `stgadgets` CLI (`src/cli/`), on `Stgadgets.Core` moved to `src/lib/`: `recording markers` and
-  `recording values`, to start game states and scenarios from real play ([cli.md](cli.md))
+- [x] The `stgadgets` CLI (`src/cli/`), on `Stgadgets.Core` and the providers moved to `src/lib/`
+  ([ADR 0015](decisions/0015-pack-tools-in-a-dotnet-cli.md)): `recording record`, `markers`, `search`, `history`,
+  `values`, `mark` and `trim`, replacing the `game-recording` skill's Python scripts ([cli.md](cli.md))
 - [ ] `stgadgets pack check <dir>`: check a pack against the schema (pack.yaml, map.yaml, derived.js, and the UI's
   imports)
 - [ ] `stgadgets pack test <dir>`: the scenario and recording checks that `dotnet test src/server` runs today, for a
@@ -145,8 +146,10 @@ its checks only run on the machine that made its recordings.
 Found while building the DoDonPachi pack:
 
 - [x] Overlay snapshots: `STGADGETS_SNAPSHOT_PORT` makes the overlay serve a PNG of the layout, so a change can be checked without looking at the screen ([pack development](pack-development.md#the-build-and-look-loop))
+- [x] Test game states: a pack's `tests/states.ts`, shown with `/?state=` in the dev server and screenshotted with `npm run screenshot -- --state`, so a layout can be seen at any moment of the game without playing to it ([pack development](pack-development.md#looking-at-game-states))
+- [x] The server's emulator is chosen in configuration (`Stgadgets:Provider`), from the same list of providers as the CLI ([providers](providers.md#choosing-a-provider))
 - [ ] Replay provider (milestone 2), so a layout can be viewed against a recording, not only live play
-- [ ] A tool to dump a pack's derived values over a recording, tick by tick, for working out `expected.yaml` and debugging `derived.js` (today only mismatches are reported)
+- [x] A tool to show a pack's derived values over a recording, for working out `expected.yaml` and debugging `derived.js`: `stgadgets recording history <name>` and `values` ([cli.md](cli.md))
 - [ ] Keep derived state, such as stage splits, across server restarts, or reload `map.yaml` and `derived.js` without one: changing either needs a restart, which resets the splits
 - [ ] Show the read → paint latency meter as idle while the overlay is hidden: a hidden overlay doesn't paint, so its numbers stop meaning anything
 

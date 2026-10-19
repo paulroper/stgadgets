@@ -2,7 +2,7 @@
 
 Everything stgadgets knows about a game lives in its **game pack**: one folder under `packs/`. Adding a game means adding a folder, with no platform code and no C#. The platform (server, providers, hosts and UI) contains no game-specific logic. See [ADR 0010](decisions/0010-game-packs.md) for why.
 
-The first pack is [`packs/invaders/`](../packs/invaders/).
+There are two so far: [`packs/invaders/`](../packs/invaders/), the first, and [`packs/ddonpach/`](../packs/ddonpach/), the most complete, with its research in `NOTES.md`.
 
 ## What's in a pack
 
@@ -112,7 +112,7 @@ For now, pack UIs are built together with the platform's UI: `npm run build` in 
 
 ### Testing the map
 
-A pack's map is proven with recordings. They're **local and git-ignored** ([ADR 0011](decisions/0011-recordings-are-local.md)): make them with the `game-recording` Claude skill (`.claude/skills/game-recording/`) while onboarding or debugging a game. Each folder under `recordings/` is a recording in the [recording format](providers.md#recording-format-draft), with an `expected.yaml` beside it listing values the map must decode:
+A pack's map is proven with recordings. They're **local and git-ignored** ([ADR 0011](decisions/0011-recordings-are-local.md)): make them with `stgadgets recording record` ([cli.md](cli.md)), usually through the `game-recording` Claude skill (`.claude/skills/game-recording/`), while onboarding or debugging a game. Each folder under `recordings/` is a recording in the [recording format](providers.md#recording-format-draft), with an `expected.yaml` beside it listing values the map must decode:
 
 ```yaml
 at:                                         # values at one point in the recording

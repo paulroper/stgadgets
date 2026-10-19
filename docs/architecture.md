@@ -4,7 +4,7 @@
 
 ## Overview
 
-stgadgets is one .NET app that runs alongside the emulator. Inside it:
+stgadgets runs alongside the emulator. Two .NET processes do the work: the **server** (provider, core and the HTTP/WebSocket server) and the **overlay host**, which talk to each other only over HTTP on `127.0.0.1`. The box below shows them together:
 
 ```
                  ┌──────────────────────── stgadgets (.NET) ───────────────────────┐
@@ -32,7 +32,8 @@ stgadgets is one .NET app that runs alongside the emulator. Inside it:
 | **Server** | Serves layout bundles and streams variables over WebSocket | Variables | Addresses, emulators |
 | **Overlay host** | Transparent, click-through window that follows the emulator and shows a layout | Windows, the OS | Game memory |
 | **Gadgets & layouts** | React components that draw variables. Game-specific layouts come from packs | Variable names | Addresses, emulators, .NET |
-| **[Game packs](packs.md)** | Everything about one game: match rules, memory map, provider settings, optional UI, recordings | One game | The platform's internals |
+| **[Game packs](packs.md)** | Everything about one game: match rules, memory map, provider settings, derived values, optional UI, tests, recordings | One game | The platform's internals |
+| **[CLI](cli.md)** | Development tools: records games through a provider, and searches and inspects recordings with the core | Providers and the core, as libraries | The server, the UI |
 
 No part of the platform contains game-specific logic: it all lives in packs ([ADR 0010](decisions/0010-game-packs.md)).
 
@@ -50,11 +51,11 @@ The core sends every tick in order and doesn't drop or merge any, so a layout se
 
 ### Polling isn't frame-synced
 
-Polling providers (RetroArch over UDP) aren't tied to the emulator's frames, so they can miss a frame or read the same frame twice. Frame-synced providers (MAME Lua) label each snapshot with its emulated frame number. For polling providers, if a game's map declares a `frame_counter` variable, the core uses that instead. Either way, each tick reports how many frames it covers (`frames: 0 | 1 | 2…`), and gadgets that care can account for missed frames.
+Polling providers (RetroArch over UDP) aren't tied to the emulator's frames, so they can miss a frame or read the same frame twice. Frame-synced providers (MAME Lua) will label each snapshot with its emulated frame number. Ticks don't yet say how many frames they cover; for now a pack that cares works it out in `derived.js` from the game's own frame counter, as DoDonPachi's `game.frame_advance` does.
 
 ## Process and hosting
 
-- **One process.** The .NET app hosts the provider, the core, the server (Kestrel, listening only on `127.0.0.1`) and the overlay window. On macOS it's likely a menu bar app.
+- **Two processes.** The server hosts the provider, the core and Kestrel (listening only on `127.0.0.1`). The overlay host is a separate app (on macOS, a menu bar app) that asks the server which emulator to follow (`/api/emulator`) and loads the layout from it. Today they're started separately; the host will start the server itself ([roadmap](roadmap.md#build-tooling-and-a-single-package)).
 - **Layouts are web pages** served by the local server. The overlay host points a system webview at them: WKWebView on macOS, WebView2 on Windows.
 - **No Node.js at runtime.** Layouts and gadgets are built ahead of time into static bundles. The webview is the JavaScript runtime.
 - **OBS for free.** Because a layout is just a URL, streamers can add it as an OBS browser source instead of (or as well as) using the overlay.
@@ -131,12 +132,11 @@ Packs are data plus optional UI code. The server loads them from `packs/` (confi
 ## Security
 
 - The server listens only on `127.0.0.1`.
-- Layouts may come from third parties, so the webview loads only from the local server, with a Content Security Policy that blocks other network access.
+- Layouts may come from third parties, so the webview loads only from the local server. A Content Security Policy that blocks other network access is planned, along with sandboxing for third-party packs.
 - Providers are read-only. stgadgets never writes to game memory.
 
 ## Open questions
 
-- **First provider:** MAME (Lua, frame-synced) or RetroArch (network commands). Decided by the milestone 0 spike in the [roadmap](roadmap.md).
-- **Overlay host spike:** confirm the overlay approach on macOS, and whether Avalonia or Photino can replace some of the native code. See [ADR 0007](decisions/0007-native-overlay-host.md).
+- **Overlay host:** the macOS host works, including in fullscreen ([ADR 0007](decisions/0007-native-overlay-host.md), still proposed until the Windows host confirms it). Whether Avalonia or Photino could replace some of the native code is open.
 - **Compositor cost:** whether the overlay adds lag to the emulator in any display mode ([L1](requirements.md#l1-no-added-lag-in-the-game)).
 - **Getting the game picture:** whether calibration is acceptable or we need to detect it automatically.

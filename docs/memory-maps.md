@@ -218,16 +218,15 @@ Steps 1–3 are packaged as the `game-recording` Claude skill (`.claude/skills/g
 
 ## Tooling
 
-The `stgadgets` CLI ([cli.md](cli.md)) has started: `stgadgets recording values` shows every value at points in a
-recording. Planned:
+The `stgadgets` CLI ([cli.md](cli.md)) records games and works with recordings: `recording record`, `search`,
+`history`, `values`, `mark` and `trim`. Planned:
 
 - `stgadgets pack check packs/invaders`: check the pack against the schema
-- `stgadgets pack test packs/invaders`: replay the pack's recordings and check their `expected.yaml` (the same harness `dotnet test src/server` runs today; see [packs.md](packs.md#testing))
+- `stgadgets pack test packs/invaders`: run the pack's scenarios and check its recordings' `expected.yaml` (the same checks `dotnet test src/server` runs today; see [packs.md](packs.md#testing))
 - A JSON Schema for editor autocomplete
 - Generating TypeScript types from a map, so gadgets get typed `useVar` names
 - Reporting standard-name coverage, such as "provides 7 of 12 standard names", so gaps in the generic layout are visible. Standard names stay optional
 
 ## Open questions
 
-- **YAML library:** YamlDotNet is the obvious choice. JSON with comments works with `System.Text.Json`, but it's noticeably worse to write by hand.
 - **Per-player blocks:** `p1.*` / `p2.*` written out by hand, or a `players` construct that generates them?
