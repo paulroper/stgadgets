@@ -9,11 +9,13 @@ stgadgets runs alongside the emulator. It reads the game's memory through the em
 ## Running it
 
 1. In `retroarch.cfg`, set `network_cmd_enable = "true"` (and turn off RetroAchievements hardcore mode). Load Space Invaders (`invaders`) or DoDonPachi (`ddonpach`, World set) with the FBNeo core.
-2. Build the UI: `cd src/ui && npm install && npm run build`
-3. Run the server: `dotnet run --project src/server/Stgadgets.Server`, then open http://127.0.0.1:5199. It reads from the emulator set by `Stgadgets:Provider` in its `appsettings.json` (`retroarch`), or replays a recording with `replay` ([providers](docs/providers.md#choosing-a-provider))
-4. Optionally, run the macOS overlay: `dotnet run --project src/host/macos/Stgadgets.Host.Mac` (see below)
+2. Once: `cd src/ui && npm install`
+3. Start stgadgets with the CLI: `bin/stgadgets dev start --build-ui`, then open http://127.0.0.1:5199. Add `--overlay` on macOS for the transparent overlay over the emulator (see below).
+4. When you're done: `bin/stgadgets dev stop`
 
-While developing, `bin/stgadgets dev start --overlay` does steps 3 and 4 in the background, and `bin/stgadgets dev stop` stops them ([docs/cli.md](docs/cli.md#development)). With [direnv](https://direnv.net), `bin/` is on your PATH inside the repository, so it's just `stgadgets`.
+`dev start` builds the UI, starts the server (and the overlay) in the background, waits until it's up, and says whether it has found a game. `bin/stgadgets dev restart` picks up changes, and `bin/stgadgets dev status` says what's running. To play back a recording instead of the emulator: `bin/stgadgets dev start --provider replay --endpoint packs/<id>/recordings/<name>` ([providers](docs/providers.md#replay-provider)). Everything the CLI does is in [docs/cli.md](docs/cli.md).
+
+`bin/stgadgets` builds the CLI from source when it's changed, and runs from anywhere in the repository. With [direnv](https://direnv.net) (`eval "$(direnv hook zsh)"` in `~/.zshrc`, then `direnv allow` here), `bin/` is on your PATH inside the repository, so it's just `stgadgets`.
 
 For gadget development with hot reload, run `npm run dev` in `src/ui/` alongside the server and open the Vite URL instead. Without a server or an emulator, open `/?state=<pack>/<state>` there to see a pack's layout in one of its test game states ([developing a game pack](docs/pack-development.md#looking-at-game-states)).
 
@@ -34,7 +36,7 @@ Tests:
 
 ### macOS overlay (in progress)
 
-**Snapshots for development:** start the overlay with `STGADGETS_SNAPSHOT_PORT=5198` and `GET http://127.0.0.1:5198/snapshot` returns a PNG of the layout as the overlay draws it, at the emulator window's size, on a transparent background (the game isn't included). It works while the overlay is hidden too, by drawing it invisibly for half a second; the `X-Overlay-Visible` header says which. Off unless the variable is set.
+**Snapshots for development:** `bin/stgadgets dev snapshot` saves a PNG of the layout as the overlay draws it. Under the hood, `dev start --overlay` starts the overlay with `STGADGETS_SNAPSHOT_PORT=5198`, and `GET http://127.0.0.1:5198/snapshot` returns a PNG of the layout as the overlay draws it, at the emulator window's size, on a transparent background (the game isn't included). It works while the overlay is hidden too, by drawing it invisibly for half a second; the `X-Overlay-Visible` header says which. Off unless the variable is set.
 
 For fullscreen play, **turn off Game Mode for RetroArch** (menu bar game controller icon → Turn Off Game Mode). Game Mode throttles the overlay to 5 Hz, about 100–200 ms behind the game ([docs/latency.md](docs/latency.md)). Windowed play isn't affected.
 
