@@ -36,11 +36,22 @@ export class LatencyTracker {
       });
     });
 
-    // Diagnostics: how often the page actually paints and runs timers, to spot WebKit throttling.
+    // Diagnostics: how often the page actually paints and runs timers, to spot WebKit throttling. Even intervals at a
+    // fraction of the display's rate mean throttling; a mix of whole and doubled frames means missed deadlines.
     let rafCount = 0;
     let timerCount = 0;
-    const countRaf = () => {
+    let lastRaf = 0;
+    let intervals: number[] = [];
+    let work: number[] = [];
+    // A message posted from an animation frame is handled after that frame's rendering update (rAF callbacks, style,
+    // layout, paint), so it measures the page's main-thread work for the frame.
+    const channel = new MessageChannel();
+    channel.port1.onmessage = (e: MessageEvent<number>) => work.push(performance.now() - e.data);
+    const countRaf = (timestamp: number) => {
       rafCount++;
+      if (lastRaf) intervals.push(timestamp - lastRaf);
+      lastRaf = timestamp;
+      channel.port2.postMessage(timestamp);
       requestAnimationFrame(countRaf);
     };
     requestAnimationFrame(countRaf);
@@ -56,6 +67,7 @@ export class LatencyTracker {
           source,
           ...stats,
           rafHz: (rafCount * 1000) / REPORT_INTERVAL_MS,
+          ...frameStats(intervals, work),
           timerHz: (timerCount * 1000) / REPORT_INTERVAL_MS,
           visibility: document.visibilityState,
           focused: document.hasFocus(),
@@ -63,6 +75,8 @@ export class LatencyTracker {
       }
       this.reported = latest;
       rafCount = timerCount = 0;
+      intervals = [];
+      work = [];
     }, REPORT_INTERVAL_MS);
   }
 
@@ -81,4 +95,23 @@ export class LatencyTracker {
       samples: s.length,
     };
   }
+}
+
+const percentile = (values: number[], p: number) => {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))] : 0;
+};
+
+/** Animation frame intervals and the main-thread work in each frame, in ms. */
+function frameStats(intervals: number[], work: number[]) {
+  const median = percentile(intervals, 0.5);
+  return {
+    rafIntervalP50: median,
+    rafIntervalP95: percentile(intervals, 0.95),
+    /** Intervals over 1.5 times the median: frames skipped while painting at that rate. */
+    rafLongShare: intervals.length ? intervals.filter((i) => i > 1.5 * median).length / intervals.length : 0,
+    workP50: percentile(work, 0.5),
+    workP95: percentile(work, 0.95),
+    workMax: work.length ? Math.max(...work) : 0,
+  };
 }

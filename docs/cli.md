@@ -194,6 +194,29 @@ stgadgets dev stop
 
 When something doesn't start, the command says so with the end of its log.
 
+## Latency
+
+### `stgadgets latency analyse <video> --game <region> --gadget <region>`
+
+The end-to-end latency test ([requirement L2](requirements.md#l2-the-overlay-must-keep-up-with-the-game)): how far the
+score gadget is behind the game's own score in a screen recording of both. The `latency-test` skill runs the whole
+test, from the recording to the write-up in [latency.md](latency.md).
+
+```sh
+stgadgets latency analyse ~/Desktop/latency.mov --game 1210,96,260,48 --gadget 180,410,220,64
+```
+
+Regions are `x,y,width,height` in the video's pixels: the game's score digits and the gadget's. It decodes the video
+with ffmpeg (`brew install ffmpeg`), using each frame's own timestamp since screen recordings often have a variable
+frame rate. A region changes when at least `--min-changed` percent of its pixels (default 0.5) change brightness by
+more than compression noise; changed frames within 2.5 frames of each other count as one change. Each game change is
+paired with the closest gadget change within `--window` ms (default 250).
+
+It prints the video's frame interval, how many changes each region had and how many were paired, and the gadget's
+offset from the game (+ behind, − ahead) as p50, p95, min and max in frames at `--refresh` Hz (default 60), with a
+count per whole frame. Changes it couldn't pair are listed by time, and `--events` lists every pair, to check against
+the video.
+
 ## Planned
 
 - `stgadgets pack check <dir>`: check a pack against the schema

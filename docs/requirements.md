@@ -35,7 +35,7 @@ Notes:
 ### L3. Measured continuously
 
 - **Timestamps through the pipeline:** each tick carries timestamps for provider receive, decode, WebSocket send, JS receive and paint. A debug gadget shows them live.
-- **End-to-end test:** record the screen at 60 fps or more and count the frames between the game's own score changing on screen and the score gadget changing. Space Invaders, with its on-screen score, is the reference test.
+- **End-to-end test:** record the screen at 60 fps or more and count the frames between the game's own score changing on screen and the score gadget changing. Space Invaders, with its on-screen score, is the reference test. `stgadgets latency analyse` counts the frames ([cli.md](cli.md#latency)), and the `latency-test` skill runs the test.
 - Latency results are recorded for each provider and OS in `docs/latency.md`, once we have numbers.
 
 ### Where the overlay lag comes from

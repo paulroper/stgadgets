@@ -144,9 +144,11 @@ public sealed class VariableBroadcaster(ILogger<VariableBroadcaster> logger)
             if (report?.Type == "latency")
             {
                 logger.LogInformation(
-                    "Latency ({Source}): read → paint p50 {P50:F1} ms, p95 {P95:F1} ms, max {Max:F1} ms at {Rate:F0} Hz ({Samples} ticks); p50 split: read → arrive {Arrive:F1} ms, arrive → paint {Paint:F1} ms; rAF {RafHz:F0} Hz, timer {TimerHz:F0} Hz, {Visibility}, focused {Focused}",
+                    "Latency ({Source}): read → paint p50 {P50:F1} ms, p95 {P95:F1} ms, max {Max:F1} ms at {Rate:F0} Hz ({Samples} ticks); p50 split: read → arrive {Arrive:F1} ms, arrive → paint {Paint:F1} ms; rAF {RafHz:F0} Hz, timer {TimerHz:F0} Hz, {Visibility}, focused {Focused}; " +
+                    "rAF interval p50 {RafIntervalP50:F1} ms, p95 {RafIntervalP95:F1} ms, {RafLongShare:P0} long; frame work p50 {WorkP50:F1} ms, p95 {WorkP95:F1} ms, max {WorkMax:F1} ms",
                     report.Source, report.P50, report.P95, report.Max, report.Rate, report.Samples, report.ArriveP50, report.PaintP50,
-                    report.RafHz, report.TimerHz, report.Visibility, report.Focused);
+                    report.RafHz, report.TimerHz, report.Visibility, report.Focused,
+                    report.RafIntervalP50, report.RafIntervalP95, report.RafLongShare, report.WorkP50, report.WorkP95, report.WorkMax);
             }
         }
         catch (JsonException ex)
@@ -157,5 +159,6 @@ public sealed class VariableBroadcaster(ILogger<VariableBroadcaster> logger)
 
     private sealed record LatencyReport(
         string Type, string Source, double P50, double P95, double Max, double Rate, int Samples, double ArriveP50, double PaintP50,
-        double RafHz, double TimerHz, string? Visibility, bool Focused);
+        double RafHz, double TimerHz, string? Visibility, bool Focused,
+        double RafIntervalP50, double RafIntervalP95, double RafLongShare, double WorkP50, double WorkP95, double WorkMax);
 }

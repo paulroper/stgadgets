@@ -32,7 +32,7 @@ One game, one variable, one gadget, on screen, with latency measured.
 - [x] A score gadget in a browser
 - [x] Spike: overlay window on macOS ([ADR 0007](decisions/0007-native-overlay-host.md)) showing the gadget over the emulator (works in fullscreen too)
 - [x] Pipeline timestamps and a latency debug gadget (read → paint; full per-stage timestamps still to do)
-- [ ] End-to-end latency test: screen recording, game score vs gadget score
+- [x] End-to-end latency test: screen recording, game score vs gadget score (`stgadgets latency analyse`, run by the `latency-test` skill). Passes fullscreen at 60 Hz ([latency.md](latency.md)); windowed still to run
 - [ ] Check L1: emulator latency with and without the overlay
 
 **Done when** the score gadget follows the game's score in the overlay within the [L2 targets](requirements.md#l2-the-overlay-must-keep-up-with-the-game), and the overlay adds no measurable lag to the emulator.
@@ -156,6 +156,8 @@ Found while building the DoDonPachi pack:
 - [ ] `/add-pack <game>`: one Claude skill that runs the whole workflow (research, recording, map, derived values, gadget interview, gadgets, game states and tests), built from the pieces above
 - [ ] Hot reload packs in the server: watch `packs/` and reload the matched pack when its `pack.yaml`, `map.yaml`, `derived.js` or provider settings change, so a `derived.js` change shows up in the overlay without restarting the server
 - [ ] Keep derived state, such as stage splits, across reloads and server restarts: today a restart resets the splits
+- [ ] Find why an overlay can get stuck painting at half the display's rate until it's restarted ([latency.md](latency.md#2026-10-20-end-to-end-test-l2))
+- [ ] Say in the docs and UI that RetroArch's run-ahead puts the overlay N frames behind the picture
 - [ ] Show the read → paint latency meter as idle while the overlay is hidden: a hidden overlay doesn't paint, so its numbers stop meaning anything
 
 ## Any time
