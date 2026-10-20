@@ -2,6 +2,19 @@
 
 Results for the [latency requirements](requirements.md#latency-highest-priority), newest first.
 
+## 2026-10-20: presentation mode with and without the overlay (L1)
+
+Does the overlay window knock RetroArch off direct-to-display presentation ([L1](requirements.md#l1-no-added-lag-in-the-game))? Checked with the Metal Performance HUD on RetroArch (`open --env MTL_HUD_ENABLED=1 -a RetroArch`). RetroArch's Vulkan driver runs on Metal through MoltenVK, so the HUD shows how its frames are presented.
+
+**Setup:** as in the end-to-end test below, with run-ahead (3 frames) and VRR runloop on, vsync off, external display at 60 Hz.
+
+| RetroArch | Overlay off | Overlay on |
+|---|---|---|
+| Fullscreen | Composited | Composited |
+| Windowed | Composited | Composited |
+
+RetroArch is composited by the window server whether or not the overlay is there, so in this setup the overlay adds no presentation lag. That doesn't cover the worst case: a setup where RetroArch does get direct presentation, which the overlay might then break. Still to find: a RetroArch configuration that gets direct presentation (to try: VRR off, vsync on, the built-in display), and to repeat this check there.
+
 ## 2026-10-20: end-to-end test (L2)
 
 The first [end-to-end test](requirements.md#l3-measured-continuously): screen recordings with Cmd-Shift-5 of the game's own score and the score gadget, measured with `stgadgets latency analyse` ([cli.md](cli.md#latency)). Offsets are in 60 Hz game frames, positive when the gadget is behind.
