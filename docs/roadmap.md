@@ -33,7 +33,7 @@ One game, one variable, one gadget, on screen, with latency measured.
 - [x] Spike: overlay window on macOS ([ADR 0007](decisions/0007-native-overlay-host.md)) showing the gadget over the emulator (works in fullscreen too)
 - [x] Pipeline timestamps and a latency debug gadget (read → paint; full per-stage timestamps still to do)
 - [x] End-to-end latency test: screen recording, game score vs gadget score (`stgadgets latency analyse`, run by the `latency-test` skill). Passes fullscreen at 60 Hz ([latency.md](latency.md)); windowed still to run
-- [ ] Check L1: emulator latency with and without the overlay
+- [ ] Check L1: emulator latency with and without the overlay. Parked: RetroArch is composited with or without the overlay, so it's unlikely to add lag ([latency.md](latency.md#2026-10-20-presentation-mode-with-and-without-the-overlay-l1)). Still to do: a setup where RetroArch gets direct presentation, a camera test if the overlay breaks it, and CPU use in Release builds
 
 **Done when** the score gadget follows the game's score in the overlay within the [L2 targets](requirements.md#l2-the-overlay-must-keep-up-with-the-game), and the overlay adds no measurable lag to the emulator.
 
