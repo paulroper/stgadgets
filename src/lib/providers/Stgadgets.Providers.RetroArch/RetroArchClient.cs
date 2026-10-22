@@ -83,8 +83,18 @@ public sealed class RetroArchClient : IDisposable
         }
     }
 
-    private async Task SendAsync(string command, CancellationToken cancellationToken) =>
-        await _udp.SendAsync(Encoding.ASCII.GetBytes(command), cancellationToken);
+    private async Task SendAsync(string command, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _udp.SendAsync(Encoding.ASCII.GetBytes(command), cancellationToken);
+        }
+        // A refusal for an earlier datagram is reported by whichever call comes next, often a send.
+        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionRefused)
+        {
+            throw NotListening(ex);
+        }
+    }
 
     private async Task<string> ReceiveAsync(CancellationToken cancellationToken)
     {
@@ -101,9 +111,16 @@ public sealed class RetroArchClient : IDisposable
         }
         catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionRefused)
         {
-            throw new TimeoutException("RetroArch isn't listening for network commands.", ex);
+            throw NotListening(ex);
         }
     }
+
+    /// <summary>
+    /// A timeout, so callers retry and log it as they do a missing reply: RetroArch stops listening briefly while it
+    /// loads content.
+    /// </summary>
+    private static TimeoutException NotListening(SocketException ex) =>
+        new("RetroArch isn't listening for network commands.", ex);
 
     public void Dispose() => _udp.Dispose();
 }
