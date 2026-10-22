@@ -233,6 +233,8 @@ string (`split.done`), with live counters for the current stage only.
 
 ## Still to find or check
 
+So far the pack has only been checked against one-player play of stage 1.
+
 - P2's variables, `game.state` 0 and 6, and the two-player rank halving: a two-player session would check them.
 - `game.state` on the results and ending screens, then whether `game.running` should exclude them.
 - The non-default settings (difficulty, extends, lives), the second extend, and the second loop.
@@ -241,5 +243,7 @@ string (`split.done`), with live counters for the current stage only.
 - `p1.flags` bit 3, and what the word at `0x10184C` (P1) / `0x101850` (P2) is: it keeps the higher of itself and the
   score when a ranking entry is made (`0x5272`).
 - The object table (RA: 64-byte entries from `0x1001CE`), e.g. for boss health. Needs arrays in the map format.
-- `ddonpachj` (Japan) and `ddonpacha` (the 2012 Arrange hack), to add them to the pack. The trainer patches
-  `ddonpachj`, so its stage select only helps once `ddonpachj` is in.
+- The later stages and their bosses.
+- `ddonpachj` (Japan) and `ddonpacha` (the 2012 Arrange hack), to add them to the pack: either checked to share the
+  World map, or with maps that extend it, which the map format can't do yet. The trainer patches `ddonpachj`, so its
+  stage select only helps once `ddonpachj` is in.

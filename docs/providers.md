@@ -76,9 +76,9 @@ The server matches [packs](packs.md) on chip CRCs when the provider reports them
   - *Replay:* recordings don't store chip CRCs, so replays match by name.
 - **Whole-file hashes (consoles):** SHA-1 or CRC32 of the ROM file.
 
-## MAME provider (strong first candidate)
+## MAME provider (planned)
 
-MAME's **Lua plugin system** is its official extension mechanism, and it suits us very well:
+The second provider, after RetroArch ([ADR 0009](decisions/0009-first-provider-retroarch.md)). MAME's **Lua plugin system** is its official extension mechanism, and it suits us very well:
 
 | Need | MAME Lua |
 |---|---|
@@ -87,7 +87,7 @@ MAME's **Lua plugin system** is its official extension mechanism, and it suits u
 | What's running | `manager.machine.system.name` (ROM set), parent, ROM hashes |
 | Screen geometry | Screen size and rotation are available |
 
-The provider is two pieces: a small **Lua plugin** (shipped with stgadgets, installed into MAME's `plugins/` folder) that sends the requested ranges over a local socket every frame, and the **.NET side**, which receives them. Whether the plugin uses MAME's built-in socket support or a local file or pipe is to be decided in the spike.
+The provider is two pieces: a small **Lua plugin** (shipped with stgadgets, installed into MAME's `plugins/` folder) that sends the requested ranges over a local socket every frame, and the **.NET side**, which receives them. Whether the plugin uses MAME's built-in socket support or a local file or pipe is still to be decided.
 
 ## RetroArch provider
 
@@ -132,11 +132,11 @@ Its endpoint is the recording's folder:
 ```sh
 # play the recording at its own speed, again and again
 dotnet run --project src/server/Stgadgets.Server -- --Stgadgets:Provider=replay \
-  --Stgadgets:ProviderEndpoint=packs/ddonpach/recordings/play-01
+  --Stgadgets:ProviderEndpoint=packs/<id>/recordings/<name>
 
 # fast-forward to a moment and hold there, for a still picture of it
 dotnet run --project src/server/Stgadgets.Server -- --Stgadgets:Provider=replay \
-  "--Stgadgets:ProviderEndpoint=packs/ddonpach/recordings/play-01#chain reaches 14"
+  "--Stgadgets:ProviderEndpoint=packs/<id>/recordings/<name>#<marker>"
 ```
 
 - **Playing:** ticks arrive at their recorded times. At the end the stream ends, and the server starts it again from
@@ -157,7 +157,7 @@ Tests and tools don't use it: the core replays recordings directly for `expected
 A recording is a directory:
 
 ```
-packs/invaders/recordings/attract-01/
+packs/<id>/recordings/<name>/
   manifest.json
   work_ram.bin       # one snapshot per tick, concatenated (ticks × region size)
   ticks.bin          # per tick: int64 microseconds since start, int64 emulated frame (-1 if unknown)

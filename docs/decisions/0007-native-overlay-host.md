@@ -1,6 +1,6 @@
 # 0007. The overlay host is a native window with the system webview
 
-- **Status:** Proposed (needs a spike on macOS)
+- **Status:** Proposed (the macOS spike passed; to be confirmed by the Windows and Linux hosts)
 - **Date:** 2026-10-15
 
 ## Context
@@ -35,7 +35,7 @@ The spike also tries options 2 and 3. If one covers enough to cut down the nativ
 - Two small host projects (a few hundred lines each) instead of one. That's acceptable, since the shared core does all the real work.
 - The .NET for macOS workload needs Xcode (each workload release needs a specific Xcode version) and produces an `.app` bundle, which affects how we build and run during development.
 
-## macOS implementation (to confirm in the spike)
+## macOS implementation
 
 | Need | Approach |
 |---|---|
@@ -65,7 +65,7 @@ Pitfalls to check:
 | Click-through, never taking focus | To confirm by hand |
 | Smoothly following moves and resizes | To confirm by hand |
 | L2: overlay read → paint | ✅ Windowed: p50 14 ms, p95 16 ms. Fullscreen: ✅ with Game Mode off (p50 6 ms); ❌ with Game Mode on (5 Hz rendering, ~100–200 ms) ([latency.md](../latency.md)) |
-| L1: no added emulator lag | ❓ Not yet measured |
+| L1: no added emulator lag | ✅ So far: RetroArch was composited with or without the overlay (2026-10-20, [latency.md](../latency.md)). Still to check: a setup where RetroArch gets direct presentation |
 | CPU | ~8% of one core in total (server 5.4%, host 1.4%, WebKit 1.5%) in Debug builds. Over the < 5% target, to be optimised |
 
 Options 2 and 3 (Photino, Avalonia) weren't tried: option 1 took about 150 lines and covered everything we needed. If the remaining checks pass, this record becomes **Accepted**. Game Mode's throttling must be understood first: if it's specific to WebKit, a native renderer may be needed for fullscreen play, and that affects [0006](0006-react-gadgets-in-a-webview.md).
@@ -76,3 +76,14 @@ Options 2 and 3 (Photino, Avalonia) weren't tried: option 1 took about 150 lines
 - WebView2 with a transparent default background colour.
 - Window tracking with `GetWindowRect` or WinEvent hooks.
 - **Latency ([L1](../requirements.md#l1-no-added-lag-in-the-game)):** a window on top of a borderless emulator can stop Windows from showing the emulator's frames directly (independent flip), forcing DWM composition and adding a frame. Check this with PresentMon.
+
+## Linux implementation (later)
+
+- **X11:** a window with an ARGB visual, an empty input shape (XShape) so clicks pass through, and
+  `_NET_WM_STATE_ABOVE` to stay on top. Window tracking with `XGetWindowAttributes` and `XTranslateCoordinates`.
+- **Wayland:** an app can't find another app's window or place its own at a position on screen, so the X11 approach
+  doesn't carry over. Options to weigh: running the host under XWayland, the `wlr-layer-shell` protocol (wlroots
+  compositors and KDE, not GNOME), or a position the user sets.
+- WebKitGTK with a transparent background.
+- **Latency ([L1](../requirements.md#l1-no-added-lag-in-the-game)):** compositors show a fullscreen window directly
+  (unredirection on X11, direct scanout on Wayland), and a window on top may stop that.

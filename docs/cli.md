@@ -32,13 +32,13 @@ uses the pack's map and its settings for that provider (`providers/<id>.yaml`; f
 the server does:
 
 ```sh
-stgadgets recording record packs/invaders/recordings/play-02 --provider retroarch --range work_ram=0x2000:0x400 \
+stgadgets recording record packs/invaders/recordings/<name> --provider retroarch --range work_ram=0x2000:0x400 \
   --watch p1.score --watch 0x21FF:u8:spare_ships --seconds 300
 ```
 
 ```
 Recording work_ram 0x2000..0x23FF from fb_alpha, invaders: 1,024 bytes a tick, about 3.7 MB a minute.
-Stop with Ctrl+C or `touch …/play-02/STOP`; mark with `echo "label" > …/play-02/MARK`.
+Stop with Ctrl+C or `touch …/<name>/STOP`; mark with `echo "label" > …/<name>/MARK`.
 182 ticks in 3.0 s (TimeUp); interval p50 16.5 ms, p95 17.9 ms; 1 marker(s)
 ```
 
@@ -71,7 +71,7 @@ How many ticks the recording has, and the tick of each marker:
 ```
 3741 ticks
      787  coin inserted
-    1635  chain reaches 14
+    1635  boss appears
     3518  last life lost, continue screen
 ```
 
@@ -128,12 +128,12 @@ Every value the server would publish at points in the recording, map and derived
 several points. `--only` keeps the names that match, where `*` matches anything (`--only 'rank*' --only p1.score`).
 
 ```sh
-stgadgets recording values packs/ddonpach/recordings/play-01 --at "chain reaches 14" --only 'rank*'
+stgadgets recording values REC --at "boss appears" --only 'rank*'
 ```
 
 ```json
 {
-  "chain reaches 14": {
+  "boss appears": {
     "tick": 1635,
     "values": {
       "rank": 25,
@@ -170,7 +170,7 @@ waits until they answer, and talks to them over HTTP. Their output and the recor
 
 ```sh
 stgadgets dev start --overlay                     # live from RetroArch, with the overlay
-stgadgets dev start --provider replay --endpoint "packs/ddonpach/recordings/play-01#chain reaches 14"
+stgadgets dev start --provider replay --endpoint "packs/<id>/recordings/<name>#<marker>"
 stgadgets dev status
 stgadgets dev restart --build-ui                  # after a change; options not given are kept
 stgadgets dev snapshot --width 1000               # the overlay's picture, to .stgadgets/dev/snapshot.png
@@ -193,6 +193,11 @@ stgadgets dev stop
 | `--build-ui` | Run `npm run build` in `src/ui` first, so the server and overlay serve the latest UI |
 
 When something doesn't start, the command says so with the end of its log.
+
+Snapshots come from the overlay itself: `--overlay` starts it with `STGADGETS_SNAPSHOT_PORT` set, and
+`GET http://127.0.0.1:<port>/snapshot` returns a PNG of the layout at the emulator window's size, on a transparent
+background (the game isn't included). While the overlay is hidden, it draws the layout invisibly for half a second to
+take one; the `X-Overlay-Visible` header says which. Without the variable, the overlay serves no snapshots.
 
 ## Latency
 

@@ -99,7 +99,7 @@ What stays the same is **the CRC32 of each chip**:
 
 **Merged sets:** a MAME *merged* zip (like the `invaders.zip` used in the spike) contains the parent's ROMs at the top level and every clone's ROMs in subfolders. Only the top-level files describe the parent. Clone CRCs being in the zip doesn't mean those clones are running.
 
-Currently only name matching is implemented. CRC matching comes when a provider reports chip CRCs.
+Matching on chip CRCs works when the provider reports them: the RetroArch provider does when it finds the zip in its content history ([providers.md](providers.md#retroarch-provider)), and replays don't, so they match by name.
 
 Clones and revisions belong to their parent's pack. If one shares most of its addresses with the parent but not all, its map will be able to **extend** the parent's and override only what's different (added once a game needs it; the exact shape is still open):
 
@@ -195,7 +195,7 @@ export default {
 
 ## Finding addresses
 
-Writing maps is the real bottleneck. Space Invaders has a published disassembly. Most games don't, and things like DoDonPachi's rank, chain timer and hyper meter will need detective work.
+Writing maps is the real bottleneck. Space Invaders has a published disassembly. Most games don't, and hidden systems such as rank and chain timers take detective work: see DoDonPachi's [`NOTES.md`](../packs/ddonpach/NOTES.md) for how it went there.
 
 ### Existing sources (check these first)
 

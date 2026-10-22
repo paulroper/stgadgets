@@ -8,7 +8,7 @@ Gadgets are React components. Layouts are pages that arrange gadgets for a game.
 
 | | What | Example |
 |---|---|---|
-| **Gadget** | A component that draws one or more variables | `<Score player={1} />`, `<RankMeter />` |
+| **Gadget** | A component that draws one or more variables | `<Counter name="credits" label="CREDITS" />`, DoDonPachi's `<Rank />` |
 | **Layout** | A page that arranges gadgets, for one game (in its pack) or for any game | `packs/invaders/ui/layout.tsx`, `GenericLayout` |
 | **SDK** | `@stgadgets/sdk`: the connection to stgadgets, hooks, and layout helpers | `useVar('p1.score')` |
 | **Standard gadgets** | `@stgadgets/gadgets`: the platform's gadgets, for any layout | `<Score name="p1.score" label="1UP" />` |
@@ -71,8 +71,6 @@ export function useFlashOnRise(name: string, ms = 300) {
 
 The core sends every tick in order, so `useOnFrame` doesn't miss changes because React rendered late. It can still miss things that happened between two polls. See [architecture](architecture.md#polling-isnt-frame-synced).
 
-
-
 ## Layouts
 
 Today a layout is a React component. When the server matches a [game pack](packs.md), the UI shows the pack's `ui/layout.tsx` (its default export), or the **generic layout** if the pack has none. The generic layout (`src/ui/src/layouts/GenericLayout.tsx`) shows standard gadgets for the [standard variable names](memory-maps.md#standard-variable-names). Gadgets render nothing for variables the map doesn't define.
@@ -83,17 +81,17 @@ Planned layout helpers, as a sketch:
 
 ```tsx
 import { defineLayout, Panel, GameSpace } from '@stgadgets/sdk/react';
-import { Score, Lives, Accuracy } from '@stgadgets/gadgets';
+import { Counter, Score } from '@stgadgets/gadgets';
 
 export default defineLayout({
   render: () => (
     <>
       <Panel anchor="left">
-        <Score player={1} />
-        <Lives player={1} />
+        <Score name="p1.score" label="1UP" />
+        <Counter name="p1.lives" label="LIVES" />
       </Panel>
       <Panel anchor="right">
-        <Accuracy />
+        <Counter name="p1.accuracy" label="ACCURACY" />
       </Panel>
       <GameSpace>{/* children use game coordinates, rotated & scaled to fit */}</GameSpace>
     </>

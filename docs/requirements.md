@@ -15,6 +15,7 @@ stgadgets must add **zero** input or display latency to the emulator.
 - **The overlay window must not knock the emulator off its fastest presentation path.** If our window sits on top of the game, the OS may have to composite the two together instead of showing the game's frames directly. That can add a frame. Watch for:
   - **macOS:** fullscreen apps can be shown directly without compositing, and a window over them may stop that.
   - **Windows:** "independent flip" and multiplane overlays for borderless windows. A window on top may force DWM composition.
+  - **Linux:** compositors show fullscreen windows directly (unredirection on X11, direct scanout on Wayland), and a window on top may stop that.
 - **Checked by measurement:** emulator latency with and without the overlay, on each OS and display mode we support. If an overlay mode adds latency, the docs and UI must say so.
 
 ### L2. The overlay must keep up with the game
@@ -36,7 +37,7 @@ Notes:
 
 - **Timestamps through the pipeline:** each tick carries timestamps for provider receive, decode, WebSocket send, JS receive and paint. A debug gadget shows them live.
 - **End-to-end test:** record the screen at 60 fps or more and count the frames between the game's own score changing on screen and the score gadget changing. Space Invaders, with its on-screen score, is the reference test. `stgadgets latency analyse` counts the frames ([cli.md](cli.md#latency)), and the `latency-test` skill runs the test.
-- Latency results are recorded for each provider and OS in `docs/latency.md`, once we have numbers.
+- Latency results are recorded for each provider and OS in [latency.md](latency.md).
 
 ### Where the overlay lag comes from
 

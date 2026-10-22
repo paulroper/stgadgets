@@ -1,6 +1,6 @@
 # stgadgets
 
-A platform for adding M2 ShotTriggers-style gadgets to shmups (STGs) running in emulators: score breakdowns, rank meters, chain gauges, input displays and anything else that makes a run easier to read.
+A platform for adding M2 ShotTriggers-style gadgets to shmups (STGs) running in emulators: score breakdowns, rank meters, chain gauges, stage splits and anything else that makes a run easier to read.
 
 stgadgets runs alongside the emulator. It reads the game's memory through the emulator's own APIs, turns it into named variables, and draws gadgets in a transparent window over the game. The game, the emulator and the ROMs are never modified.
 
@@ -36,7 +36,7 @@ Tests:
 
 ### macOS overlay (in progress)
 
-**Snapshots for development:** `bin/stgadgets dev snapshot` saves a PNG of the layout as the overlay draws it. Under the hood, `dev start --overlay` starts the overlay with `STGADGETS_SNAPSHOT_PORT=5198`, and `GET http://127.0.0.1:5198/snapshot` returns a PNG of the layout as the overlay draws it, at the emulator window's size, on a transparent background (the game isn't included). It works while the overlay is hidden too, by drawing it invisibly for half a second; the `X-Overlay-Visible` header says which. Off unless the variable is set.
+For development, `bin/stgadgets dev snapshot` saves a PNG of the layout as the overlay draws it, even while it's hidden ([the build-and-look loop](docs/pack-development.md#the-build-and-look-loop)).
 
 For fullscreen play, **turn off Game Mode for RetroArch** (menu bar game controller icon → Turn Off Game Mode). Game Mode throttles the overlay to 5 Hz, about 100–200 ms behind the game ([docs/latency.md](docs/latency.md)). Windowed play isn't affected.
 
@@ -70,7 +70,7 @@ See [Architecture](docs/architecture.md) for the full picture.
 - [Gadget design](docs/gadget-design.md): how gadgets look and feel
 - [Emulator providers](docs/providers.md): the provider interface, RetroArch, and the recording format
 - [The stgadgets CLI](docs/cli.md): recording a game, finding addresses, and inspecting recordings
-- [Roadmap](docs/roadmap.md): from Space Invaders to DoDonPachi
+- [Roadmap](docs/roadmap.md): from Space Invaders to DoDonPachi and beyond
 - [Latency measurements](docs/latency.md)
 - [Code conventions](docs/conventions.md): organise code by what it does, not what it is
 - [Decision records](docs/decisions/): why things are the way they are
@@ -80,11 +80,10 @@ See [Architecture](docs/architecture.md) for the full picture.
 | | |
 |---|---|
 | Runtime | .NET 10 |
-| First OS | macOS (Windows to follow) |
+| Operating systems | macOS, Windows and Linux (overlay on macOS so far) |
 | First emulator | RetroArch ([ADR 0009](docs/decisions/0009-first-provider-retroarch.md)); MAME next |
 | Latency | No added lag in the game; overlay at most 1–2 frames behind |
-| First game | Space Invaders (Taito, 1978) |
-| Dream game | DoDonPachi (Cave, 1997) |
+| Reference games | Space Invaders (Taito, 1978), DoDonPachi (Cave, 1997) |
 
 ## Not affiliated
 

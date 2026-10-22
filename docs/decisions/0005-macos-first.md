@@ -1,6 +1,6 @@
 # 0005. Develop for macOS first
 
-- **Status:** Accepted
+- **Status:** Accepted; targets amended by [0016](0016-macos-windows-and-linux.md): macOS, Windows and Linux equally
 - **Date:** 2026-10-15
 
 ## Context

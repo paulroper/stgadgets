@@ -5,7 +5,7 @@
 
 ## Context
 
-The milestone 0 spike had to show we could read Space Invaders' memory, using the original hardware's addresses, on macOS. It also had to decide between RetroArch network commands and a MAME Lua plugin ([roadmap](../roadmap.md#0-pick-the-first-provider-spike-about-a-day)).
+The milestone 0 spike had to show we could read Space Invaders' memory, using the original hardware's addresses, on macOS. It also had to decide between RetroArch network commands and a MAME Lua plugin ([roadmap](../roadmap.md#0-spike)).
 
 Results with RetroArch 1.22.2 and the FBNeo core (details in [providers.md](../providers.md#retroarch-provider) and [latency.md](../latency.md)):
 

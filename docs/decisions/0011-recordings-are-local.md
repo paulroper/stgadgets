@@ -1,6 +1,6 @@
 # 0011. Recordings are local; recording tools live in a skill
 
-- **Status:** Accepted
+- **Status:** Accepted; tools amended by [0015](0015-pack-tools-in-a-dotnet-cli.md): they're a .NET CLI, which the skill drives
 - **Date:** 2026-10-16
 - **Amends:** [0010](0010-game-packs.md) (recordings and expected values committed in packs)
 

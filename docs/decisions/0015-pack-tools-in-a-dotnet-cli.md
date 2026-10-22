@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-10-19
+- **Amends:** [0011](0011-recordings-are-local.md) (recording tools as Python scripts in a skill)
 
 ## Context
 
