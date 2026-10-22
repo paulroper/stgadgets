@@ -126,6 +126,7 @@ tests/                               # mirrors src/: tests for src/<module>/X li
   ui/                                # Vitest, run from src/ui (npm test): the app against a fake server; also runs
                                      # packs/*/tests, which import testing.ts as @stgadgets/testing
   lib/providers/Stgadgets.Providers.Replay.Tests/
+  lib/providers/Stgadgets.Providers.RetroArch.Tests/
   (later) host/lib/Stgadgets.Host.Lib.Api.Tests/
 packs/                               # game packs: everything game-specific (docs/packs.md)
   invaders/                          # pack.yaml, map.yaml, providers/, ui/, tests/, recordings/

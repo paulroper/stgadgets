@@ -23,9 +23,15 @@ public sealed record Pack(
     DerivedScript? Derived,
     IReadOnlyDictionary<string, ProviderSettings> ProviderSettings)
 {
-    // TODO: match on ProgramCrcs first once providers report chip CRCs (docs/memory-maps.md#precedence).
+    /// <summary>
+    /// Whether the pack's map applies to <paramref name="content"/> (docs/memory-maps.md#precedence). Chip CRCs decide
+    /// when the provider reports them, so a renamed zip still matches and another revision under the same name doesn't.
+    /// They're compared by value only, since MAME and FBNeo don't always name a chip the same way.
+    /// </summary>
     public bool Matches(ContentInfo content) =>
-        content.Romset is not null && Romsets.Contains(content.Romset, StringComparer.OrdinalIgnoreCase);
+        content.ChipCrcs is { } chipCrcs && ProgramCrcs.Count > 0
+            ? ProgramCrcs.Values.All(crc => chipCrcs.Values.Contains(crc))
+            : content.Romset is not null && Romsets.Contains(content.Romset, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The folders under recordings/, each a recording with an optional expected.yaml.</summary>
     public IEnumerable<string> Recordings

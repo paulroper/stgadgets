@@ -28,6 +28,12 @@ public sealed class RetroArchProvider(IPEndPoint endpoint) : IEmulatorProvider
 
     public async Task<ContentInfo?> GetContentAsync(CancellationToken cancellationToken)
     {
+        var status = await GetStatusAsync(cancellationToken);
+        return status.State == "CONTENTLESS" ? null : new ContentInfo(status.Content, status.System, FindChipCrcs(status.Content));
+    }
+
+    private async Task<RetroArchStatus> GetStatusAsync(CancellationToken cancellationToken)
+    {
         RetroArchStatus status;
         try
         {
@@ -41,7 +47,28 @@ public sealed class RetroArchProvider(IPEndPoint endpoint) : IEmulatorProvider
 
         if (_process?.ProcessId is not { } pid || !IsRunning(pid))
             _process = FindProcess();
-        return status.State == "CONTENTLESS" ? null : new ContentInfo(status.Content, status.System);
+        return status;
+    }
+
+    /// <summary>
+    /// Compares what GET_STATUS reports rather than whole <see cref="ContentInfo"/>s, which would read the ROM set's
+    /// files at every check and whose chip CRCs compare by reference.
+    /// </summary>
+    private async Task<bool> IsStillPlayingAsync(ContentInfo content, CancellationToken cancellationToken)
+    {
+        var status = await GetStatusAsync(cancellationToken);
+        return status.State != "CONTENTLESS" && status.Content == content.Romset && status.System == content.System;
+    }
+
+    /// <summary>The chip CRCs of the ROM set GET_STATUS names, when its zip is in RetroArch's content history.</summary>
+    private IReadOnlyDictionary<string, uint>? FindChipCrcs(string? basename)
+    {
+        if (basename is null)
+            return null;
+        var path = ContentHistory.DefaultLocations(ExecutableDirectory(_process?.ProcessId))
+            .Select(history => ContentHistory.FindContent(history, basename))
+            .FirstOrDefault(path => path is not null);
+        return path is null ? null : RomSetZip.ReadChipCrcs(path);
     }
 
     /// <summary>
@@ -54,6 +81,20 @@ public sealed class RetroArchProvider(IPEndPoint endpoint) : IEmulatorProvider
             .Concat(System.Diagnostics.Process.GetProcessesByName(AppName.ToLowerInvariant()))   // Windows/Linux
             .FirstOrDefault();
         return new EmulatorProcessInfo(AppName, process?.Id);
+    }
+
+    private static string? ExecutableDirectory(int? pid)
+    {
+        if (pid is null)
+            return null;
+        try
+        {
+            return Path.GetDirectoryName(System.Diagnostics.Process.GetProcessById(pid.Value).MainModule?.FileName);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            return null;
+        }
     }
 
     private static bool IsRunning(int pid)
@@ -91,7 +132,7 @@ public sealed class RetroArchProvider(IPEndPoint endpoint) : IEmulatorProvider
             if (clock.Elapsed - lastStatusCheck > StatusCheckInterval)
             {
                 lastStatusCheck = clock.Elapsed;
-                if (await GetContentAsync(cancellationToken) != content)
+                if (!await IsStillPlayingAsync(content, cancellationToken))
                     yield break;
             }
 

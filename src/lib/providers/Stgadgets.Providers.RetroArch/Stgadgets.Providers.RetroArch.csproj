@@ -4,4 +4,8 @@
     <ProjectReference Include="..\..\Stgadgets.Core\Stgadgets.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Stgadgets.Providers.RetroArch.Tests" />
+  </ItemGroup>
+
 </Project>

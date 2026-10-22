@@ -67,12 +67,13 @@ The core builds the `ReadPlan` from the matched pack's map, merging addresses in
 
 ## Identifying the game
 
-The server matches [packs](packs.md) on ROM set name, with ROM hash as a fallback (see [memory-maps.md](memory-maps.md#matching)). Providers report whatever they can:
+The server matches [packs](packs.md) on chip CRCs when the provider reports them, and on ROM set name otherwise (see [memory-maps.md](memory-maps.md#precedence)). Providers report whatever they can:
 
 - **ROM set name:** usually the content's file name for arcade games (`invaders.zip` → `invaders`). This breaks if the user renames files. MAME and FBNeo also sometimes use different names, and MAME occasionally renames sets between versions.
 - **Chip CRCs (arcade):** survive renames and naming differences, and are what pack matching prefers (see [memory-maps.md](memory-maps.md#why-chip-crcs-not-file-hashes-for-arcade-games)).
   - *MAME:* the Lua API can list the loaded ROMs and their hashes.
-  - *RetroArch:* `GET_STATUS` probably gives a CRC of the whole file, which is useless for zips. Instead, the provider finds the content's zip and reads the chip CRCs from its file listing. How we find the path (`GET_STATUS`, RetroArch's content history playlist, or the user's ROM folder) is to be decided in the spike.
+  - *RetroArch:* no network command gives the content's path, so the provider finds the zip in RetroArch's content history and reads the chip CRCs from its file listing (see [RetroArch provider](#retroarch-provider)).
+  - *Replay:* recordings don't store chip CRCs, so replays match by name.
 - **Whole-file hashes (consoles):** SHA-1 or CRC32 of the ROM file.
 
 ## MAME provider (strong first candidate)
@@ -101,7 +102,7 @@ Implemented in `src/lib/providers/Stgadgets.Providers.RetroArch`, used by the se
 
 | Need | Command | Notes |
 |---|---|---|
-| What's running | `GET_STATUS` → `GET_STATUS PLAYING fb_alpha,invaders,crc32=be3e15a` | Also `PAUSED` or `CONTENTLESS`. The CRC is of the whole zip, so it's useless for matching (see [memory-maps.md](memory-maps.md#why-chip-crcs-not-file-hashes-for-arcade-games)) |
+| What's running | `GET_STATUS` → `GET_STATUS PLAYING fb_alpha,invaders,crc32=be3e15a` | Also `PAUSED` or `CONTENTLESS`. The name is the content's file name without its folder or extension; for a file inside an archive, the archive's. The CRC is of the whole zip, so it's useless for matching (see [memory-maps.md](memory-maps.md#why-chip-crcs-not-file-hashes-for-arcade-games)), and RetroArch's master branch no longer sends it |
 | Read memory | `READ_CORE_RAM <hex offset> <len>` → `READ_CORE_RAM <offset> <hex bytes…>` | Uses RetroAchievements addressing. **This is the one that works with FBNeo** |
 | | `READ_CORE_MEMORY <hex addr> <len>` | ❌ FBNeo replies `-1 no memory map defined`. It only works with cores that publish a libretro memory map |
 
@@ -114,8 +115,9 @@ Measurements:
 How the provider works:
 
 - **Core profiles.** `READ_CORE_RAM` offsets are in the core's own layout. For FBNeo's Space Invaders, offset 0 is CPU address `0x2000` and `0x2000` bytes are readable (work RAM and video RAM). Some cores also return the bytes in a different order: FBNeo keeps 68000 RAM as little-endian words, so each pair of bytes comes back swapped, and `word_swapped: true` makes the provider swap them back. Each pack lists this for the cores it supports, keyed by RetroArch's system ID, in `providers/retroarch.yaml` ([packs.md](packs.md#provider-settings)), and `CoreProfile` reads it from the matched pack. Each new game and core pairing must be checked by hand for now.
+- **Finding the ROM set.** RetroArch writes the full path of everything it loads to its content history, `playlists/builtin/content_history.lpl`. The provider looks in each OS's default playlist folders and in RetroArch's own folder (the default on Windows), newest history first. It takes the newest entry whose file name matches `GET_STATUS`, and reads the chip CRCs from that zip's listing. If there's no history, no matching entry, or the history is in RetroArch's old line-based or compressed format, the provider reports no CRCs and packs match by name. Not covered yet: a history moved with `content_history_directory`. The newest entry with the name may also be a different file with the same name, in which case the CRCs don't match and no pack is used.
 - **Pipelined reads.** Every chunk for a tick is sent before waiting for any reply, so a tick costs one frame, not one frame per range.
-- **Watching for changes.** Every 2 seconds the provider re-checks `GET_STATUS` and ends the stream if the content changed. After 10 timeouts in a row, it assumes RetroArch is gone.
+- **Watching for changes.** Every 2 seconds the provider re-checks `GET_STATUS` and ends the stream if the state, system or name changed. It doesn't read the ROM set again. After 10 timeouts in a row, it assumes RetroArch is gone.
 - **Polling only.** It isn't synced to frames, so single-frame events can still be missed. A map's `frame_counter` variable, if it has one, can be used to spot missed or repeated frames.
 
 ## Replay provider

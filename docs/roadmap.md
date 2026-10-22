@@ -42,7 +42,7 @@ One game, one variable, one gadget, on screen, with latency measured.
 Generalise only what milestone 1 proved:
 
 - [x] Map loader and decoder for real (YAML, types, byte order)
-- [ ] Match maps to ROM set and hash (ROM set works; chip CRCs wait on providers reporting them)
+- [x] Match maps to ROM set and chip CRCs (RetroArch finds the zip through its content history; console ROM hashes wait on a console pack)
 - [x] Replay provider ([providers](providers.md#replay-provider))
 - [x] Decode a recording and print the variables: `stgadgets recording values` and `history` ([cli.md](cli.md))
 - [x] Unit tests for decoding against the recordings
