@@ -8,7 +8,7 @@
 
 Space Invaders (Taito, 1978) is a good first game: it has an 8-bit CPU (Intel 8080), 1 KB of work RAM, a well-documented disassembly, an on-screen score we can use for latency tests, and a rotated monitor.
 
-## 0. Pick the first provider (spike, about a day)
+## 0. Spike
 
 The riskiest assumption is that we can read Space Invaders' memory, at the original hardware's addresses, on macOS. Test both candidates before writing anything for real:
 
@@ -25,7 +25,7 @@ One game, one variable, one gadget, on screen, with latency measured.
 - [x] Set up the .NET solution (`src/`, `tests/`) on .NET 10
 - [x] The chosen provider, streaming work RAM
 - [x] Capture recordings: `stgadgets recording record` ([cli.md](cli.md)), used by the `game-recording` skill ([ADR 0011](decisions/0011-recordings-are-local.md)) in the [recording format](providers.md#recording-format-draft)
-- [x] Capture fixture recordings (`invaders/play-01`: mystery ship, deaths, game over; still to capture: inserting a coin, clearing a wave): attract mode, inserting a coin, scoring, losing a life, clearing a wave
+- [x] Capture fixture recordings of attract mode, scoring, the mystery ship, losing a life and game over (still to capture: inserting a coin, clearing a wave)
 - [x] Check the draft addresses in [memory-maps.md](memory-maps.md) against the recordings
 - [x] Minimal decoding of `p1.score` (BCD), with the map hardcoded or very minimal
 - [x] Kestrel WebSocket server and a bare `@stgadgets/sdk` with `useVar`
@@ -52,47 +52,77 @@ Generalise only what milestone 1 proved:
 
 **Done when** a live score and accuracy panel sit next to a game of Space Invaders and stay correct, and the same layout runs in a browser against a recording.
 
-## 3. Map authoring tools
+## 3. Prove out the platform with additional packs
 
-Before tackling harder games, build tools to find addresses (see [memory-maps.md](memory-maps.md#finding-addresses)):
+Grow the platform by adding packs, and pick each game for what it needs that the platform doesn't do yet. Games with hidden systems are where ShotTriggers-style gadgets earn their keep. Each pack's open work, such as states not yet checked, clone sets and gadget ideas, lives in its own `NOTES.md`, not here.
+
+**Done when** a new pack can be written without changes to the platform.
+
+### Map authoring tools
+
+Tools to find addresses (see [memory-maps.md](memory-maps.md#finding-addresses)):
 
 - [x] RAM search on recordings (changed, unchanged, went up, went down, equals a value): `stgadgets recording search` ([cli.md](cli.md)), used by the `game-recording` skill
 - [ ] Watch view: show chosen addresses live while playing (for now, `recording record --watch` logs them to `changes.log`)
 - [ ] Import helpers for MAME cheat files
 
-## 4. Fill out the format (early 80s and 16-bit era)
+### Map format
 
-Pick games that need features Space Invaders didn't:
-
-- [x] 16-bit values and big-endian CPUs (68000), via DoDonPachi: including FBNeo's byte-swapped 68000 RAM (`word_swapped` in a pack's `providers/retroarch.yaml`)
+- [x] 16-bit values and big-endian CPUs (68000), including FBNeo's byte-swapped 68000 RAM (`word_swapped` in a pack's `providers/retroarch.yaml`)
 - [x] Bit fields in maps (`mask`, `shift`)
 - [ ] Arrays and structs (enemy and bullet tables), and pointers
-- [ ] Maps that extend other maps, for clone ROM sets (DoDonPachi's `ddonpachj` and `ddonpacha` are waiting on this or a check)
+- [ ] Maps that extend other maps, for clone ROM sets
 - [ ] Calibrating the game picture position, and `GameSpace`
-- [ ] Second provider (whichever wasn't picked in milestone 0)
-- [ ] Windows overlay host: see [milestone 7](#7-ready-for-other-people)
 
-## 5. 90s shmups
+### Providers
 
-Games with hidden systems are where ShotTriggers-style gadgets earn their keep:
+- [ ] Second provider: MAME, kept from milestone 0
 
-- [x] **Rank meters:** hidden difficulty that changes as you play (DoDonPachi's rank, its parts and what changed it)
-- [x] **Chain and combo systems** (DoDonPachi's chain gauge and hits)
+### Gadgets for hidden systems
+
+- [x] **Rank meters:** hidden difficulty that changes as you play, its parts and what changed it
+- [x] **Chain and combo systems**
 - [ ] **Hitbox overlays:** on hold, undecided whether gadgets should draw over the game at all. They'd also need exact alignment with the game picture, per-object position data, and a canvas renderer
 
-## 6. DoDonPachi 🐝
+## 4. Single distributable
 
-The long-term goal. DoDonPachi (`ddonpach`, Cave, 1997) runs on a 68000-based Cave board, is vertical, and has a combo system that's an obvious fit for gadgets: a chain gauge and hit counter (hyper stock came later, in DaiOuJou), plus hidden rank, bees and a secret second loop.
+Turn stgadgets from something that runs from this repo into one thing people can install and run on macOS, Windows
+and Linux.
 
-- [x] Pack for the World set (`packs/ddonpach/`): the map from published research checked against the World ROM's code, derived values for the game's rules, and a layout with score and stage clear bonus, chain, lives and next extend, power, rank, bees, second loop conditions, distance to the boss, game speed (slowdown) and stage splits. The research is in its [`NOTES.md`](../packs/ddonpach/NOTES.md)
-- [ ] Check what one-player stage 1 play hasn't reached: two players, other settings, later stages and bosses, the second loop, the MAXIMUM bonus
-- [ ] `ddonpachj` and `ddonpacha` in the pack
-- [ ] Future gadgets from the notes: rank graph, personal-best splits
+**Done when** someone who has never seen this repo can install stgadgets on any of the three, point it at RetroArch
+and see a pack's layout over their game.
 
-## 7. Ready for other people
+### Windows host
 
-Turn stgadgets from something that runs from this repo into something people can install, and write packs for
-without it.
+- [ ] Overlay host for Windows (separate session): a transparent, click-through window with WebView2, sharing
+  `host/lib`, including the L1 check for independent flip
+- [ ] The same development hooks as the macOS host, such as snapshots
+
+### Linux host
+
+- [ ] Decide how to support X11 and Wayland: on Wayland, a click-through window that stays above another app's window
+  depends on the compositor
+- [ ] Overlay host for Linux: a transparent, click-through window with WebKitGTK, sharing `host/lib`, including the L1
+  check
+- [ ] The same development hooks as the macOS host, such as snapshots
+
+### Build tooling and a single package
+
+- [ ] One build that produces a release for each OS: the server (self-contained .NET), the UI, the built-in packs and
+  the overlay host, as one installable package (a `.app`/`.dmg` on macOS, an installer on Windows, and a package for
+  Linux, format to decide)
+- [ ] The host starts and stops the server itself, so users run one thing
+- [ ] Signing and notarization (Apple Developer account for macOS; code signing on Windows)
+- [ ] CI that builds and tests each OS's package
+
+### User documentation
+
+- [ ] User docs: installing, setting up the emulator (RetroArch network commands, cores), the overlay and OBS
+- [ ] A list of supported games and emulator cores, with what each pack shows
+
+## 5. Ready for platform developers
+
+Let people write and share packs without this repo.
 
 ### Pack test framework
 
@@ -115,22 +145,6 @@ that made them. Committed scenarios and layout tests now cover each pack's logic
 
 - [ ] A pack author's guide, from [developing a game pack](pack-development.md), with a reference for the map
   format, `derived.js`, the SDK and the standard gadgets that doesn't assume this repo
-- [ ] User docs: installing, setting up the emulator (RetroArch network commands, cores), the overlay and OBS
-- [ ] A list of supported games and emulator cores, with what each pack shows
-
-### Windows host
-
-- [ ] Overlay host for Windows (separate session): a transparent, click-through window with WebView2, sharing
-  `host/lib`, including the L1 check for independent flip
-- [ ] The same development hooks as the macOS host, such as snapshots
-
-### Build tooling and a single package
-
-- [ ] One build that produces a release for each OS: the server (self-contained .NET), the UI, the built-in packs and
-  the overlay host, as one installable package (a `.app`/`.dmg` on macOS, an installer on Windows)
-- [ ] The host starts and stops the server itself, so users run one thing
-- [ ] Signing and notarization (Apple Developer account for macOS; code signing on Windows)
-- [ ] CI that builds and tests each OS's package
 
 ### Packs outside the repo
 
@@ -164,4 +178,4 @@ Found while building the DoDonPachi pack:
 
 - Input display gadget. Needs its own input source: reading the controller directly (GameController/HID on macOS) or the game's input bytes in RAM. Emulator APIs don't give us controller input.
 - Using a layout as an OBS browser source
-- Distribution: see [milestone 7](#7-ready-for-other-people)
+- Distribution: see [milestone 4](#4-single-distributable)
