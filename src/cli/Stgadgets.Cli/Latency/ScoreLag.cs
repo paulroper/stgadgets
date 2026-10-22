@@ -62,12 +62,15 @@ internal sealed record ScoreLag(
         var (usedGame, usedGadget) = (new HashSet<int>(), new HashSet<int>());
         var pairs = new List<ChangePair>();
         foreach (var (g, d) in candidates)
+        {
             if (!usedGame.Contains(g) && !usedGadget.Contains(d))
             {
                 usedGame.Add(g);
                 usedGadget.Add(d);
                 pairs.Add(new(game[g], gadget[d]));
             }
+        }
+
         return pairs.OrderBy(p => p.Game).ToList();
     }
 

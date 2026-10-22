@@ -44,3 +44,11 @@ A few more rules for modules:
 - **Tests mirror `src/`.** Tests for `src/<module>/X` live in `tests/<module>/X.Tests`. Game recordings and their expected values live in each pack's `recordings/` folder, which is local and git-ignored (`docs/packs.md#testing`).
 
 See [Architecture → Repository layout](architecture.md#repository-layout) for the current tree.
+
+## Linting
+
+### .NET
+
+Linting is part of the build: `dotnet build` runs the Roslyn analyzers (`AnalysisLevel=latest-recommended`) and the code style in the root `.editorconfig`. Any warning fails the build (root `Directory.Build.props`), locally and in CI. To fix most style issues automatically, run `dotnet format` on the module's solution, for example `dotnet format src/server/Stgadgets.Server.slnx`.
+
+Turn a rule off in `.editorconfig`, with a comment that says why, rather than suppressing it in code.

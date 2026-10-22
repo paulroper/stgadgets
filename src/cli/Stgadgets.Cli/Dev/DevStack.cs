@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -97,7 +98,7 @@ internal sealed class DevStack(string repoRoot, TextWriter output)
             output.WriteLine("Starting the overlay…");
             using var overlay = StartLogged(
                 "dotnet", ["run", "--project", "src/host/macos/Stgadgets.Host.Mac"], OverlayLog,
-                new() { ["STGADGETS_SNAPSHOT_PORT"] = options.SnapshotPort.ToString() });
+                new() { ["STGADGETS_SNAPSHOT_PORT"] = options.SnapshotPort.ToString(CultureInfo.InvariantCulture) });
             await WaitForAsync(
                 () => SnapshotAsync(options.SnapshotPort, width: 16, cancellationToken), TimeSpan.FromMinutes(3), "the overlay's snapshots",
                 OverlayLog, cancellationToken);
@@ -118,8 +119,10 @@ internal sealed class DevStack(string repoRoot, TextWriter output)
         if (state.Options.Overlay)
         {
             foreach (var overlay in OverlayProcesses())
+            {
                 using (overlay)
                     overlay.Kill();
+            }
         }
         File.Delete(StateFile);
 
@@ -280,7 +283,9 @@ internal sealed class DevStack(string repoRoot, TextWriter output)
         {
             if (process.ProcessName.StartsWith("Stgadgets.Host", StringComparison.Ordinal)
                 && process.MainModule?.FileName.Contains(OverlayApp, StringComparison.Ordinal) == true)
+            {
                 return true;
+            }
         }
         catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
         {

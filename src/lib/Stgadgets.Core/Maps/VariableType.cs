@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace Stgadgets.Core.Maps;
@@ -20,7 +21,7 @@ public sealed partial record VariableType(VariableKind Kind, int Size, Endiannes
         if (!match.Success)
             throw new FormatException($"Unknown variable type '{text}'");
 
-        var size = int.Parse(match.Groups["size"].Value);
+        var size = int.Parse(match.Groups["size"].Value, CultureInfo.InvariantCulture);
         Endianness? endianness = match.Groups["endian"].Value switch
         {
             "le" => Maps.Endianness.Little,
