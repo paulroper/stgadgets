@@ -5,10 +5,13 @@
   <PropertyGroup>
     <TargetFramework>net10.0-macos</TargetFramework>
     <OutputType>Exe</OutputType>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>true</ImplicitUsings>
     <SupportedOSPlatformVersion>14.0</SupportedOSPlatformVersion>
     <TrimMode Condition="'$(Configuration)' == 'Release'">full</TrimMode>
+    <!--
+      No lock file: it would only record the macOS workload's platform version and the SDK's trimming package, which
+      change with the machine's workload and SDK rather than with anything we choose. The host has no packages of its own.
+    -->
+    <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
 
     <!--
       Workload 27.0.10722 requires exactly Xcode 27.0; we build with 27.1 (see README).

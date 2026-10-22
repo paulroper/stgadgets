@@ -1,11 +1,19 @@
 <!-- Shared by every .NET project in the repository. Linting: Roslyn analyzers and the code style in .editorconfig. -->
 <Project>
   <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <!-- Needed for IDE0005 (unnecessary usings) to run in the build; doc comments stay optional, for every member and parameter. -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
+
+    <!-- Package versions live in Directory.Packages.props. CI restores exactly what the lock files say. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
   </PropertyGroup>
 </Project>
