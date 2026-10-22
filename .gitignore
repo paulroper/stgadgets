@@ -74,6 +74,7 @@ local/
 
 ## Web
 node_modules/
+*.tsbuildinfo
 src/ui/dist/
 src/ui/screenshots/
 
