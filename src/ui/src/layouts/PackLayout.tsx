@@ -14,6 +14,8 @@ export function PackLayout({ pack }: { pack: string | null }) {
   const Layout = (pack && layouts.get(pack)) || GenericLayout;
   return (
     <Suspense fallback={null}>
+      {/* Layout is one of the components made once, above, not one created during render. */}
+      {/* oxlint-disable-next-line react/static-components */}
       <Layout />
     </Suspense>
   );

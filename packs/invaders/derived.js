@@ -11,21 +11,26 @@ const SAUCER_SCORES = [100, 50, 50, 100, 150, 100, 100, 50, 300, 100, 100, 100, 
 const SAUCER_300 = SAUCER_SCORES.indexOf(300);
 const RACK_START_Y = 0x78;
 
-const saucerIndex = ptr => ptr >= 0x54 && ptr < 0x54 + SAUCER_SCORES.length ? ptr - 0x54 : null;
+const saucerIndex = ptr => (ptr >= 0x54 && ptr < 0x54 + SAUCER_SCORES.length ? ptr - 0x54 : null);
 
 // Changes between this tick and the last are player 1's doing only if both ticks are player 1 playing.
 const p1Playing = (v, prev) =>
-  prev !== null && v['game.running'] && prev['game.running'] && v['player.data'] === 0x21 && prev['player.data'] === 0x21;
+  prev !== null &&
+  v['game.running'] &&
+  prev['game.running'] &&
+  v['player.data'] === 0x21 &&
+  prev['player.data'] === 0x21;
 
 const POPUP_TICKS = 60;
 
-const tempoIndex = aliens => aliens > 0 && aliens <= 55 ? ALIENS.findIndex(threshold => threshold <= aliens) : -1;
+const tempoIndex = aliens => (aliens > 0 && aliens <= 55 ? ALIENS.findIndex(threshold => threshold <= aliens) : -1);
 
 export default {
   // Declared first: everything below is null outside play, when memory holds leftovers (aliens_remaining is 255 on
   // the start screen) rather than the game's state.
   'game.running': {
-    description: 'Standard: a game is being played. False in attract mode and while the start and game-over screens hold play still.',
+    description:
+      'Standard: a game is being played. False in attract mode and while the start and game-over screens hold play still.',
     value: v => v['game.mode'] && v['game.moving'],
   },
 
@@ -33,11 +38,12 @@ export default {
   // (two-player games aren't verified yet).
   'p1.alive': {
     description: "Standard: player 1's ship is in play and not exploding.",
-    value: v => v['game.running'] && v['player.data'] === 0x21 ? v['player.state'] === 0xFF : null,
+    value: v => (v['game.running'] && v['player.data'] === 0x21 ? v['player.state'] === 0xff : null),
   },
   // Player 1's shots this game, from the global shot counter.
   'p1.shots': {
-    description: 'Shots player 1 has fired this game (counted as they leave the screen, hit or miss); null in attract mode.',
+    description:
+      'Shots player 1 has fired this game (counted as they leave the screen, hit or miss); null in attract mode.',
     value: (v, prev) => {
       if (!v['game.mode']) return null;
       if (prev === null || prev['p1.shots'] === null) return 0;
@@ -46,7 +52,8 @@ export default {
   },
 
   'p1.kills': {
-    description: "Aliens player 1 has shot this game (the saucer isn't an alien). Counts from when stgadgets joined if a game was already under way; null in attract mode.",
+    description:
+      "Aliens player 1 has shot this game (the saucer isn't an alien). Counts from when stgadgets joined if a game was already under way; null in attract mode.",
     value: (v, prev) => {
       if (!v['game.mode']) return null;
       if (prev === null || prev['p1.kills'] === null) return 0;
@@ -56,8 +63,9 @@ export default {
   },
 
   'p1.accuracy': {
-    description: 'Aliens hit per shot this game, from 0 to 1; null before the first shot. Saucer hits and shots that hit bombs count as misses.',
-    value: v => v['p1.shots'] ? v['p1.kills'] / v['p1.shots'] : null,
+    description:
+      'Aliens hit per shot this game, from 0 to 1; null before the first shot. Saucer hits and shots that hit bombs count as misses.',
+    value: v => (v['p1.shots'] ? v['p1.kills'] / v['p1.shots'] : null),
   },
 
   // The latest score increase, for the "+N" popup by the score.
@@ -65,7 +73,9 @@ export default {
     description: "Points from player 1's most recent score increase this game; null until the first.",
     value: (v, prev) => {
       if (!v['game.mode'] || prev === null) return null;
-      return p1Playing(v, prev) && v['p1.score'] > prev['p1.score'] ? v['p1.score'] - prev['p1.score'] : prev['p1.last_gain'];
+      return p1Playing(v, prev) && v['p1.score'] > prev['p1.score']
+        ? v['p1.score'] - prev['p1.score']
+        : prev['p1.last_gain'];
     },
   },
   'p1.last_gain_age': {
@@ -78,16 +88,16 @@ export default {
   },
   'p1.score_popup': {
     description: 'p1.last_gain for about a second after it happens, else null.',
-    value: v => v['p1.last_gain_age'] !== null && v['p1.last_gain_age'] < POPUP_TICKS ? v['p1.last_gain'] : null,
+    value: v => (v['p1.last_gain_age'] !== null && v['p1.last_gain_age'] < POPUP_TICKS ? v['p1.last_gain'] : null),
   },
   'p1.lives': {
     description: "Standard: player 1's ships including the one in play; a ship that's exploding no longer counts.",
-    value: v => v['p1.alive'] === null ? null : v['p1.ships_reserve'] + (v['p1.alive'] ? 1 : 0),
+    value: v => (v['p1.alive'] === null ? null : v['p1.ships_reserve'] + (v['p1.alive'] ? 1 : 0)),
   },
 
   'fleet.aliens': {
     description: 'aliens_remaining, or null outside play (it reads 255 on the start screen).',
-    value: v => v['game.running'] ? v.aliens_remaining : null,
+    value: v => (v['game.running'] ? v.aliens_remaining : null),
   },
 
   'fleet.tempo': {
@@ -107,7 +117,8 @@ export default {
   },
 
   'saucer.status': {
-    description: "null outside play, else 'flying', 'due' (launches when no squiggly shot is out), 'counting', 'paused' (rack still at its starting height) or 'none' (under 8 aliens: no more saucers this wave).",
+    description:
+      "null outside play, else 'flying', 'due' (launches when no squiggly shot is out), 'counting', 'paused' (rack still at its starting height) or 'none' (under 8 aliens: no more saucers this wave).",
     value: v => {
       if (!v['game.running']) return null;
       if (v['saucer.active']) return 'flying';
@@ -122,9 +133,12 @@ export default {
     value: v => {
       switch (v['saucer.status']) {
         case 'counting':
-        case 'paused': return v['saucer.timer'];
-        case 'due': return 0;
-        default: return null;
+        case 'paused':
+          return v['saucer.timer'];
+        case 'due':
+          return 0;
+        default:
+          return null;
       }
     },
   },

@@ -30,7 +30,7 @@ type DerivedScript = Record<string, DerivedFunction | { value: DerivedFunction; 
 
 const statesModules = import.meta.glob<GameStates>("../../../packs/*/tests/states.ts", { import: "default" });
 const derivedScripts = import.meta.glob<DerivedScript>("../../../packs/*/derived.js", { import: "default" });
-const packOf = (path: string) => path.split("/")[4];   // ../../../packs/<id>/...
+const packOf = (path: string) => path.split("/")[4]; // ../../../packs/<id>/...
 
 /** The packs that have game states. */
 export const packsWithStates = Object.keys(statesModules).map(packOf);
@@ -43,7 +43,9 @@ export async function gameStates(pack: string): Promise<Record<string, Vars>> {
   const loadDerived = derivedScripts[`../../../packs/${pack}/derived.js`];
   const derived = loadDerived ? await loadDerived() : {};
 
-  return Object.fromEntries(Object.entries(file.states).map(([name, steps]) => [name, play(name, steps, file, derived)]));
+  return Object.fromEntries(
+    Object.entries(file.states).map(([name, steps]) => [name, play(name, steps, file, derived)]),
+  );
 }
 
 // Plays one state's ticks, as derived.js scenarios do (src/lib/Stgadgets.Core/Derived/DerivedScenarios.cs): adds
@@ -61,7 +63,8 @@ function play(name: string, steps: GameStateStep[], file: GameStates, derived: D
       }
       if (repeat === 0) {
         for (const [variable, value] of Object.entries(step.set ?? {})) {
-          if (!(variable in file.start)) throw new Error(`State '${name}' sets '${variable}', which isn't in start: only map variables can be set`);
+          if (!(variable in file.start))
+            throw new Error(`State '${name}' sets '${variable}', which isn't in start: only map variables can be set`);
           memory[variable] = value;
         }
       }
@@ -76,12 +79,19 @@ function play(name: string, steps: GameStateStep[], file: GameStates, derived: D
 // values in order, each seeing the ones before it and the previous tick's. A value that throws or returns something
 // other than a finite number, boolean, string or null fails the state. So does reading a name the tick doesn't have,
 // which usually means a map variable missing from start.
-function evaluate(name: string, tick: number, derived: DerivedScript, values: MapValues, prev: MapValues | null): MapValues {
+function evaluate(
+  name: string,
+  tick: number,
+  derived: DerivedScript,
+  values: MapValues,
+  prev: MapValues | null,
+): MapValues {
   const where = (variable: string) => `State '${name}' (tick ${tick}): derived '${variable}'`;
   let current = "";
   const v = new Proxy(values, {
     get: (target, key) => {
-      if (typeof key === "string" && !(key in target)) throw new Error(`${where(current)} read '${key}', which this tick doesn't have`);
+      if (typeof key === "string" && !(key in target))
+        throw new Error(`${where(current)} read '${key}', which this tick doesn't have`);
       return Reflect.get(target, key);
     },
   });
@@ -93,10 +103,13 @@ function evaluate(name: string, tick: number, derived: DerivedScript, values: Ma
     try {
       result = value(v, prev);
     } catch (error) {
-      throw new Error(`${where(variable)} failed: ${(error as Error).message}`);
+      throw new Error(`${where(variable)} failed: ${(error as Error).message}`, { cause: error });
     }
     const valid =
-      result === null || typeof result === "boolean" || typeof result === "string" || (typeof result === "number" && Number.isFinite(result));
+      result === null ||
+      typeof result === "boolean" ||
+      typeof result === "string" ||
+      (typeof result === "number" && Number.isFinite(result));
     if (!valid) throw new Error(`${where(variable)} returned ${String(result)}`);
     values[variable] = result as Value;
   }

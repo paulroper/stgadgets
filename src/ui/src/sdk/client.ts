@@ -56,7 +56,7 @@ export class StgadgetsClient {
   connect(url: string) {
     const socket = new WebSocket(url);
     this.socket = socket;
-    socket.onmessage = (event) => this.receive(JSON.parse(event.data) as ServerMessage);
+    socket.onmessage = event => this.receive(JSON.parse(event.data) as ServerMessage);
     socket.onclose = () => {
       this.update({ state: "disconnected", detail: "Can't reach the stgadgets server" });
       setTimeout(() => this.connect(url), RECONNECT_DELAY_MS);
@@ -92,9 +92,13 @@ export class StgadgetsClient {
       case "tick": {
         const prev = this.vars;
         const vars = { ...prev, ...message.changed };
-        const info = { seq: message.seq, readAt: message.readAt, receivedAt: performance.timeOrigin + performance.now() };
+        const info = {
+          seq: message.seq,
+          readAt: message.readAt,
+          receivedAt: performance.timeOrigin + performance.now(),
+        };
         this.vars = vars;
-        this.frameListeners.forEach((listener) => listener(vars, prev, info));
+        this.frameListeners.forEach(listener => listener(vars, prev, info));
         if (Object.keys(message.changed).length > 0) this.notify();
         break;
       }
@@ -107,7 +111,7 @@ export class StgadgetsClient {
   }
 
   private notify() {
-    this.listeners.forEach((listener) => listener());
+    this.listeners.forEach(listener => listener());
   }
 }
 

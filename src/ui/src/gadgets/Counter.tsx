@@ -8,7 +8,7 @@ interface Props {
 }
 
 /** A labelled number. Renders nothing if the game's map has no such variable. */
-export function Counter({ name, label, format = (v) => v }: Props) {
+export function Counter({ name, label, format = String }: Props) {
   const value = useVar<number | null>(name);
   if (value === undefined) return null;
 

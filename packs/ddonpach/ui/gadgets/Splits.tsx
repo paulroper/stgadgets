@@ -50,7 +50,15 @@ function Row({ split, current }: { split: Split; current?: boolean }) {
   );
 }
 
-const ahead = (stage: string): Split => ({ stage, frames: null, game_frames: null, points: null, deaths: null, bombs: null, continues: null });
+const ahead = (stage: string): Split => ({
+  stage,
+  frames: null,
+  game_frames: null,
+  points: null,
+  deaths: null,
+  bombs: null,
+  continues: null,
+});
 
 /** Player 1's stage splits this credit: time, points, deaths, bombs, continues and slowdown, with the current stage live. */
 export function Splits() {
@@ -62,11 +70,21 @@ export function Splits() {
   const deaths = useVar<number | null>("split.deaths");
   const bombs = useVar<number | null>("split.bombs");
   const continues = useVar<number | null>("split.continues");
-  const finished = useMemo(() => new Map(parse(done).map((split) => [split.stage, split])), [done]);
+  const finished = useMemo(() => new Map(parse(done).map(split => [split.stage, split])), [done]);
   if (stage === undefined || done === undefined) return null;
 
   const current: Split | null =
-    stage === null ? null : { stage, frames: frames ?? null, game_frames: gameFrames ?? null, points: points ?? null, deaths: deaths ?? null, bombs: bombs ?? null, continues: continues ?? null };
+    stage === null
+      ? null
+      : {
+          stage,
+          frames: frames ?? null,
+          game_frames: gameFrames ?? null,
+          points: points ?? null,
+          deaths: deaths ?? null,
+          bombs: bombs ?? null,
+          continues: continues ?? null,
+        };
 
   return (
     <div className="gadget splits">
@@ -84,7 +102,7 @@ export function Splits() {
           </tr>
         </thead>
         <tbody>
-          {STAGES.map((name) =>
+          {STAGES.map(name =>
             current?.stage === name ? (
               <Row key={name} split={current} current />
             ) : (

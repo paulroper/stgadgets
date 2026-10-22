@@ -1,4 +1,4 @@
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import { client, type FrameListener, type Value } from "./client";
 
 /** A variable's current value, or undefined if the active map doesn't define it. */
@@ -24,6 +24,8 @@ export function useConnection() {
 /** Calls `listener` for every tick, in order. The building block for trackers (docs/gadgets.md#trackers). */
 export function useOnFrame(listener: FrameListener) {
   const latest = useRef(listener);
-  latest.current = listener;
+  useLayoutEffect(() => {
+    latest.current = listener;
+  });
   useEffect(() => client.onFrame((...args) => latest.current(...args)), []);
 }

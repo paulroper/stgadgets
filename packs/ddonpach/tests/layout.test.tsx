@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 
 /** The cells of each row of the splits table. */
 function splits() {
-  return [...gadget("SPLITS").querySelectorAll("tbody tr")].map((row) => [...row.querySelectorAll("td")].map((cell) => cell.textContent));
+  return [...gadget("SPLITS").querySelectorAll("tbody tr")].map(row =>
+    [...row.querySelectorAll("td")].map(cell => cell.textContent),
+  );
 }
 
 describe("DoDonPachi overlay", () => {
@@ -91,6 +93,10 @@ describe("DoDonPachi overlay", () => {
     expect(textOf("2ND LOOP")).toBe("LOOP 2");
     expect(textOf("BOSS · 2-3")).toBe("in ~93 s");
     expect(textOf("RANK")).toBe("63 / 63");
-    expect(splits().slice(0, 8).every((row) => row[1] !== "-")).toBe(true); // the first loop and 2-1, 2-2 are done
+    expect(
+      splits()
+        .slice(0, 8)
+        .every(row => row[1] !== "-"),
+    ).toBe(true); // the first loop and 2-1, 2-2 are done
   });
 });

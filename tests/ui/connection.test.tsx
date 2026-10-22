@@ -92,7 +92,9 @@ describe("showing a game state in development", () => {
   it("lists the pack's game states when there's no such state", async () => {
     await startApp("/?state=invaders/noSuchState");
 
-    await waitFor(() => expect(root().textContent).toMatch(/^No game state 'invaders\/noSuchState'\. Try invaders\/saucerFlying, /));
+    await waitFor(() =>
+      expect(root().textContent).toMatch(/^No game state 'invaders\/noSuchState'\. Try invaders\/saucerFlying, /),
+    );
   });
 });
 

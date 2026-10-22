@@ -28,7 +28,9 @@ export function Rank() {
   const reason = useVar<string | null>("rank.change_reason");
   const age = useVar<number | null>("rank.change_age");
   const timePoint = useVar<number | null>("rank.time_point_in");
-  const parts = PARTS.map((part) => ({ ...part, value: usePart(part.name) }));
+  // PARTS never changes, so the hooks run in the same order every render.
+  // oxlint-disable-next-line react/hooks
+  const parts = PARTS.map(part => ({ ...part, value: usePart(part.name) }));
   if (rank === undefined || model === undefined) return null;
 
   const shown = running ? rank : null;
@@ -45,7 +47,13 @@ export function Rank() {
       </div>
       <div className="bar">
         {parts.map(({ name, value }) =>
-          value ? <div key={name} className={`bar-fill ${name.replace(".", "-")}`} style={{ width: `${(value / RANK_MAX) * 100}%` }} /> : null,
+          value ? (
+            <div
+              key={name}
+              className={`bar-fill ${name.replace(".", "-")}`}
+              style={{ width: `${(value / RANK_MAX) * 100}%` }}
+            />
+          ) : null,
         )}
       </div>
       <div className="note">

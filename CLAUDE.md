@@ -16,6 +16,7 @@ Emulator overlay that shows M2 ShotTriggers-style gadgets for shmups. A .NET ser
 - CLI (any OS): `dotnet test src/cli`; run it with `bin/stgadgets <command>`, which builds it first (`docs/cli.md`). `bin/stgadgets dev` starts and stops the server and overlay for development
 - macOS overlay (needs Xcode + `macos` workload): `dotnet build src/host/macos`
 - UI: `cd src/ui && npm run build`; tests (in `tests/ui` and `packs/*/tests`): `cd src/ui && npm test`
+- Lint: .NET builds fail on any analyzer or style warning. For TS/JS, including packs: `cd src/ui && npm run lint && npm run format` (`docs/conventions.md#linting`)
 
 ## Code conventions
 

@@ -77,7 +77,7 @@ export class FakeServer {
 export async function startApp(url = "/") {
   sockets = [];
   vi.stubGlobal("WebSocket", FakeSocket);
-  vi.resetModules();   // a fresh client for every test
+  vi.resetModules(); // a fresh client for every test
 
   history.replaceState(null, "", url);
   document.documentElement.className = "";

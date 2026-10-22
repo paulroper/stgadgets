@@ -30,7 +30,12 @@ export function Bees() {
 
   return (
     <div className="gadget bees">
-      <div className="label"><span className="bees-icon" aria-hidden="true">🐝</span> BEES</div>
+      <div className="label">
+        <span className="bees-icon" aria-hidden="true">
+          🐝
+        </span>{" "}
+        BEES
+      </div>
       <div className={collected !== null && collected >= of ? "value bees-perfect" : "value"}>
         {collected ?? "-"}
         <span className="unit"> / {of}</span>
@@ -52,12 +57,14 @@ export function Bees() {
                 : ""}
       </div>
       <div className="bees-stages">
-        {STAGES.map((n) => {
+        {STAGES.map(n => {
           const count = byStage[n];
           return (
             <span
               key={n}
-              className={["bees-stage", count != null && count >= of ? "perfect" : "", n === stage ? "current" : ""].join(" ").trim()}
+              className={["bees-stage", count != null && count >= of ? "perfect" : "", n === stage ? "current" : ""]
+                .join(" ")
+                .trim()}
               title={`Stage ${n}`}
             >
               <span className="bees-stage-n">{n}</span>

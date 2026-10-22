@@ -9,8 +9,16 @@ interface Props extends SVGProps<SVGSVGElement> {
 /** Pixel art as crisp SVG, coloured with CSS `fill`. */
 export function Sprite({ rows, label, ...svg }: Props) {
   return (
-    <svg viewBox={`0 0 ${rows[0].length} ${rows.length}`} shapeRendering="crispEdges" role="img" aria-label={label} {...svg}>
+    <svg
+      viewBox={`0 0 ${rows[0].length} ${rows.length}`}
+      shapeRendering="crispEdges"
+      role="img"
+      aria-label={label}
+      {...svg}
+    >
       {rows.flatMap((row, y) =>
+        // A pixel's position is its identity: the sprite never reorders.
+        // oxlint-disable-next-line react/no-array-index-key
         [...row].flatMap((c, x) => (c === "#" ? [<rect key={`${x},${y}`} x={x} y={y} width={1} height={1} />] : [])),
       )}
     </svg>

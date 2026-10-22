@@ -2,15 +2,7 @@ import { useVar } from "@stgadgets/sdk";
 import { Sprite } from "./Sprite";
 import "./Lives.css";
 
-const SHIP = [
-  ".....#.....",
-  ".....#.....",
-  "....###....",
-  ".#########.",
-  "###########",
-  "###########",
-  "#.#.#.#.#.#",
-];
+const SHIP = [".....#.....", ".....#.....", "....###....", ".#########.", "###########", "###########", "#.#.#.#.#.#"];
 
 /** Player 1's lives as a row of laser bases, in our own pixel art (docs/gadget-design.md#no-real-game-assets). */
 export function Lives() {

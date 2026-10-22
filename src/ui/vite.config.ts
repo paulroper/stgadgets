@@ -39,10 +39,10 @@ function packImportRule(): Plugin {
       const target = path.resolve(path.dirname(importerPath), source);
       const allowed =
         allowedHere.includes(source) ||
-        Object.values(aliases).includes(source) ||   // already resolved by the alias
-        source.startsWith("\0") ||                    // Vite and plugin internals
+        Object.values(aliases).includes(source) || // already resolved by the alias
+        source.startsWith("\0") || // Vite and plugin internals
         source.startsWith("/@") ||
-        target.startsWith(packRoot + path.sep);       // its own files
+        target.startsWith(packRoot + path.sep); // its own files
       if (!allowed) {
         this.error(
           `${path.relative(packsDir, importerPath)} imports "${source}". It may import only ` +

@@ -52,3 +52,12 @@ See [Architecture → Repository layout](architecture.md#repository-layout) for 
 Linting is part of the build: `dotnet build` runs the Roslyn analyzers (`AnalysisLevel=latest-recommended`) and the code style in the root `.editorconfig`. Any warning fails the build (root `Directory.Build.props`), locally and in CI. To fix most style issues automatically, run `dotnet format` on the module's solution, for example `dotnet format src/server/Stgadgets.Server.slnx`.
 
 Turn a rule off in `.editorconfig`, with a comment that says why, rather than suppressing it in code.
+
+### TypeScript and JavaScript
+
+[Oxlint](https://oxc.rs/docs/guide/usage/linter) and [Oxfmt](https://oxc.rs/docs/guide/usage/formatter) cover the UI (`src/ui`), its tests (`tests/ui`) and the packs: their UIs, tests and `derived.js`. Run them from `src/ui`:
+
+- `npm run lint`: Oxlint, with the rules in the root `.oxlintrc.json`. Any warning fails it.
+- `npm run format`: formats the files in place. `npm run format:check` only checks them, as CI does.
+
+Their configs (`.oxlintrc.json`, `.oxfmtrc.json`) live at the repository root because they cover packs and tests as well as `src/ui`. Turn a rule off there, with a comment that says why, when it doesn't fit this codebase. For a single false positive, disable it on that line with `// oxlint-disable-next-line <rule>`, after a comment that says why.

@@ -17,7 +17,9 @@ export async function showGameState(spec: string) {
 
   const values = name ? states[name] : undefined;
   if (!values) {
-    const detail = `No game state '${spec}'. Try ${Object.keys(states).map((state) => `${pack}/${state}`).join(", ")}`;
+    const detail = `No game state '${spec}'. Try ${Object.keys(states)
+      .map(state => `${pack}/${state}`)
+      .join(", ")}`;
     client.receive({ type: "status", state: "no-pack", detail });
     return;
   }
