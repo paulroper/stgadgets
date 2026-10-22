@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\lib\providers\Stgadgets.Providers.RetroArch\Stgadgets.Providers.RetroArch.csproj" />
+  </ItemGroup>
+
+</Project>

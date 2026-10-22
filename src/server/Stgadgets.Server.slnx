@@ -5,5 +5,6 @@
   <Project Path="../lib/providers/Stgadgets.Providers.RetroArch/Stgadgets.Providers.RetroArch.csproj" />
   <Project Path="../lib/providers/Stgadgets.Providers.Replay/Stgadgets.Providers.Replay.csproj" />
   <Project Path="../../tests/lib/providers/Stgadgets.Providers.Replay.Tests/Stgadgets.Providers.Replay.Tests.csproj" />
+  <Project Path="../../tests/lib/providers/Stgadgets.Providers.RetroArch.Tests/Stgadgets.Providers.RetroArch.Tests.csproj" />
   <Project Path="Stgadgets.Server/Stgadgets.Server.csproj" />
 </Solution>

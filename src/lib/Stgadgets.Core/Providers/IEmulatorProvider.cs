@@ -6,7 +6,11 @@ namespace Stgadgets.Core.Providers;
 /// <summary>What the emulator is running.</summary>
 /// <param name="Romset">MAME/FBNeo short name, e.g. "invaders".</param>
 /// <param name="System">The emulator's name for the system or core, e.g. "fb_alpha".</param>
-public sealed record ContentInfo(string? Romset, string? System);
+/// <param name="ChipCrcs">
+/// Arcade games: the CRC32 of each ROM chip, by file name (<see cref="RomSetZip"/>). Null when the provider can't find
+/// the ROM set's files, and then packs match by <paramref name="Romset"/> alone.
+/// </param>
+public sealed record ContentInfo(string? Romset, string? System, IReadOnlyDictionary<string, uint>? ChipCrcs = null);
 
 /// <summary>The emulator's process, so the overlay host can find its window.</summary>
 /// <param name="AppName">The app's name as the OS shows it, e.g. "RetroArch".</param>

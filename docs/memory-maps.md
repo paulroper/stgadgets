@@ -93,9 +93,9 @@ What stays the same is **the CRC32 of each chip**:
 
 #### Precedence
 
-1. If the provider reports chip CRCs, they decide: a pack matches when all its `program_crcs` are present. The name is ignored, so renamed zips and naming differences between MAME and FBNeo don't matter.
+1. If the provider reports chip CRCs and the pack lists `program_crcs`, the CRCs decide: a pack matches when every one of its `program_crcs` values is among the chips. The name is ignored, so renamed zips and naming differences between MAME and FBNeo don't matter. Chips are compared by CRC only, not by file name, since the two emulators don't always name a chip the same way.
 2. Otherwise the core matches by `romsets` name.
-3. If the name matches but the CRCs don't, the pack is **not** used. A different revision under the same name would give wrong values silently, which is worse than showing nothing. Tooling reports the mismatch so the map can be extended.
+3. If the name matches but the CRCs don't, the pack is **not** used. A different revision under the same name would give wrong values silently, which is worse than showing nothing. The server's status says that no pack matched the program ROMs, rather than that there's no pack for the name.
 
 **Merged sets:** a MAME *merged* zip (like the `invaders.zip` used in the spike) contains the parent's ROMs at the top level and every clone's ROMs in subfolders. Only the top-level files describe the parent. Clone CRCs being in the zip doesn't mean those clones are running.
 

@@ -49,6 +49,36 @@ public sealed class PackLoaderTests : IDisposable
     }
 
     [Fact]
+    public void Matches_program_rom_crcs_whatever_the_romset_is_called()
+    {
+        var catalog = PackCatalog.LoadDirectory(_packs.Path);
+        Assert.Equal("test", catalog.Find(new ContentInfo("renamed", "fb_alpha", Chips(("prg_alt.bin", 0x1234abcd), ("gfx.bin", 1))))?.Id);
+    }
+
+    [Fact]
+    public void Doesnt_match_another_revision_under_the_same_name()
+    {
+        var catalog = PackCatalog.LoadDirectory(_packs.Path);
+        Assert.Null(catalog.Find(new ContentInfo("test", "fb_alpha", Chips(("prg.bin", 0x99999999)))));
+    }
+
+    [Fact]
+    public void Matches_by_name_when_the_pack_lists_no_crcs()
+    {
+        _packs.Write("test/pack.yaml", """
+            schema: 1
+            id: test
+            title: Test Game
+            match: { romsets: [test] }
+            """);
+        var catalog = PackCatalog.LoadDirectory(_packs.Path);
+        Assert.Equal("test", catalog.Find(new ContentInfo("test", "fb_alpha", Chips(("prg.bin", 0x99999999))))?.Id);
+    }
+
+    private static Dictionary<string, uint> Chips(params (string Name, uint Crc)[] chips) =>
+        chips.ToDictionary(chip => chip.Name, chip => chip.Crc);
+
+    [Fact]
     public void Pack_id_must_match_the_folder_name()
     {
         Directory.Move(Path.Combine(_packs.Path, "test"), Path.Combine(_packs.Path, "renamed"));

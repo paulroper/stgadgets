@@ -59,13 +59,16 @@ public sealed class GameStateService(
         var pack = packs.Find(content);
         if (pack is null)
         {
-            broadcaster.SetStatus("no-pack", $"No pack for '{content.Romset}'");
+            broadcaster.SetStatus("no-pack", content.ChipCrcs is null
+                ? $"No pack for '{content.Romset}'"
+                : $"No pack for the program ROMs in '{content.Romset}'");
             return;
         }
 
         var decoder = new MapDecoder(pack.Map);
-        logger.LogInformation("Playing {Game} (pack {Pack}, {Romset} on {System}); reading {Ranges}",
-            pack.Game.Title, pack.Id, content.Romset, content.System, string.Join(", ", decoder.Plan.Ranges));
+        logger.LogInformation("Playing {Game} (pack {Pack}, {Romset} on {System}, chip CRCs {ChipCrcs}); reading {Ranges}",
+            pack.Game.Title, pack.Id, content.Romset, content.System, content.ChipCrcs is null ? "not found" : "read",
+            string.Join(", ", decoder.Plan.Ranges));
         broadcaster.SetGame(pack, content.Romset);
         broadcaster.SetStatus("connected");
 
