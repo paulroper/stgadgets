@@ -1,6 +1,4 @@
 using System.Net;
-using CoreGraphics;
-using Foundation;
 
 namespace Stgadgets.Host.Mac;
 

@@ -29,7 +29,17 @@ export default {
     /** 15 invaders left: 40 hit with 58 shots, and the mystery ship is flying and was just hit for 100. */
     saucerFlying: [
       {},
-      { set: { aliens_remaining: 15, "shots.count": 58, "p1.score": 720, "fleet.sound_delay": 21, "saucer.score_ptr": 0x56, "saucer.active": true }, repeat: 30 },
+      {
+        set: {
+          aliens_remaining: 15,
+          "shots.count": 58,
+          "p1.score": 720,
+          "fleet.sound_delay": 21,
+          "saucer.score_ptr": 0x56,
+          "saucer.active": true,
+        },
+        repeat: 30,
+      },
       { set: { "p1.score": 820 } },
     ],
 
@@ -37,10 +47,24 @@ export default {
     waveStart: [{ set: { "rack.y": 0x78 } }],
 
     /** The next shot scores 300 if it hits the mystery ship, which is due any moment; the march has just sped up. */
-    saucerJackpot: [{}, { set: { aliens_remaining: 22, "shots.count": 45, "fleet.sound_delay": 34, "saucer.due": true, "saucer.score_ptr": 0x5b } }],
+    saucerJackpot: [
+      {},
+      {
+        set: {
+          aliens_remaining: 22,
+          "shots.count": 45,
+          "fleet.sound_delay": 34,
+          "saucer.due": true,
+          "saucer.score_ptr": 0x5b,
+        },
+      },
+    ],
 
     /** One invader left, on the last life: the march is at full speed and no more mystery ships come this wave. */
-    lastInvader: [{}, { set: { aliens_remaining: 1, "shots.count": 90, "p1.ships_reserve": 0, "fleet.sound_delay": 5 } }],
+    lastInvader: [
+      {},
+      { set: { aliens_remaining: 1, "shots.count": 90, "p1.ships_reserve": 0, "fleet.sound_delay": 5 } },
+    ],
 
     /** Game over: play is held still, and the score and the new high score stay on screen. */
     gameOver: [

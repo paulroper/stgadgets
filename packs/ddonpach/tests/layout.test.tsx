@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 
 /** The cells of each row of the splits table. */
 function splits() {
-  return [...gadget("SPLITS").querySelectorAll("tbody tr")].map((row) => [...row.querySelectorAll("td")].map((cell) => cell.textContent));
+  return [...gadget("SPLITS").querySelectorAll("tbody tr")].map(row =>
+    [...row.querySelectorAll("td")].map(cell => cell.textContent),
+  );
 }
 
 describe("DoDonPachi overlay", () => {
@@ -65,7 +67,7 @@ describe("DoDonPachi overlay", () => {
     expect(textOf("2ND LOOP")).toBe("NOT THIS CREDIT");
     expect(textOf("LIVES", ".note")).toBe("no more extends");
     expect(textOf("STAGE CLEAR", ".note")).toBe("no miss lost · stars 0");
-    const current = splits()[4];
+    const current = splits()[4]!;
     expect([current[0], current[3], current[5]]).toEqual(["1-5", "1", "1"]); // stage, deaths, continues
   });
 
@@ -75,7 +77,7 @@ describe("DoDonPachi overlay", () => {
     expect(textOf("SCORE")).toBe("---------");
     expect(textOf("2ND LOOP")).toBe("NEEDS ONE"); // three deaths
     expect(textOf("BOSS")).toBe("-");
-    const current = splits()[0];
+    const current = splits()[0]!;
     expect([current[0], current[3], current[4], current[5]]).toEqual(["1-1", "3", "1", "0"]); // stage, deaths, bombs, continues
   });
 
@@ -91,6 +93,10 @@ describe("DoDonPachi overlay", () => {
     expect(textOf("2ND LOOP")).toBe("LOOP 2");
     expect(textOf("BOSS · 2-3")).toBe("in ~93 s");
     expect(textOf("RANK")).toBe("63 / 63");
-    expect(splits().slice(0, 8).every((row) => row[1] !== "-")).toBe(true); // the first loop and 2-1, 2-2 are done
+    expect(
+      splits()
+        .slice(0, 8)
+        .every(row => row[1] !== "-"),
+    ).toBe(true); // the first loop and 2-1, 2-2 are done
   });
 });

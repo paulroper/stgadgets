@@ -1,0 +1,6 @@
+{
+  // Packs and tests/ui have no tsconfig of their own. This points tools that search upwards from a file, such as
+  // editors and Oxlint's type-aware rules, to the UI's, which includes them.
+  "files": [],
+  "references": [{ "path": "./src/ui" }]
+}

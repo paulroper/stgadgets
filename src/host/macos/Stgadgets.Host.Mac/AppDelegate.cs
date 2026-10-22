@@ -1,6 +1,3 @@
-using AppKit;
-using CoreGraphics;
-using Foundation;
 using Stgadgets.Host.Lib.Api;
 
 namespace Stgadgets.Host.Mac;
@@ -76,7 +73,7 @@ public sealed class AppDelegate : NSApplicationDelegate
     private void Track()
     {
         var target = _locator!.Target;
-        CGRect? frame = (target, Experiment("always-show")) switch
+        var frame = (target, Experiment("always-show")) switch
         {
             (null, true) => new CGRect(100, 100, 400, 600),
             (null, false) => null,

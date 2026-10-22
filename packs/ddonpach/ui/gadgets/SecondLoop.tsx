@@ -33,7 +33,15 @@ export function SecondLoop() {
   if (possible === undefined) return null;
 
   const headline =
-    possible === null ? (running && loop ? "LOOP 2" : "-") : !eligible ? "NOT THIS CREDIT" : possible ? "ON TRACK" : "NEEDS ONE";
+    possible === null
+      ? running && loop
+        ? "LOOP 2"
+        : "-"
+      : !eligible
+        ? "NOT THIS CREDIT"
+        : possible
+          ? "ON TRACK"
+          : "NEEDS ONE";
 
   return (
     <div className={`gadget loop2 ${possible ? "loop2-on" : eligible === false ? "loop2-off" : ""}`}>
@@ -43,7 +51,11 @@ export function SecondLoop() {
       <ul className="loop2-conditions">
         <Condition met={eligible && byDeaths} label="deaths" progress={`${deaths ?? "-"} / ${DEATHS_ALLOWED}`} />
         <Condition met={eligible && byHits} label="max chain" progress={`${maxHits ?? "-"} / ${hitsNeeded ?? "-"}`} />
-        <Condition met={eligible && byScore} label="score" progress={`${score == null ? "-" : (score / 1e6).toFixed(1)}M / ${SCORE_NEEDED / 1e6}M`} />
+        <Condition
+          met={eligible && byScore}
+          label="score"
+          progress={`${score == null ? "-" : (score / 1e6).toFixed(1)}M / ${SCORE_NEEDED / 1e6}M`}
+        />
         <Condition met={eligible && byBees} label="perfect bees" progress={`${perfect ?? "-"} / ${PERFECT_NEEDED}`} />
       </ul>
     </div>

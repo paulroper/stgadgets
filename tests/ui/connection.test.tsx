@@ -70,11 +70,15 @@ describe("losing the server", () => {
     vi.useFakeTimers({ toFake: ["setTimeout"] });
 
     server.disconnect();
-    act(() => vi.advanceTimersByTime(999));
+    act(() => {
+      vi.advanceTimersByTime(999);
+    });
     expect(server.sockets).toHaveLength(1);
-    act(() => vi.advanceTimersByTime(1));
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
     expect(server.sockets).toHaveLength(2);
-    expect(server.socket.url).toBe(server.sockets[0].url);
+    expect(server.socket.url).toBe(server.sockets[0]?.url);
 
     server.startGame("no-such-pack", { "p1.score": 300 });
     expect(screen.getByText("0300")).toBeDefined();
@@ -92,7 +96,9 @@ describe("showing a game state in development", () => {
   it("lists the pack's game states when there's no such state", async () => {
     await startApp("/?state=invaders/noSuchState");
 
-    await waitFor(() => expect(root().textContent).toMatch(/^No game state 'invaders\/noSuchState'\. Try invaders\/saucerFlying, /));
+    await waitFor(() =>
+      expect(root().textContent).toMatch(/^No game state 'invaders\/noSuchState'\. Try invaders\/saucerFlying, /),
+    );
   });
 });
 

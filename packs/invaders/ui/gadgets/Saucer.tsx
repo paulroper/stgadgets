@@ -49,7 +49,9 @@ export function Saucer() {
           )}
         </div>
         <div className="bar">
-          {counting && <div className="bar-fill" style={{ width: `${Math.min(appearsIn / TIMER_RELOAD, 1) * 100}%` }} />}
+          {counting && (
+            <div className="bar-fill" style={{ width: `${Math.min(appearsIn / TIMER_RELOAD, 1) * 100}%` }} />
+          )}
         </div>
         <div className="note">{status && note[status]}</div>
       </div>

@@ -14,7 +14,13 @@ export function Boss() {
     <div className={reached ? "gadget boss boss-here" : "gadget boss"}>
       <div className="label">BOSS{stage && progress !== null ? ` · ${stage}` : ""}</div>
       <div className="value small">
-        {progress === null ? "-" : reached ? "HERE!" : eta != null ? `in ~${Math.ceil(eta)} s` : `${Math.round(progress * 100)}%`}
+        {progress === null
+          ? "-"
+          : reached
+            ? "HERE!"
+            : eta != null
+              ? `in ~${Math.ceil(eta)} s`
+              : `${Math.round(progress * 100)}%`}
       </div>
       <div className="bar">
         <div className="bar-fill" style={{ width: `${(progress ?? 0) * 100}%` }} />

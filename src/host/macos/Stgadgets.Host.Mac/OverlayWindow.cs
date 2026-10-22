@@ -1,6 +1,3 @@
-using AppKit;
-using CoreGraphics;
-using Foundation;
 using WebKit;
 
 namespace Stgadgets.Host.Mac;

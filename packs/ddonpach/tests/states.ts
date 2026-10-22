@@ -79,7 +79,9 @@ export default {
     ],
 
     /** The ship select screen: memory still holds the last game's score and lives. */
-    titleScreen: [{ set: { "game.state": 11, "p1.flags": 0, "p1.stock": 0, "p1.bombs": 0, rank: 0, "p1.score_digits": 324 } }],
+    titleScreen: [
+      { set: { "game.state": 11, "p1.flags": 0, "p1.stock": 0, "p1.bombs": 0, rank: 0, "p1.score_digits": 324 } },
+    ],
 
     /** A power-up: the formula has moved ahead of rank, and the stage is scrolling, so rank is about to follow. */
     rankRising: [{ repeat: 100 }, { set: { "p1.shot_power": 2, "p1.laser_power": 2, "stage.progress": 10 } }],
@@ -87,7 +89,11 @@ export default {
     /** Every bee on stages 1 and 2. */
     perfectBees: [
       { set: { "bees.stage": 13 }, add: { "p1.score_digits": 50 }, repeat: 300 },
-      { set: { "stage.index": 1, "bees.stage": 0, "bees.perfect_stages": 1 }, add: { "p1.score_digits": 50 }, repeat: 300 },
+      {
+        set: { "stage.index": 1, "bees.stage": 0, "bees.perfect_stages": 1 },
+        add: { "p1.score_digits": 50 },
+        repeat: 300,
+      },
       { set: { "bees.stage": 13, rank: 44 } },
     ],
 
@@ -111,7 +117,16 @@ export default {
 
     /** Stage 5 after the third death and a continue: the second loop and the no-miss bonus are gone, every extend given. */
     continued: [
-      { set: { "stage.index": 4, "p1.next_extend": 0xffff, "p1.score_digits": 1830412, "p1.deaths_first_credit": 2, "p1.stock": 1 }, repeat: 600 },
+      {
+        set: {
+          "stage.index": 4,
+          "p1.next_extend": 0xffff,
+          "p1.score_digits": 1830412,
+          "p1.deaths_first_credit": 2,
+          "p1.stock": 1,
+        },
+        repeat: 600,
+      },
       { set: { "p1.flags": 0x01, "p1.deaths_stage": 1, "p1.deaths_first_credit": 3 }, repeat: 90 },
       { set: { "game.state": 8, "p1.flags": 0, "p1.stock": 0 }, repeat: 120 },
       { set: { "p1.continues": 0x101 } },
@@ -146,7 +161,11 @@ export default {
       { set: { "stage.index": 4, "bees.perfect_stages": 4 }, add: { "p1.score_digits": 1000 }, repeat: 600 },
       { set: { "stage.index": 5, "bees.perfect_stages": 5 }, add: { "p1.score_digits": 1000 }, repeat: 600 },
       { set: { "stage.index": 6, "bees.perfect_stages": 6 }, repeat: 300 },
-      { set: { loop: 1, "stage.index": 0, "bees.stage": 0, "p1.max_hits": 312 }, add: { "p1.score_digits": 1000 }, repeat: 600 },
+      {
+        set: { loop: 1, "stage.index": 0, "bees.stage": 0, "p1.max_hits": 312 },
+        add: { "p1.score_digits": 1000 },
+        repeat: 600,
+      },
       { set: { "stage.index": 1 }, add: { "p1.score_digits": 1000 }, repeat: 600 },
       { set: { "stage.index": 2, "stage.progress": 100, rank: 63 }, add: { "p1.score_digits": 1000 }, repeat: 300 },
     ],

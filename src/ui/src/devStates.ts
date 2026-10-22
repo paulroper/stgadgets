@@ -6,7 +6,7 @@ import { client } from "./sdk/client";
 
 /** Does what the server does when it matches a game, with `spec` ("<pack>/<state>") as the first tick's values. */
 export async function showGameState(spec: string) {
-  const [pack, name] = spec.split("/");
+  const [pack, name] = spec.split("/") as [string, ...string[]];
   let states;
   try {
     states = await gameStates(pack);
@@ -17,7 +17,9 @@ export async function showGameState(spec: string) {
 
   const values = name ? states[name] : undefined;
   if (!values) {
-    const detail = `No game state '${spec}'. Try ${Object.keys(states).map((state) => `${pack}/${state}`).join(", ")}`;
+    const detail = `No game state '${spec}'. Try ${Object.keys(states)
+      .map(state => `${pack}/${state}`)
+      .join(", ")}`;
     client.receive({ type: "status", state: "no-pack", detail });
     return;
   }

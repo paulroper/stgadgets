@@ -35,17 +35,20 @@ function failWith(message: string): never {
   throw new Error(message);
 }
 
+const labelOf = (el: HTMLElement) => el.querySelector(".label")?.textContent?.trim() ?? "";
+
 /**
  * The gadget on screen whose label matches: the whole label text for a string, e.g. "LIVES", or a pattern, e.g.
  * /^BOSS/. Fails, listing the labels on screen, if there isn't one.
  */
 export function gadget(label: string | RegExp): HTMLElement {
   const gadgets = [...root().querySelectorAll<HTMLElement>(".gadget")];
-  const labelOf = (el: HTMLElement) => el.querySelector(".label")?.textContent?.trim() ?? "";
   const matches = (text: string) => (typeof label === "string" ? text === label : label.test(text));
-  const found = gadgets.find((el) => matches(labelOf(el)));
+  const found = gadgets.find(el => matches(labelOf(el)));
   if (!found) {
-    throw new Error(`No gadget labelled ${label}. On screen: ${gadgets.map((el) => JSON.stringify(labelOf(el))).join(", ")}`);
+    throw new Error(
+      `No gadget labelled ${label}. On screen: ${gadgets.map(el => JSON.stringify(labelOf(el))).join(", ")}`,
+    );
   }
   return found;
 }

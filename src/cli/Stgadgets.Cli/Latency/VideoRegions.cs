@@ -37,8 +37,10 @@ internal static partial class VideoRegions
     {
         var (videoWidth, videoHeight) = Size(video);
         foreach (var (name, region) in (ReadOnlySpan<(string, Region)>)[("--game", game), ("--gadget", gadget)])
+        {
             if (region.X + region.Width > videoWidth || region.Y + region.Height > videoHeight)
                 throw new UsageException($"{name} {region} is outside the video, which is {videoWidth}x{videoHeight}");
+        }
 
         // Both regions in one picture, the game's above the gadget's, so one decode gives both with the same timestamps.
         var width = Math.Max(game.Width, gadget.Width);
@@ -57,14 +59,18 @@ internal static partial class VideoRegions
         var stderr = Task.Run(() =>
         {
             while (ffmpeg.StandardError.ReadLine() is { } line)
+            {
                 if (ShowInfo().Match(line) is { Success: true } match)
+                {
                     times.Add(double.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture));
+                }
                 else if (!line.StartsWith("[Parsed_showinfo", StringComparison.Ordinal))
                 {
                     messages.Enqueue(line);
                     if (messages.Count > 10)
                         messages.Dequeue();
                 }
+            }
         });
 
         var frameSize = width * (game.Height + gadget.Height);
@@ -98,9 +104,14 @@ internal static partial class VideoRegions
     {
         var count = 0;
         for (var y = top; y < top + region.Height; y++)
+        {
             for (var x = y * width; x < y * width + region.Width; x++)
+            {
                 if (Math.Abs(previous[x] - current[x]) > PixelThreshold)
                     count++;
+            }
+        }
+
         return (double)count / (region.Width * region.Height);
     }
 
@@ -121,7 +132,10 @@ internal static partial class VideoRegions
     {
         var start = new ProcessStartInfo(program)
         {
-            RedirectStandardOutput = true, RedirectStandardError = true, RedirectStandardInput = true, UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            RedirectStandardInput = true,
+            UseShellExecute = false,
         };
         foreach (var argument in arguments)
             start.ArgumentList.Add(argument);

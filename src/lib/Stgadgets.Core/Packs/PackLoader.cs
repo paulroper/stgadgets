@@ -50,7 +50,7 @@ public static class PackLoader
     private static Dictionary<string, ProviderSettings> LoadProviderSettings(string directory) =>
         Directory.Exists(directory)
             ? Directory.EnumerateFiles(directory, "*.yaml").ToDictionary(
-                Path.GetFileNameWithoutExtension,
+                path => Path.GetFileNameWithoutExtension(path),
                 path => new ProviderSettings(path, File.ReadAllText(path)))
             : [];
 

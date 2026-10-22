@@ -108,7 +108,7 @@ be tested on its own:
 
 ### Then the layout and gadgets
 
-Write the pack's `ui/layout.tsx` and its gadgets in `ui/gadgets/`, then `npm run build` and `npm test` in `src/ui`.
+Write the pack's `ui/layout.tsx` and its gadgets in `ui/gadgets/`, then `npm run build`, `npm test`, `npm run lint` and `npm run format` in `src/ui`.
 See [gadgets & layouts](gadgets.md), and follow the [gadget design](gadget-design.md) language.
 
 Add a game state to the pack's `tests/states.ts` for each moment a gadget behaves differently in (a boss, a

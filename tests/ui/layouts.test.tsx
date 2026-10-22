@@ -8,7 +8,7 @@ const NO_UI = "no-such-pack";
 
 /** The label and value of each gadget on screen, in order. */
 function readouts() {
-  return [...root().querySelectorAll(".gadget")].map((gadget) => [
+  return [...root().querySelectorAll(".gadget")].map(gadget => [
     gadget.querySelector(".label")?.textContent,
     gadget.querySelector(".value")?.textContent,
   ]);
@@ -96,7 +96,7 @@ describe("generic layout", () => {
 
     for (let score = 10; score <= 50; score += 10) {
       server.tick({ "p1.score": score });
-      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise(resolve => requestAnimationFrame(resolve));
     }
 
     await waitFor(() => expect(screen.getByText(/ms/).textContent).toMatch(/^[\d.]+ \/ [\d.]+ ms p50\/p95 · \d+ Hz$/));
@@ -104,9 +104,9 @@ describe("generic layout", () => {
 });
 
 // Every pack that has its own UI (packs/<id>/ui/layout.tsx).
-const packLayouts = Object.entries(
-  import.meta.glob<{ default: ComponentType }>("../../packs/*/ui/layout.tsx"),
-).map(([path, load]) => ({ pack: path.split("/").at(-3)!, load }));
+const packLayouts = Object.entries(import.meta.glob<{ default: ComponentType }>("../../packs/*/ui/layout.tsx")).map(
+  ([path, load]) => ({ pack: path.split("/").at(-3)!, load }),
+);
 
 describe.each(packLayouts)("pack layout: $pack", ({ pack, load }) => {
   it("is shown instead of the generic layout", async () => {

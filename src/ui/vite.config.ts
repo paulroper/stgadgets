@@ -32,17 +32,17 @@ function packImportRule(): Plugin {
       if (!importerPath?.startsWith(packsDir + path.sep)) return null;
 
       // packs/<id>/...
-      const [pack, folder] = path.relative(packsDir, importerPath).split(path.sep);
+      const [pack, folder] = path.relative(packsDir, importerPath).split(path.sep) as [string, ...string[]];
       const packRoot = path.join(packsDir, pack);
       const allowedHere = folder === "tests" ? allowedInPackTests : allowedInPackUi;
       const aliases = folder === "tests" ? { ...packApi, ...testingApi } : packApi;
       const target = path.resolve(path.dirname(importerPath), source);
       const allowed =
         allowedHere.includes(source) ||
-        Object.values(aliases).includes(source) ||   // already resolved by the alias
-        source.startsWith("\0") ||                    // Vite and plugin internals
+        Object.values(aliases).includes(source) || // already resolved by the alias
+        source.startsWith("\0") || // Vite and plugin internals
         source.startsWith("/@") ||
-        target.startsWith(packRoot + path.sep);       // its own files
+        target.startsWith(packRoot + path.sep); // its own files
       if (!allowed) {
         this.error(
           `${path.relative(packsDir, importerPath)} imports "${source}". It may import only ` +
@@ -72,5 +72,12 @@ export default defineConfig({
     dir: repoDir,
     include: ["tests/ui/**/*.test.{ts,tsx}", "packs/*/tests/**/*.test.{ts,tsx}"],
     environment: "jsdom",
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}", "../../packs/*/ui/**/*.{ts,tsx}"],
+      allowExternal: true,
+      reporter: ["text-summary", "html", "cobertura"],
+      reportsDirectory: path.join(import.meta.dirname, "coverage"),
+    },
   },
 });

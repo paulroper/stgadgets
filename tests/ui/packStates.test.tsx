@@ -8,7 +8,11 @@ afterEach(() => {
 
 // Every game state of every pack (packs/<id>/tests/states.ts), computed with the pack's derived.js.
 const packStates = (
-  await Promise.all(packsWithStates.map(async (pack) => Object.entries(await gameStates(pack)).map(([state, values]) => ({ pack, state, values }))))
+  await Promise.all(
+    packsWithStates.map(async pack =>
+      Object.entries(await gameStates(pack)).map(([state, values]) => ({ pack, state, values })),
+    ),
+  )
 ).flat();
 
 describe.each(packStates)("pack state: $pack $state", ({ pack, values }) => {

@@ -24,17 +24,20 @@ interface Page {
 }
 
 async function gameStatePages(spec: string, vite: ViteDevServer): Promise<Page[]> {
-  const [pack, state] = spec.split("/");
+  const [pack, state] = spec.split("/") as [string, ...string[]];
   const file = path.resolve(import.meta.dirname, "../../packs", pack, "tests/states.ts");
   if (!existsSync(file)) throw new Error(`No game states for '${pack}' (${file})`);
   const states = Object.keys(((await vite.ssrLoadModule(file)).default as { states: Record<string, unknown> }).states);
-  if (state && !states.includes(state)) throw new Error(`No game state '${spec}'. Try ${states.map((s) => `${pack}/${s}`).join(", ")}`);
+  if (state && !states.includes(state))
+    throw new Error(`No game state '${spec}'. Try ${states.map(s => `${pack}/${s}`).join(", ")}`);
 
   const base = vite.resolvedUrls!.local[0];
-  return (state ? [state] : states).map((s) => ({ url: `${base}?state=${pack}/${s}`, name: `${pack}-${s}-` }));
+  return (state ? [state] : states).map(s => ({ url: `${base}?state=${pack}/${s}`, name: `${pack}-${s}-` }));
 }
 
-const vite = options.state ? await createServer({ configFile: path.join(import.meta.dirname, "vite.config.ts"), server: { port: 0 } }) : null;
+const vite = options.state
+  ? await createServer({ configFile: path.join(import.meta.dirname, "vite.config.ts"), server: { port: 0 } })
+  : null;
 mkdirSync(out, { recursive: true });
 const browser = await firefox.launch();
 try {
@@ -47,14 +50,15 @@ try {
   for (const { url, name } of pages) {
     for (const size of sizes) {
       const [width, height] = size.split("x").map(Number);
+      if (!width || !height) throw new Error(`Size '${size}' isn't <width>x<height>, e.g. 1024x600`);
       const page = await browser.newPage({ viewport: { width, height } });
       await page.goto(url);
       await page.waitForSelector(".layout .gadget", { timeout: 15_000 });
       await page.waitForTimeout(vite ? 200 : 1_000); // a few ticks, so values have arrived; a game state has them at once
 
       const rem = await page.evaluate(() => getComputedStyle(document.documentElement).fontSize);
-      const sides = await page.$$eval(".layout-left, .layout-right", (els) =>
-        els.map((el) => {
+      const sides = await page.$$eval(".layout-left, .layout-right", els =>
+        els.map(el => {
           const overflow = el.scrollHeight - el.clientHeight;
           return `${el.className} ${Math.round(el.getBoundingClientRect().width)}px wide, ${overflow > 0 ? `overflows by ${overflow}px` : "fits"}`;
         }),

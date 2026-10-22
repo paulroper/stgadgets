@@ -13,9 +13,7 @@ export function Slowdown() {
   return (
     <div className={`gadget slowdown slowdown-${level}`}>
       <div className="label">GAME SPEED</div>
-      <div className="value small">
-        {paused ? "PAUSED" : percent === null ? "-" : `${percent}%`}
-      </div>
+      <div className="value small">{paused ? "PAUSED" : percent === null ? "-" : `${percent}%`}</div>
       <div className="bar">
         <div className="bar-fill" style={{ width: `${percent ?? 0}%` }} />
       </div>

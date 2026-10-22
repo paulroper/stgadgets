@@ -1,0 +1,12 @@
+{
+  "$schema": "./src/ui/node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 120,
+  "arrowParens": "avoid",
+  "overrides": [
+    {
+      // derived.js keys are dotted variable names ('loop2.eligible'); single quotes keep them quieter.
+      "files": ["**/derived.js"],
+      "options": { "singleQuote": true }
+    }
+  ]
+}

@@ -44,3 +44,40 @@ A few more rules for modules:
 - **Tests mirror `src/`.** Tests for `src/<module>/X` live in `tests/<module>/X.Tests`. Game recordings and their expected values live in each pack's `recordings/` folder, which is local and git-ignored (`docs/packs.md#testing`).
 
 See [Architecture → Repository layout](architecture.md#repository-layout) for the current tree.
+
+## Comments explain decisions, not code
+
+Code should explain itself through its names, types and structure. Use a comment only to explain a decision or give the context behind it: why the code is this way, what it rules out, or where a value comes from.
+
+| ✅ Explains a decision | ❌ Restates the code |
+|---|---|
+| `// Setting onmessage starts a MessagePort; addEventListener needs a separate start() call.` | `// Set the message handler` |
+| `const PAUSED_AFTER_TICKS = 30; // longer than slowdown ever holds a frame` | `const PAUSED_AFTER_TICKS = 30; // 30 ticks` |
+| `// Never let a provider error stop the app; log it and reconnect.` | `// Catch the exception` |
+
+If code needs a comment to say *what* it does, improve the code first: rename it, extract a well-named function or constant, or simplify it. The same goes for doc comments: write one when it adds context that the name and signature don't give.
+
+## Linting
+
+### .NET
+
+Linting is part of the build: `dotnet build` runs the Roslyn analyzers (`AnalysisLevel=latest-recommended`) and the code style in the root `.editorconfig`. Any warning fails the build (root `Directory.Build.props`), locally and in CI. To fix most style issues automatically, run `dotnet format` on the module's solution, for example `dotnet format src/server/Stgadgets.Server.slnx`.
+
+Turn a rule off in `.editorconfig`, with a comment that says why, rather than suppressing it in code.
+
+### TypeScript and JavaScript
+
+[Oxlint](https://oxc.rs/docs/guide/usage/linter) and [Oxfmt](https://oxc.rs/docs/guide/usage/formatter) cover the UI (`src/ui`), its tests (`tests/ui`) and the packs: their UIs, tests and `derived.js`. Run them from `src/ui`:
+
+- `npm run lint`: Oxlint, with the rules in the root `.oxlintrc.json`, including type-aware rules such as `no-floating-promises`. Any warning fails it.
+- `npm run format`: formats the files in place. `npm run format:check` only checks them, as CI does.
+
+Their configs (`.oxlintrc.json`, `.oxfmtrc.json`) live at the repository root because they cover packs and tests as well as `src/ui`. Turn a rule off there, with a comment that says why, when it doesn't fit this codebase. For a single false positive, disable it on that line with `// oxlint-disable-next-line <rule>`, after a comment that says why.
+
+The root `tsconfig.json` only refers to `src/ui/tsconfig.json`. Packs and `tests/ui` have no tsconfig of their own, and without it, editors and the type-aware rules would check them with TypeScript's defaults.
+
+## .NET project settings and packages
+
+- **Shared settings** (target framework, nullable, implicit usings, linting) live in the root `Directory.Build.props`, so a project file holds only what's particular to it. `tests/Directory.Build.props` adds the test packages and `using Xunit` to every test project.
+- **Package versions** live in the root `Directory.Packages.props` ([Central Package Management](https://learn.microsoft.com/nuget/consume-packages/central-package-management)). A project's `<PackageReference>` names a package without a version.
+- **Lock files** (`packages.lock.json`) record exactly what each project restores. Commit them with any package change. CI restores in locked mode, so it fails if they're out of date. The macOS host has none, because its only packages come from the SDK and the macOS workload.

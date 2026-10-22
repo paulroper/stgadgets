@@ -92,6 +92,10 @@ Code is organised by what it does, not what it is: see [Code conventions](conven
 
 ```
 bin/stgadgets                        # the CLI, built from source when it's changed; on the PATH with direnv (.envrc)
+.github/workflows/ci.yml             # CI: builds, tests and lints every module on each push and pull request
+Directory.*.props, .editorconfig     # .NET settings, package versions and code style for every project (docs/conventions.md)
+.oxlintrc.json, .oxfmtrc.json        # lint and format rules for the UI, its tests and the packs
+tsconfig.json                        # points editors and type-aware lint at src/ui's tsconfig, for packs and tests/ui
 src/
   lib/                               # shared .NET libraries; the only code modules may reference
     Stgadgets.Core/                  # packs, map loader & decoder, derived values (Jint) & their scenarios, recordings & expected values, provider interface

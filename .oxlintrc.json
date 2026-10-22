@@ -1,0 +1,47 @@
+{
+  "$schema": "./src/ui/node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import", "react", "vitest"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error"
+  },
+  "rules": {
+    // React 17+'s JSX transform needs no React import.
+    "react/react-in-jsx-scope": "off",
+    // Gadgets import their stylesheets.
+    "import/no-unassigned-import": ["error", { "allow": ["**/*.css"] }],
+    // Awaiting in a loop is how we do things in order: ticks in tests, pages in screenshot.ts.
+    "no-await-in-loop": "off",
+    // Setting onmessage starts a MessagePort; addEventListener needs a separate start() call.
+    "unicorn/prefer-add-event-listener": "off",
+    // Mapping to new objects is how React state stays immutable.
+    "oxc/no-map-spread": "off",
+    // We assert types where data comes from something we trust to match them: the server's messages, packs' own
+    // modules and game states, caught errors.
+    "typescript/no-unsafe-type-assertion": "off",
+
+    // React rules from categories we don't turn on wholesale.
+    "react/only-export-components": "error",
+    "react/no-unknown-property": "error",
+    "react/self-closing-comp": "error",
+    "react/jsx-no-useless-fragment": "error",
+    "react/jsx-boolean-value": "error"
+  },
+  "env": { "browser": true, "es2024": true },
+  "ignorePatterns": ["**/node_modules/**", "**/dist/**"],
+  "overrides": [
+    {
+      // Run by Node: the dev server's config and the screenshot script.
+      "files": ["src/ui/vite.config.ts", "src/ui/screenshot.ts"],
+      "env": { "browser": false, "node": true }
+    },
+    {
+      // Run by the server's JavaScript engine (Jint), which has no browser or Node APIs.
+      "files": ["packs/*/derived.js"],
+      "env": { "browser": false },
+      // Catches browser and Node globals Jint doesn't have, such as console and setTimeout, before the server runs them.
+      "rules": { "no-undef": "error" }
+    }
+  ]
+}

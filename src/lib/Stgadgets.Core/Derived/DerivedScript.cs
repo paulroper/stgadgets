@@ -67,7 +67,7 @@ public sealed class DerivedScript
     {
         var engine = CreateEngine(tickLimit ?? TickLimit, out var deadline);
         var evaluator = new DerivedEvaluator(engine, Functions(engine, deadline, Source));
-        foreach (byte fill in (byte[])[0x00, 0x01, 0x11, 0x01])   // vary the values so scripts take more of their branches
+        foreach (var fill in (byte[])[0x00, 0x01, 0x11, 0x01])   // vary the values so scripts take more of their branches
         {
             var bytes = Enumerable.Repeat(fill, 8).ToArray();
             evaluator.Evaluate(map.Variables.ToDictionary(v => v.Name, v => MapDecoder.Decode(v, bytes.AsSpan(0, v.Type.Size), map.Endianness)));

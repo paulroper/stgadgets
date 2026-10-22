@@ -18,7 +18,7 @@ export default function InvadersClassic() {
           <Lives />
           <Counter name="p1.kills" label="KILLS" />
           <Accuracy />
-          <Counter name="credits" label="CREDIT" format={(v) => String(v).padStart(2, "0")} />
+          <Counter name="credits" label="CREDIT" format={v => String(v).padStart(2, "0")} />
           <LatencyMeter />
         </div>
         <div className="panel">

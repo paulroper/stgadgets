@@ -31,7 +31,12 @@ export class LatencyTracker {
       // The next animation frame is when this tick's changes reach the screen.
       requestAnimationFrame(() => {
         const at = now();
-        this.samples.push({ at, ms: at - info.readAt, arrive: info.receivedAt - info.readAt, paint: at - info.receivedAt });
+        this.samples.push({
+          at,
+          ms: at - info.readAt,
+          arrive: info.receivedAt - info.readAt,
+          paint: at - info.receivedAt,
+        });
         if (this.samples.length > WINDOW) this.samples.shift();
       });
     });
@@ -61,7 +66,8 @@ export class LatencyTracker {
     setInterval(() => {
       const stats = this.stats();
       const latest = this.samples.at(-1)?.at ?? 0;
-      if (stats && latest > this.reported) {   // only new samples
+      if (stats && latest > this.reported) {
+        // only new samples
         client.send({
           type: "latency",
           source,
@@ -82,25 +88,35 @@ export class LatencyTracker {
 
   stats(): LatencyStats | null {
     const s = this.samples;
-    if (s.length < 2) return null;
-    const sorted = s.map((x) => x.ms).sort((a, b) => a - b);
-    const median = (values: number[]) => values.sort((a, b) => a - b)[Math.floor(values.length / 2)];
+    const [first, last] = [s[0], s.at(-1)];
+    if (s.length < 2 || !first || !last) return null;
+    const sorted = s.map(x => x.ms).toSorted((a, b) => a - b);
     return {
-      p50: sorted[Math.floor(sorted.length * 0.5)],
-      p95: sorted[Math.floor(sorted.length * 0.95)],
-      max: sorted[sorted.length - 1],
-      arriveP50: median(s.map((x) => x.arrive)),
-      paintP50: median(s.map((x) => x.paint)),
-      rate: ((s.length - 1) * 1000) / (s[s.length - 1].at - s[0].at),
+      p50: percentileOfSorted(sorted, 0.5),
+      p95: percentileOfSorted(sorted, 0.95),
+      max: percentileOfSorted(sorted, 1),
+      arriveP50: percentile(
+        s.map(x => x.arrive),
+        0.5,
+      ),
+      paintP50: percentile(
+        s.map(x => x.paint),
+        0.5,
+      ),
+      rate: ((s.length - 1) * 1000) / (last.at - first.at),
       samples: s.length,
     };
   }
 }
 
-const percentile = (values: number[], p: number) => {
-  const sorted = [...values].sort((a, b) => a - b);
-  return sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))] : 0;
-};
+const percentileOfSorted = (sorted: number[], p: number) =>
+  sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))] ?? 0;
+
+const percentile = (values: number[], p: number) =>
+  percentileOfSorted(
+    values.toSorted((a, b) => a - b),
+    p,
+  );
 
 /** Animation frame intervals and the main-thread work in each frame, in ms. */
 function frameStats(intervals: number[], work: number[]) {
@@ -109,7 +125,7 @@ function frameStats(intervals: number[], work: number[]) {
     rafIntervalP50: median,
     rafIntervalP95: percentile(intervals, 0.95),
     /** Intervals over 1.5 times the median: frames skipped while painting at that rate. */
-    rafLongShare: intervals.length ? intervals.filter((i) => i > 1.5 * median).length / intervals.length : 0,
+    rafLongShare: intervals.length ? intervals.filter(i => i > 1.5 * median).length / intervals.length : 0,
     workP50: percentile(work, 0.5),
     workP95: percentile(work, 0.95),
     workMax: work.length ? Math.max(...work) : 0,
