@@ -45,6 +45,18 @@ A few more rules for modules:
 
 See [Architecture → Repository layout](architecture.md#repository-layout) for the current tree.
 
+## Comments explain decisions, not code
+
+Code should explain itself through its names, types and structure. Use a comment only to explain a decision or give the context behind it: why the code is this way, what it rules out, or where a value comes from.
+
+| ✅ Explains a decision | ❌ Restates the code |
+|---|---|
+| `// Setting onmessage starts a MessagePort; addEventListener needs a separate start() call.` | `// Set the message handler` |
+| `const PAUSED_AFTER_TICKS = 30; // longer than slowdown ever holds a frame` | `const PAUSED_AFTER_TICKS = 30; // 30 ticks` |
+| `// Never let a provider error stop the app; log it and reconnect.` | `// Catch the exception` |
+
+If code needs a comment to say *what* it does, improve the code first: rename it, extract a well-named function or constant, or simplify it. The same goes for doc comments: write one when it adds context that the name and signature don't give.
+
 ## Linting
 
 ### .NET
