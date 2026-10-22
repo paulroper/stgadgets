@@ -33,7 +33,9 @@ const derivedScripts = import.meta.glob<DerivedScript>("../../../packs/*/derived
 const packOf = (path: string) => path.split("/")[4]; // ../../../packs/<id>/...
 
 /** The packs that have game states. */
-export const packsWithStates = Object.keys(statesModules).map(packOf);
+export const packsWithStates = Object.keys(statesModules)
+  .map(packOf)
+  .filter(pack => pack !== undefined);
 
 /** Every game state of a pack, by name. Throws if the pack has none, or a state can't be computed. */
 export async function gameStates(pack: string): Promise<Record<string, Vars>> {

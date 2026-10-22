@@ -15,7 +15,10 @@ class FakeSocket {
   /** Messages the UI sent to the server. */
   sent: unknown[] = [];
 
-  constructor(readonly url: string) {
+  readonly url: string;
+
+  constructor(url: string) {
+    this.url = url;
     sockets.push(this);
   }
 
@@ -36,7 +39,9 @@ export class FakeServer {
 
   /** The UI's current connection. */
   get socket() {
-    return sockets[sockets.length - 1];
+    const socket = sockets.at(-1);
+    if (!socket) throw new Error("The UI hasn't opened a connection");
+    return socket;
   }
 
   send(message: { type: string } & Record<string, unknown>) {

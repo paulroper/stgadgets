@@ -10,7 +10,7 @@ interface Props extends SVGProps<SVGSVGElement> {
 export function Sprite({ rows, label, ...svg }: Props) {
   return (
     <svg
-      viewBox={`0 0 ${rows[0].length} ${rows.length}`}
+      viewBox={`0 0 ${rows[0]?.length ?? 0} ${rows.length}`}
       shapeRendering="crispEdges"
       role="img"
       aria-label={label}

@@ -74,7 +74,7 @@ describe("losing the server", () => {
     expect(server.sockets).toHaveLength(1);
     act(() => vi.advanceTimersByTime(1));
     expect(server.sockets).toHaveLength(2);
-    expect(server.socket.url).toBe(server.sockets[0].url);
+    expect(server.socket.url).toBe(server.sockets[0]?.url);
 
     server.startGame("no-such-pack", { "p1.score": 300 });
     expect(screen.getByText("0300")).toBeDefined();

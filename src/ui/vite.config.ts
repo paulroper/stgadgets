@@ -32,7 +32,7 @@ function packImportRule(): Plugin {
       if (!importerPath?.startsWith(packsDir + path.sep)) return null;
 
       // packs/<id>/...
-      const [pack, folder] = path.relative(packsDir, importerPath).split(path.sep);
+      const [pack, folder] = path.relative(packsDir, importerPath).split(path.sep) as [string, ...string[]];
       const packRoot = path.join(packsDir, pack);
       const allowedHere = folder === "tests" ? allowedInPackTests : allowedInPackUi;
       const aliases = folder === "tests" ? { ...packApi, ...testingApi } : packApi;

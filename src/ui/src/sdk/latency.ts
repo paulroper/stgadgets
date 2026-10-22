@@ -88,12 +88,13 @@ export class LatencyTracker {
 
   stats(): LatencyStats | null {
     const s = this.samples;
-    if (s.length < 2) return null;
+    const [first, last] = [s[0], s.at(-1)];
+    if (s.length < 2 || !first || !last) return null;
     const sorted = s.map(x => x.ms).toSorted((a, b) => a - b);
     return {
-      p50: sorted[Math.floor(sorted.length * 0.5)],
-      p95: sorted[Math.floor(sorted.length * 0.95)],
-      max: sorted[sorted.length - 1],
+      p50: percentileOfSorted(sorted, 0.5),
+      p95: percentileOfSorted(sorted, 0.95),
+      max: percentileOfSorted(sorted, 1),
       arriveP50: percentile(
         s.map(x => x.arrive),
         0.5,
@@ -102,16 +103,20 @@ export class LatencyTracker {
         s.map(x => x.paint),
         0.5,
       ),
-      rate: ((s.length - 1) * 1000) / (s[s.length - 1].at - s[0].at),
+      rate: ((s.length - 1) * 1000) / (last.at - first.at),
       samples: s.length,
     };
   }
 }
 
-const percentile = (values: number[], p: number) => {
-  const sorted = values.toSorted((a, b) => a - b);
-  return sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))] : 0;
-};
+const percentileOfSorted = (sorted: number[], p: number) =>
+  sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))] ?? 0;
+
+const percentile = (values: number[], p: number) =>
+  percentileOfSorted(
+    values.toSorted((a, b) => a - b),
+    p,
+  );
 
 /** Animation frame intervals and the main-thread work in each frame, in ms. */
 function frameStats(intervals: number[], work: number[]) {

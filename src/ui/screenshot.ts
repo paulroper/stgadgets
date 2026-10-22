@@ -24,7 +24,7 @@ interface Page {
 }
 
 async function gameStatePages(spec: string, vite: ViteDevServer): Promise<Page[]> {
-  const [pack, state] = spec.split("/");
+  const [pack, state] = spec.split("/") as [string, ...string[]];
   const file = path.resolve(import.meta.dirname, "../../packs", pack, "tests/states.ts");
   if (!existsSync(file)) throw new Error(`No game states for '${pack}' (${file})`);
   const states = Object.keys(((await vite.ssrLoadModule(file)).default as { states: Record<string, unknown> }).states);
@@ -50,6 +50,7 @@ try {
   for (const { url, name } of pages) {
     for (const size of sizes) {
       const [width, height] = size.split("x").map(Number);
+      if (!width || !height) throw new Error(`Size '${size}' isn't <width>x<height>, e.g. 1024x600`);
       const page = await browser.newPage({ viewport: { width, height } });
       await page.goto(url);
       await page.waitForSelector(".layout .gadget", { timeout: 15_000 });

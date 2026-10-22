@@ -67,7 +67,7 @@ describe("DoDonPachi overlay", () => {
     expect(textOf("2ND LOOP")).toBe("NOT THIS CREDIT");
     expect(textOf("LIVES", ".note")).toBe("no more extends");
     expect(textOf("STAGE CLEAR", ".note")).toBe("no miss lost · stars 0");
-    const current = splits()[4];
+    const current = splits()[4]!;
     expect([current[0], current[3], current[5]]).toEqual(["1-5", "1", "1"]); // stage, deaths, continues
   });
 
@@ -77,7 +77,7 @@ describe("DoDonPachi overlay", () => {
     expect(textOf("SCORE")).toBe("---------");
     expect(textOf("2ND LOOP")).toBe("NEEDS ONE"); // three deaths
     expect(textOf("BOSS")).toBe("-");
-    const current = splits()[0];
+    const current = splits()[0]!;
     expect([current[0], current[3], current[4], current[5]]).toEqual(["1-1", "3", "1", "0"]); // stage, deaths, bombs, continues
   });
 

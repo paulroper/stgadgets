@@ -6,7 +6,7 @@ import { client } from "./sdk/client";
 
 /** Does what the server does when it matches a game, with `spec` ("<pack>/<state>") as the first tick's values. */
 export async function showGameState(spec: string) {
-  const [pack, name] = spec.split("/");
+  const [pack, name] = spec.split("/") as [string, ...string[]];
   let states;
   try {
     states = await gameStates(pack);
