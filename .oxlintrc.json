@@ -16,7 +16,17 @@
     // Setting onmessage starts a MessagePort; addEventListener needs a separate start() call.
     "unicorn/prefer-add-event-listener": "off",
     // Mapping to new objects is how React state stays immutable.
-    "oxc/no-map-spread": "off"
+    "oxc/no-map-spread": "off",
+    // We assert types where data comes from something we trust to match them: the server's messages, packs' own
+    // modules and game states, caught errors.
+    "typescript/no-unsafe-type-assertion": "off",
+
+    // React rules from categories we don't turn on wholesale.
+    "react/only-export-components": "error",
+    "react/no-unknown-property": "error",
+    "react/self-closing-comp": "error",
+    "react/jsx-no-useless-fragment": "error",
+    "react/jsx-boolean-value": "error"
   },
   "env": { "browser": true, "es2024": true },
   "ignorePatterns": ["**/node_modules/**", "**/dist/**"],

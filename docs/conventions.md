@@ -69,7 +69,15 @@ Turn a rule off in `.editorconfig`, with a comment that says why, rather than su
 
 [Oxlint](https://oxc.rs/docs/guide/usage/linter) and [Oxfmt](https://oxc.rs/docs/guide/usage/formatter) cover the UI (`src/ui`), its tests (`tests/ui`) and the packs: their UIs, tests and `derived.js`. Run them from `src/ui`:
 
-- `npm run lint`: Oxlint, with the rules in the root `.oxlintrc.json`. Any warning fails it.
+- `npm run lint`: Oxlint, with the rules in the root `.oxlintrc.json`, including type-aware rules such as `no-floating-promises`. Any warning fails it.
 - `npm run format`: formats the files in place. `npm run format:check` only checks them, as CI does.
 
 Their configs (`.oxlintrc.json`, `.oxfmtrc.json`) live at the repository root because they cover packs and tests as well as `src/ui`. Turn a rule off there, with a comment that says why, when it doesn't fit this codebase. For a single false positive, disable it on that line with `// oxlint-disable-next-line <rule>`, after a comment that says why.
+
+The root `tsconfig.json` only refers to `src/ui/tsconfig.json`. Packs and `tests/ui` have no tsconfig of their own, and without it, editors and the type-aware rules would check them with TypeScript's defaults.
+
+## .NET project settings and packages
+
+- **Shared settings** (target framework, nullable, implicit usings, linting) live in the root `Directory.Build.props`, so a project file holds only what's particular to it. `tests/Directory.Build.props` adds the test packages and `using Xunit` to every test project.
+- **Package versions** live in the root `Directory.Packages.props` ([Central Package Management](https://learn.microsoft.com/nuget/consume-packages/central-package-management)). A project's `<PackageReference>` names a package without a version.
+- **Lock files** (`packages.lock.json`) record exactly what each project restores. Commit them with any package change. CI restores in locked mode, so it fails if they're out of date. The macOS host has none, because its only packages come from the SDK and the macOS workload.

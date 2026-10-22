@@ -17,9 +17,15 @@ export function Sprite({ rows, label, ...svg }: Props) {
       {...svg}
     >
       {rows.flatMap((row, y) =>
-        // A pixel's position is its identity: the sprite never reorders.
-        // oxlint-disable-next-line react/no-array-index-key
-        [...row].flatMap((c, x) => (c === "#" ? [<rect key={`${x},${y}`} x={x} y={y} width={1} height={1} />] : [])),
+        row.split("").flatMap((c, x) =>
+          c === "#"
+            ? [
+                // A pixel's position is its identity: the sprite never reorders.
+                // oxlint-disable-next-line react/no-array-index-key
+                <rect key={`${x},${y}`} x={x} y={y} width={1} height={1} />,
+              ]
+            : [],
+        ),
       )}
     </svg>
   );

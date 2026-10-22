@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react"
 import { client, type FrameListener, type Value } from "./client";
 
 /** A variable's current value, or undefined if the active map doesn't define it. */
+// T is the type the gadget expects from its pack's map, which only the server knows; asking for it keeps gadgets terse.
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
 export function useVar<T extends Value = Value>(name: string): T | undefined {
   return useSyncExternalStore(client.subscribe, () => client.vars[name] as T | undefined);
 }

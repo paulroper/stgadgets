@@ -70,9 +70,13 @@ describe("losing the server", () => {
     vi.useFakeTimers({ toFake: ["setTimeout"] });
 
     server.disconnect();
-    act(() => vi.advanceTimersByTime(999));
+    act(() => {
+      vi.advanceTimersByTime(999);
+    });
     expect(server.sockets).toHaveLength(1);
-    act(() => vi.advanceTimersByTime(1));
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
     expect(server.sockets).toHaveLength(2);
     expect(server.socket.url).toBe(server.sockets[0]?.url);
 
