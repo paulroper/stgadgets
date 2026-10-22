@@ -72,5 +72,12 @@ export default defineConfig({
     dir: repoDir,
     include: ["tests/ui/**/*.test.{ts,tsx}", "packs/*/tests/**/*.test.{ts,tsx}"],
     environment: "jsdom",
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}", "../../packs/*/ui/**/*.{ts,tsx}"],
+      allowExternal: true,
+      reporter: ["text-summary", "html", "cobertura"],
+      reportsDirectory: path.join(import.meta.dirname, "coverage"),
+    },
   },
 });

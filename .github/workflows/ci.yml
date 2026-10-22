@@ -30,7 +30,11 @@ jobs:
           cache: true
           cache-dependency-path: "**/packages.lock.json"
       - run: dotnet build src/server
-      - run: dotnet test src/server --no-build
+      - run: dotnet test src/server --no-build --collect:"XPlat Code Coverage" --results-directory coverage
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage-server
+          path: coverage/**/coverage.cobertura.xml
 
   cli:
     name: CLI
@@ -44,7 +48,11 @@ jobs:
           cache-dependency-path: "**/packages.lock.json"
       - run: dotnet build src/cli
       # The shared libraries' tests already run in the server job.
-      - run: dotnet test tests/cli/Stgadgets.Cli.Tests --no-build
+      - run: dotnet test tests/cli/Stgadgets.Cli.Tests --no-build --collect:"XPlat Code Coverage" --results-directory coverage
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage-cli
+          path: coverage/**/coverage.cobertura.xml
 
   macos-host:
     name: macOS overlay
@@ -81,4 +89,38 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run build
-      - run: npm test
+      - run: npm run coverage
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage-ui
+          path: src/ui/coverage/cobertura-coverage.xml
+
+  # One report for every job's coverage: a summary on the run's page, and the full HTML report as an artifact.
+  coverage:
+    name: Coverage report
+    needs: [server, cli, ui]
+    runs-on: ubuntu-latest
+    steps:
+      # The reports point at the source files, which the HTML report shows line by line.
+      - uses: actions/checkout@v6
+      # ReportGenerator runs on .NET, so it needs the SDK global.json names, like every other job.
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: coverage-*
+          path: coverage
+      - uses: danielpalme/ReportGenerator-GitHub-Action@5.5.11
+        with:
+          reports: coverage/**/*.xml
+          targetdir: coverage-report
+          reporttypes: HtmlInline;MarkdownSummaryGithub
+          # Source generators' output, such as [GeneratedRegex] implementations.
+          filefilters: -**/obj/**
+          title: stgadgets
+      - run: cat coverage-report/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coverage-report
