@@ -110,6 +110,16 @@ P1's block starts at `0x204062` and P2's at `0x2041D4`, `0x172` bytes apart. Off
 
 So P1's score is at `0x204156` and P2's at `0x2042C8`.
 
+## Frame counter, high score and continues
+
+- `0x20FD44` (u32) is added to by the vblank interrupt (`0x1C52`), so it counts every frame, slowdown included. It
+  was reset with the board, and stood still only while RetroArch was paused.
+- `0x20FAE8` (u32) is the high score: it read the 1,613,210 shown throughout play. Briefly 500,000 at a reset before
+  the saved table came back.
+- P1 + `0x116` counts continues used, up to 9 (player setup at `0x2FAF0`). It went 0 to 1 on the continue screen. The
+  score cap (`0x7EC2`) is 63,999,990 plus this count, so the score's last digit probably counts continues as in
+  DoDonPachi; not yet seen after a continue.
+
 ## Lives and extends
 
 There's no lives counter. Each player has a team list at `+0x1A`, one word per pilot (`0x20F9FD` + 1 of them), and a
@@ -123,7 +133,10 @@ team, the first pilot's bit was set at the first death, the second's at the seco
   above the team size.
 - **Secret extend:** the extend code has its own path (`0x30194`) with a team of 3 or more, fewer than 2 pilots left,
   and the dropped-1UP counter (`0x20E460`) at 3. The shmups wiki's "miss 3 extend items" rule.
-- The shmups wiki gives a score extend every 1.5 million points; not checked in the code.
+- **Score extends** (`0x7E6E`): when the score reaches P1 + `0xF8` (`p1.next_extend`), the next threshold is
+  `settings.extend_last` (`0x20FA0E`) if that's set, and after it none (`0xFFFFFFFF`); otherwise it's
+  `settings.extend_every` (`0x20FA0A`) higher. At the defaults the first is 1,500,000 and they come every 1,500,000,
+  as the shmups wiki says. Not yet seen reached.
 
 Respawning loads the next pilot's own bombs and fragments, so they can go up at a death: one game went from 1 bomb and
 26 fragments to 3 bombs and 6.
@@ -133,11 +146,40 @@ Respawning loads the next pilot's own bombs and fragments, so they can go up at 
 Full bombs are at `+0x112` and fragments at `+0x113`. Fragments count up as pieces are collected; at 40 they wrap to
 0 and add a full bomb (they read 37, 39, then 0 with one more bomb). The overlay's dropped-bomb counter turns red at 5.
 
+## Shot and options
+
+Each pilot has their own power, in the player block, and all of it was 0 again when the next pilot came in:
+
+| Offset | Meaning | Seen |
+|---|---|---|
+| `+0x110` | Shot level, 0-3 | Up by one at each shot level-up the screen showed, small or large |
+| `+0x111` | Small shot items towards the next level | Counted up by small shots, cleared by every level-up |
+| `+0x118` | Options | 2 after the first option item, with two options on screen |
+| `+0x104` | Option level | Up by one at each option item after the first; not yet seen at a respawn |
+| `+0x022` | Option formation (word) | Set by the special options (below); not yet seen |
+
+The rules, from the pickup routines:
+
+- **Small shot** (`0x2FCA2`): at level 3 it scores 100 points. If three small shots were let fall in a row
+  (`dropped.small_shot` = 3), it's a special level-up (below). Otherwise it counts towards the next level, which
+  takes 2, 3 and 4 items at levels 0, 1 and 2 (table at `0x2FCDE`). In play, level 0 to 1 took 2 and 1 to 2 took 3; a
+  small shot at level 3 left the count alone. The shmups wiki's 1, 2, 4, 8 doesn't match.
+- **Large shot** (`0x2FD94`): at level 3 it scores 5,000. After three dropped it's a special level-up; otherwise it
+  adds a level and clears the small item count. Three large shots in play took the level 0 to 1, 1 to 2 and 2 to 3,
+  the last clearing a count of 1.
+- **Special shot level-up** (`0x2FDE6`): level 3 at once, `special.shot` set, and 1 more rank a frame.
+- **Bomb fragments** (`0x2FD24`): 40 make a bomb. With 4 bombs they stop at 40, and a fragment then scores 1,000.
+- **Large bomb** (`0x2FE12`): a bomb; a fifth makes it 4 bombs and 40 fragments, and when full it scores 10,000.
+- **Option** (`0x2FE72`): each ship has a table (`0x2FF1A`, by ship id) of how many of each item must have been
+  dropped (options, medals, bomb fragments, small shots, large shots); the first that matches sets that formation in
+  `+0x022` (`0x0A`, `0x0C`, `0x0E`, `0x10`, …). These are trap15's shadow, wide, rolling, search and homing options.
+
 ## Items, medals and drops
 
-- **Medal value** `0x20E459` is written by the medal routine (`0x30010`). It went 0, 2, 4, 6 as medals were taken
-  in a row, and back to 0 when one dropped. Per the shmups wiki, medals go 100 to 900 in hundreds, then 1,000 to
-  10,000 in thousands, and dropping one resets the chain.
+- **Medal value** `0x20E459` is written by the medal routine (`0x30010`): twice the next medal's place in the scale.
+  It went 0, 2, 4, 6 as 100, 200 and 300 point medals were taken in a row (the score went up by each), and back to 0
+  when one dropped. Per the shmups wiki, medals go 100 to 900 in hundreds, then 1,000 to 10,000 in thousands, and
+  dropping one resets the chain; `medal.next` in `derived.js` follows that scale, checked up to 600.
 - **Drop cycle** `0x20E457`: the position in a fixed cycle of 25 item drops, stepped and wrapped at `0x39DA6`. The
   overlay shows the next six from it.
 - **Dropped items**, one byte each, counting items of that kind let fall since the last one was taken (cleared on
@@ -191,7 +233,7 @@ Shown as a percentage, the overlay uses `1 − rank / 0x1000000`, and the patch 
 
 ## Enemies and bosses
 
-The enemy table is at `0x20869A`: 96 slots, `0x72` bytes apart. Per slot: status word (bit 15 active), routine
+The enemy table is at `0x20869A` (`enemies` in the map): 96 slots, `0x72` bytes apart. Per slot: status word (bit 15 active), routine
 address (u32) at `+2`, part id at `+0x20`, HP (u16) at `+0x50`. The overlay identifies bosses by routine address and
 reads their HP and timers.
 

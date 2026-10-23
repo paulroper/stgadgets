@@ -57,6 +57,18 @@ variables:
     address: 0x20F9FD
     description: The team's size − 1; the death and extend code loop over pN.team that many times + 1 (0x2FA7C, 0x30152).
     verified: true
+  frame_counter:
+    type: u32
+    address: 0x20FD44
+    description: >-
+      Standard. Added to by the vblank interrupt (0x1C52), so it counts every frame, slowdown included; reset with the
+      board. Stood still only while RetroArch was paused.
+    verified: true
+  hiscore:
+    type: u32
+    address: 0x20FAE8
+    description: Standard. Binary; read 1,613,210, the high score shown, throughout play.
+    verified: true
   credits:
     type: u8
     address: 0x203400
@@ -73,6 +85,20 @@ variables:
     type: u8
     address: 0x20F9FB
     description: Timer rank DIP, 0 low, 1 normal, 2 high, 3 highest (trap15). Read 1 at the defaults.
+  settings.extend_every:
+    type: u32
+    address: 0x20FA0A
+    description: >-
+      Points between score extends, added to pN.next_extend each time one is reached (0x7E8E), unless
+      settings.extend_last is set. 1,500,000 at the defaults.
+    verified: true
+  settings.extend_last:
+    type: u32
+    address: 0x20FA0E
+    description: >-
+      When not 0, the next extend after reaching one is at this score, and after that there are none (0x7E84). 0 at the
+      defaults.
+    verified: true
 
   # --- Rank (trap15; stored inverted: lower is harder) -------------------------------------------------------------
 
@@ -141,7 +167,21 @@ variables:
   p1.score:
     type: u32
     address: 0x204156
-    description: Standard. Binary, matched the screen exactly.
+    description: >-
+      Standard. Binary, matched the screen exactly. Capped at 63,999,990 plus p1.continues, which suggests the last
+      digit counts continues as in DoDonPachi (0x7EC2); not yet seen after a continue.
+    verified: true
+  p1.next_extend:
+    type: u32
+    address: 0x20415A
+    description: >-
+      The score that gives the next extend (0x7E6E); 0xFFFFFFFF once there are no more. 1,500,000 at the start of a
+      game at the defaults. Not yet seen reached.
+    verified: true
+  p1.continues:
+    type: u8
+    address: 0x204178
+    description: Continues used, up to 9 (0x2FAF0). Went 0 to 1 on the continue screen, and back to 0 for a new game.
     verified: true
   p1.bombs:
     type: u8
@@ -158,6 +198,41 @@ variables:
     address: 0x204179
     description: Shot charge, full at 0x48 (overlay).
     verified: true
+  p1.shot_level:
+    type: u8
+    address: 0x204172
+    description: >-
+      Main shot level, 0-3 (pickups at 0x2FCA2, 0x2FD94). A large shot adds a level; small shots add one once
+      p1.shot_items reaches 2, 3 or 4 at levels 0, 1, 2 (table at 0x2FCDE). At 3, shot items score points instead.
+      Back to 0 when the next pilot came in.
+    verified: true
+  p1.shot_items:
+    type: u8
+    address: 0x204173
+    description: >-
+      Small shot items towards the next shot level: 2, 3 and 4 are needed at levels 0, 1 and 2 (0x2FCDE). Cleared by
+      every level-up, including a large shot's, and at a respawn; unchanged at level 3.
+    verified: true
+  p1.options:
+    type: u8
+    address: 0x20417A
+    description: >-
+      Options flying with the ship: 2 after the first option item, when the screen showed two. 0 when the next pilot
+      came in.
+    verified: true
+  p1.option_formation:
+    type: u16
+    address: 0x204084
+    description: >-
+      The hidden option formation from a special option (0x2FF2C onwards: 0x0A, 0x0C, 0x0E, 0x10, ...). Not yet seen
+      set.
+  p1.option_level:
+    type: u8
+    address: 0x204166
+    description: >-
+      Went up by one at each option item after the first (0, 1, 2), when the screen showed an option level-up. Not
+      yet seen at a respawn.
+    verified: true
 
   # --- Player 2 (P1's offsets + 0x172; not yet seen in a two-player game) -------------------------------------------
 
@@ -168,9 +243,16 @@ variables:
   p2.team.1: u16 @ 0x2041F0
   p2.team.2: u16 @ 0x2041F2
   p2.score: u32 @ 0x2042C8
+  p2.next_extend: u32 @ 0x2042CC
+  p2.continues: u8 @ 0x2042EA
+  p2.option_formation: u16 @ 0x2041F6
   p2.bombs: u8 @ 0x2042E6
   p2.bomb_fragments: u8 @ 0x2042E7
   p2.shot_charge: u8 @ 0x2042EB
+  p2.shot_level: u8 @ 0x2042E4
+  p2.shot_items: u8 @ 0x2042E5
+  p2.options: u8 @ 0x2042EC
+  p2.option_level: u8 @ 0x2042D8
 
   # --- Items and medals --------------------------------------------------------------------------------------------
 
@@ -178,8 +260,9 @@ variables:
     type: u8
     address: 0x20E459
     description: >-
-      The next medal's value, written by the medal routine (0x30010). Went 0, 2, 4, 6 as medals were taken in a row,
-      and back to 0 when one dropped.
+      The next medal's value, as twice its place in the scale: 0 for 100 points, 2 for 200, and so on (medal.next is
+      the points). Written by the medal routine (0x30010). Went 0, 2, 4, 6 as 100, 200 and 300 point medals were taken
+      in a row, and back to 0 when one dropped.
     verified: true
   drop.position:
     type: u8
@@ -251,3 +334,26 @@ variables:
     type: u8
     address: 0x20E6B7
     description: Black Heart's trigger counter; 5 meets it (counted at 0x77AB8).
+
+  # --- Enemies -----------------------------------------------------------------------------------------------------
+
+  enemies:
+    address: 0x20869A
+    count: 96
+    stride: 0x72
+    description: >-
+      Every enemy and boss part on screen (overlay, batrider.lua). A boss is several entries, one per part; the overlay
+      tells them apart by routine and part, and picks the part whose HP to show with a status mask (NOTES.md).
+    fields:
+      status: u16 @ 0x00
+      active:
+        type: bool
+        offset: 0x00
+        mask: 0x80
+        description: Status bit 15, set while the entry is in use.
+      routine:
+        type: u32
+        offset: 0x02
+        description: The code that runs the enemy, which identifies its kind; 0x0531B4 is stage 1's boss.
+      part: u16 @ 0x20
+      hp: u16 @ 0x50

@@ -10,6 +10,11 @@ const FLYING = 0x0e;
 const PILOT_DOWN = 0x01; // pN.team bit 0 (death at 0x2FA6E, extend at 0x3014E)
 const MAPPED_PILOTS = 3; // pN.team.0-2; every team seen so far has three
 
+// Medals go up in hundreds to 900, then in thousands to 10,000 (shmups wiki); medal.value is twice the index.
+const MEDAL_POINTS = [
+  100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000,
+];
+
 const playerIn = (v, n) => v['game.running'] && v[`p${n}.active`];
 
 const alive = (v, n) => (playerIn(v, n) ? (v[`p${n}.status`] & FLYING) === FLYING : null);
@@ -47,5 +52,11 @@ export default {
   'p2.lives': {
     description: "Standard: player 2's pilots not down, including the one flying.",
     value: v => lives(v, 2),
+  },
+
+  'medal.next': {
+    description: 'Points the next medal released will be worth.',
+    value: v =>
+      v['game.running'] ? (MEDAL_POINTS[Math.min(v['medal.value'] / 2, MEDAL_POINTS.length - 1)] ?? null) : null,
   },
 };
