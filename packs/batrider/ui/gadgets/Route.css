@@ -1,0 +1,35 @@
+.route-stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--value-small-size);
+  color: var(--dim);
+}
+
+.route-stages li {
+  display: flex;
+  gap: 0.5rem;
+  line-height: 1.6;
+}
+
+.route-n {
+  width: 1ch;
+}
+
+.route-state {
+  margin-left: auto;
+  min-width: 4ch;
+  text-align: right;
+}
+
+.route-stages .done {
+  color: var(--good);
+}
+
+.route-stages .current {
+  color: var(--live);
+}
+
+.route-stages .next {
+  color: var(--text);
+}

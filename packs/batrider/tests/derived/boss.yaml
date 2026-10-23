@@ -1,0 +1,49 @@
+# The boss on screen, from the enemy table: the MAME layout's routine and part for each boss, and the status that shows
+# a part can be hit. CONFRICT (stage 1) shows part 118 first, then its body (part 0) while the body's status & 0xF201
+# is 0x8200.
+
+start:
+  stage.counter: 1
+  p1.active: true
+  p1.status: 0x8E
+  team.last_index: 2
+
+scenarios:
+  no boss:
+    - expect: { boss.name: null, boss.hp: null, boss.hp_max: null }
+
+  CONFRICT's first part, then its body, each with its own full bar:
+    - set:
+        enemies[36].routine: 0x0531B4
+        enemies[36].part: 118
+        enemies[36].status: 0x8300
+        enemies[36].hp: 42
+      expect: { boss.name: CONFRICT, boss.part: 118, boss.hp: 42, boss.hp_max: 42 }
+    - set: { "enemies[36].hp": 20 }
+      expect: { boss.hp: 20, boss.hp_max: 42 }
+    - set:
+        enemies[36].hp: 0
+        enemies[29].routine: 0x0531B4
+        enemies[29].part: 0
+        enemies[29].status: 0x9382
+        enemies[29].hp: 84
+      expect: { boss.name: null }
+    - set: { "enemies[29].status": 0x8382 }
+      expect: { boss.name: CONFRICT, boss.part: 0, boss.hp: 84, boss.hp_max: 84 }
+    - set: { "enemies[29].hp": 60 }
+      expect: { boss.hp: 60, boss.hp_max: 84 }
+
+  an enemy that isn't a boss:
+    - set:
+        enemies[3].routine: 0x012345
+        enemies[3].status: 0x8000
+        enemies[3].hp: 50
+      expect: { boss.name: null }
+
+  outside play:
+    - set:
+        stage.counter: 0
+        enemies[29].routine: 0x0531B4
+        enemies[29].status: 0x8200
+        enemies[29].hp: 84
+      expect: { boss.hp: null }

@@ -1,0 +1,79 @@
+# Rank's breakdown: each tick's change is put down to time (the timer rank and credits, per frame), the events the
+# game's tables account for (deaths, extends, pickups), and the rest, shots and grazing. Rank units: positive is
+# harder, 0x1000000 the whole scale.
+
+# Normal at the defaults: rank at its minimum, 4 a frame. One frame a tick.
+start:
+  stage.counter: 1
+  course: 2
+  team.last_index: 2
+  frame_counter: 1000
+  rank: 0xF00000
+  rank.min: 0xF80000
+  rank.per_frame: 4
+  p1.status: 0x8E
+  p1.active: true
+  p1.ship: 0x00
+  p1.team.1: 0x10
+  p1.team.2: 0x20
+add: { frame_counter: 1, rank: -4 }
+
+scenarios:
+  time alone:
+    - expect: { rank.from_time: 0, rank.drift: 4, rank.change: null }
+    - repeat: 10
+      expect: { rank.from_time: 40, rank.from_shots: 0, rank.percent: 6.25 }
+
+  unused credits add to the drift:
+    - set: { credits: 2 }
+      expect: { rank.drift: 6 }
+    - add: { rank: -2 }
+      expect: { rank.from_time: 6, rank.from_shots: 0 }
+
+  shooting is the rest:
+    - expect: { rank.from_shots: 0 }
+    - add: { rank: -60 }
+      repeat: 2
+      expect: { rank.from_time: 8, rank.from_shots: 120 }
+
+  a large shot, by its table value:
+    - expect: { rank.from_items: 0 }
+    - set: { p1.shot_level: 1, rank: 0xEF7FFC }
+      expect: { rank.from_items: 0x8000, rank.from_shots: 0, rank.change: 0x8000, rank.change_reason: large shot, rank.change_age: 0 }
+    - repeat: 10
+      expect: { rank.change: 0x8000, rank.change_age: 10 }
+
+  a small shot that completes a level is a small shot, not a large one:
+    - set: { p1.shot_items: 1 }
+    - set: { p1.shot_level: 1, p1.shot_items: 0, rank: 0xEFFEFC }
+      expect: { rank.change: 0x100, rank.change_reason: small shot }
+
+  bomb fragments, and a medal worth 1,000 or more:
+    - set: { p1.bomb_fragments: 10, medal.value: 18 }
+    - set: { p1.bomb_fragments: 12, medal.value: 20, rank: 0xEFEEFC }
+      expect: { rank.from_items: 0x1100, rank.change_reason: bomb fragment + medal 1000 }
+
+  a death eases rank by the table for the pilots left:
+    - set: { p1.status: 0x81 }
+    - set: { p1.status: 0x8E, p1.ship: 0x10, p1.team.0: 0x01, rank: 0xF3FFFC }
+      expect: { rank.from_deaths: -0x40000, rank.change: -0x40000, rank.change_reason: death, rank.from_shots: 0 }
+
+  a death near the floor only eases rank as far as rank.min:
+    - set: { rank: 0xF7FFF0 }
+    - set: { p1.ship: 0x10, p1.team.0: 0x01, rank: 0xF7FFFC }
+      expect: { rank.from_deaths: -16, rank.from_shots: 0 }
+
+  an extend by the table for the pilots up before it:
+    - set: { p1.team.0: 0x01 }
+    - set: { p1.team.0: 0x00, rank: 0xDFFFFC }
+      expect: { rank.from_extends: 0x100000, rank.change_reason: extend }
+
+  a paused game adds no time:
+    - expect: { rank.from_time: 0 }
+    - add: { rank: 4 }
+      repeat: 5
+      expect: { rank.from_time: 0, rank.from_shots: 0 }
+
+  outside play:
+    - set: { stage.counter: 0 }
+      expect: { rank.percent: null, rank.from_time: null, rank.change: null }

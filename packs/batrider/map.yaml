@@ -164,11 +164,11 @@ variables:
     address: 0x204080
     description: As p1.team.0.
     verified: true
-  p1.score:
+  p1.score_raw:
     type: u32
     address: 0x204156
     description: >-
-      Standard. Binary, matched the screen exactly. Capped at 63,999,990 plus p1.continues, which suggests the last
+      Binary, matched the screen exactly; p1.score is this in play. Capped at 63,999,990 plus p1.continues, which suggests the last
       digit counts continues as in DoDonPachi (0x7EC2); not yet seen after a continue.
     verified: true
   p1.next_extend:
@@ -242,7 +242,7 @@ variables:
   p2.team.0: u16 @ 0x2041EE
   p2.team.1: u16 @ 0x2041F0
   p2.team.2: u16 @ 0x2041F2
-  p2.score: u32 @ 0x2042C8
+  p2.score_raw: u32 @ 0x2042C8
   p2.next_extend: u32 @ 0x2042CC
   p2.continues: u8 @ 0x2042EA
   p2.option_formation: u16 @ 0x2041F6

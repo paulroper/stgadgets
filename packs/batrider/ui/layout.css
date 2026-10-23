@@ -1,0 +1,5 @@
+/* The latency meter is the timing panel's only gadget, so it needs no divider above it. */
+.batrider-timing .gadget.debug {
+  border-top: 0;
+  padding-top: 0;
+}

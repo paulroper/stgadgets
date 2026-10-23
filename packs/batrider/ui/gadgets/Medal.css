@@ -1,0 +1,8 @@
+.medal .bar-fill {
+  background: var(--live);
+}
+
+.medal-max .value,
+.medal-max .note {
+  color: var(--live);
+}

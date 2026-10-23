@@ -1,0 +1,7 @@
+.boss .bar-fill {
+  background: var(--bad);
+}
+
+.boss-here .value {
+  color: var(--bad);
+}

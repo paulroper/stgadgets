@@ -1,0 +1,50 @@
+# The route, the score, extends and shot power.
+
+start:
+  stage.counter: 1
+  course: 2
+  stage.order.2: 3
+  stage.order.3: 1
+  stage.order.4: 2
+  team.last_index: 2
+  p1.active: true
+  p1.status: 0x8E
+  p1.score_raw: 1000
+  p1.next_extend: 1500000
+
+scenarios:
+  the route on the normal course:
+    - expect: { route.1: MANHATTAN, route.2: SEWAGE, route.3: AIRPORT, route.4: SKY HIGH, route.5: HIGHWAY }
+
+  no route on the training course:
+    - set: { course: 0 }
+      expect: { route.1: null, route.2: null }
+
+  the score, and the points just scored adding up:
+    - expect: { p1.score: 1000, p1.score_gain: null }
+    - set: { p1.score_raw: 1100 }
+      expect: { p1.score_gain: 100, p1.score_gain_age: 0 }
+    - repeat: 10
+      expect: { p1.score_gain: 100, p1.score_gain_age: 10 }
+    - set: { p1.score_raw: 1400 }
+      expect: { p1.score_gain: 400, p1.score_gain_age: 0 }
+    - repeat: 60
+      expect: { p1.score_gain: null }
+
+  extends:
+    - expect: { p1.next_extend_at: 1500000 }
+    - set: { p1.next_extend: 0xFFFFFFFF }
+      expect: { p1.next_extend_at: null }
+
+  small shot items still needed, 2, 3 and 4 at levels 0, 1 and 2:
+    - expect: { p1.shot_items_needed: 2 }
+    - set: { p1.shot_items: 1 }
+      expect: { p1.shot_items_needed: 1 }
+    - set: { p1.shot_level: 2, p1.shot_items: 0 }
+      expect: { p1.shot_items_needed: 4 }
+    - set: { p1.shot_level: 3 }
+      expect: { p1.shot_items_needed: null }
+
+  outside play:
+    - set: { stage.counter: 0 }
+      expect: { p1.score: null, route.1: null, p1.shot_items_needed: null }

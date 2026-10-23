@@ -251,10 +251,27 @@ down separately. The overlay picks which part's HP to show with a status mask pe
 - P2's block, in a two-player game.
 - The Dec 1997 sets.
 
+## The layout
+
+`ui/layout.tsx`. Left: score (with the points just scored), high score, lives as pilots with the next extend, bombs
+and fragments, shot and option power, stage; then rank and the next medal. Right: the boss's HP and the route, the
+items let fall towards a special, and latency.
+
+- **Rank** is shown as the MAME layout does, `1 - rank / 0x1000000` as a percentage. Its breakdown (`rank.from_*` in
+  `derived.js`) puts each tick's change down to time (the timer rank and unused credits, per frame of
+  `frame_counter`), deaths and extends (trap15's tables, by pilots left or up), pickups it can see (shot and option
+  levels, small shot items, fragments, large bombs, medals), and the rest, which is shots and grazing. When an event
+  would take rank past `rank.min` or 0, it's counted only as far as rank went. Not seen, so in the rest: small shots
+  at the top level, cash, bombs used, bullet seals. Over the recorded games the parts added up to the rank's change
+  since play started.
+- **Boss HP** uses the MAME layout's table of boss routines and parts; checked on CONFRICT only.
+- **Route** names: Manhattan, then the stage order (1 airport, 2 Sky High, 3 Sewage System, from the overlay's pairings
+  and the shmups wiki; only 3 seen), then the Highway (the shmups wiki), on the normal and advanced courses.
+
 ## Future ideas
 
-- Rank as a percentage and as a bar, with the rank cost of each event as it happens.
 - Lives as the team's portraits: who's up, who's next.
-- The item drop cycle, the dropped-item counters and the medal chain: what's coming and what's close to special.
+- The item drop cycle (`drop.position`): what's coming.
 - A hidden boss checklist for the current team and stage order.
-- Boss HP and time left.
+- Boss timers, from the overlay's timer fields.
+- The hidden option formations: what each ship needs dropped for each one.
