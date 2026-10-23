@@ -1,4 +1,4 @@
-# stgadgets
+<h1 align="center"><img src="docs/logo.svg" alt="stgadgets" width="640"></h1>
 
 A platform for adding M2 ShotTriggers-style gadgets to shmups (STGs) running in emulators: score breakdowns, rank meters, chain gauges, stage splits and anything else that makes a run easier to read.
 
