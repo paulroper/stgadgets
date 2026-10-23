@@ -72,18 +72,39 @@ const BOSSES = {
 const BOSS_PART_MASK = 0xf001;
 const BOSS_PART_VALUE = 0x8000;
 
-// The route on the normal and advanced courses: Manhattan first, then the three stages in stage.order (the overlay
-// pairs 1 with Envy, 2 with Blunt, 3 with Sobut, and the shmups wiki puts them at the airport, Sky High and the sewers;
-// 3 is checked), then the Highway. Later stages aren't known yet.
-const ORDERED_STAGES = { 1: 'AIRPORT', 2: 'SKY HIGH', 3: 'SEWAGE' };
-const ROUTE_COURSES = new Set([2, 4]);
-const ROUTE_LENGTH = 5;
-const routeStage = (v, n) => {
-  if (n === 1) return 'MANHATTAN';
-  if (n >= 2 && n <= 4) return ORDERED_STAGES[v[`stage.order.${n}`]] ?? null;
-  if (n === 5) return 'HIGHWAY';
-  return null;
+// Each scene's name, as the game shows it at the start of the stage (table at 0x11C0C, by stage.scene). 8-11 are the
+// hidden bosses' stages.
+const SCENE_NAMES = {
+  1: 'M.CITY',
+  2: 'AIRPORT',
+  3: 'SKY HIGH',
+  4: 'S.SYSTEM',
+  5: 'HIGH-WAY',
+  6: 'Z.CITY',
+  7: 'BUILDING',
+  8: 'BASHImk2',
+  9: 'BASHI-R',
+  10: 'B.H.mk2',
+  11: 'G.SQUID',
 };
+
+// Each course's stages, from the master script's branch by course (0x21C20): scene ids, and 'order N' for the stage
+// chosen in that slot of stage.order, whose value v is scene v + 1 (the table at 0x21EE8). The boss course runs a
+// different script and has no route here.
+const ROUTES = {
+  0: [1, 'order 0', 5], // training (0x21C9A)
+  2: [1, 'order 0', 'order 1', 'order 2', 5], // normal (0x21CB4)
+  4: [1, 'order 0', 'order 1', 'order 2', 5, 6, 7], // advanced (0x21CEA)
+};
+const ROUTE_ROWS = 7;
+// A hidden boss's stage comes after this many of the course's stages, when its condition is met (the conditional
+// calls in the course scripts: BASHImk2 before the HIGH-WAY, B.H.mk2 after it, BASHI-R and G.SQUID after Z.CITY).
+const HIDDEN_AFTER = { 8: 4, 10: 5, 9: 6, 11: 6 };
+
+const routeScenes = v =>
+  (ROUTES[v.course] ?? []).map(stage =>
+    typeof stage === 'number' ? stage : 1 + (v[`stage.order.${2 + Number(stage.split(' ')[1])}`] & 3),
+  );
 
 // Where each scene's boss arrives, in stage.scroll: the position its stage script waits for before spawning it (NOTES.md,
 // stage scripts). Only scenes whose boss has been seen arriving at that position are listed.
@@ -380,14 +401,35 @@ export default {
     },
   },
 
-  // The route: each stage's name, on the courses with a known route.
+  // The route: the course's stages by name, and where the run is on it. Found by scene rather than stage number, since a
+  // hidden boss's stage adds to stage.counter.
   ...Object.fromEntries(
-    Array.from({ length: ROUTE_LENGTH }, (_, i) => [
+    Array.from({ length: ROUTE_ROWS }, (_, i) => [
       `route.${i + 1}`,
       {
-        description: `Stage ${i + 1}'s name on this course, or null when it isn't known.`,
-        value: v => (v['game.running'] && ROUTE_COURSES.has(v.course) ? routeStage(v, i + 1) : null),
+        description: `The name of the course's stage ${i + 1}, or null past the course's last stage or on the boss course.`,
+        value: v => (v['game.running'] ? (SCENE_NAMES[routeScenes(v)[i]] ?? null) : null),
       },
     ]),
   ),
+  'route.at': {
+    description: "The course's stage being played (1 for the first), or null on a hidden boss's stage.",
+    value: v => {
+      if (!v['game.running']) return null;
+      const at = routeScenes(v).indexOf(v['stage.scene']);
+      return at < 0 ? null : at + 1;
+    },
+  },
+  'route.done': {
+    description: "How many of the course's stages are behind the run.",
+    value: v => {
+      if (!v['game.running'] || !ROUTES[v.course]) return null;
+      return v['route.at'] !== null ? v['route.at'] - 1 : (HIDDEN_AFTER[v['stage.scene']] ?? null);
+    },
+  },
+  'route.extra': {
+    description: "The hidden boss's stage being played, between the course's stages, or null.",
+    value: v =>
+      v['game.running'] && HIDDEN_AFTER[v['stage.scene']] !== undefined ? SCENE_NAMES[v['stage.scene']] : null,
+  },
 };

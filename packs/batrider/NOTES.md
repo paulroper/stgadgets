@@ -253,6 +253,26 @@ scene may be two scroll sections or two courses' branches. Envy, Blunt and Sobut
 the stage order), not stages 2-4's. To add a stage to the boss gadget, check its position in a recording (the boss
 arrives just past it) and add it to `BOSS_AT` in `derived.js`.
 
+## Courses and routes
+
+There's no stage count in RAM: the route is in the master script (scene 0's, `0x21BD8`), which branches by course
+(`0x21C20`) and calls each stage's script in turn. `0x0878` calls the stage in a slot of the stage order through the
+table at `0x21EE8`, so order value *v* is scene *v* + 1. Stage names are the game's, from the table it draws them with
+(`0x11C0C`, by scene): 1 M.CITY, 2 AIRPORT, 3 SKY HIGH, 4 S.SYSTEM, 5 HIGH-WAY, 6 Z.CITY, 7 BUILDING, and the hidden
+bosses' 8 BASHImk2, 9 BASHI-R, 10 B.H.mk2, 11 G.SQUID.
+
+| Course | Script | Stages |
+|---|---|---|
+| Training (0) | `0x21C9A` | M.CITY, the first chosen stage, HIGH-WAY |
+| Normal (2) | `0x21CB4` | M.CITY, the three chosen, HIGH-WAY |
+| Advanced (4) | `0x21CEA` | M.CITY, the three chosen, HIGH-WAY, Z.CITY, BUILDING |
+| Boss (6) | `0x21D50` | A boss rush, from its own scripts; not decoded |
+
+Hidden bosses' stages are conditional calls in the course scripts (class 5 commands `0x90`, `0x94`, `0x9C`, `0xA0`,
+whose handlers sit beside those bosses' code, skip them unless their condition is met): BASHImk2 before the HIGH-WAY,
+B.H.mk2 after it, and BASHI-R and G.SQUID after Z.CITY. Each adds to `stage.counter`, which is why the route goes by
+scene. Seen in play: the normal course's M.CITY then S.SYSTEM (order value 3) as stage 2.
+
 ## Stage order and hidden bosses
 
 - `0x20F9E0`-`0x20F9E2`: the order of stages 2-4, read by the stage loader (`0x10BEC`), set before character select.
@@ -301,8 +321,8 @@ items let fall towards a special, and latency.
   since play started.
 - **Boss HP** uses the MAME layout's table of boss routines and parts; checked on CONFRICT only. Before the boss
   arrives, the gadget shows the scroll's progress towards it and the time left, on stages in `BOSS_AT` (stage 1 so far).
-- **Route** names: Manhattan, then the stage order (1 airport, 2 Sky High, 3 Sewage System, from the shmups wiki's
-  colours; only 3 seen), then the Highway (the shmups wiki), on the normal and advanced courses.
+- **Route**: the course's stages from the ROM (below), found by `stage.scene`, with a hidden boss's stage as an extra
+  line. Names are the game's own.
 
 ## Future ideas
 

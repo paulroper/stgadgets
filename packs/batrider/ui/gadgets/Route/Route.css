@@ -33,3 +33,12 @@
 .route-stages .next {
   color: var(--text);
 }
+
+/* Rows past the course's last stage keep their place, so the panel doesn't change height between courses. */
+.route-stages .route-none {
+  visibility: hidden;
+}
+
+.route-extra {
+  color: var(--live);
+}

@@ -29,7 +29,8 @@ describe("Armed Police Batrider overlay", () => {
     expect(textOf("RANK")).toBe("3.33 %");
     expect(textOf("RANK", ".rank-change")).toBe("+0.20% large shot");
     expect(textOf("RANK", ".rank-parts")).toBe("time+0.01%shots & graze0.00%items+0.20%extends0.00%deaths0.00%");
-    expect(route()).toEqual(["1MANHATTAN◀", "2SEWAGENEXT", "3AIRPORT", "4SKY HIGH", "5HIGHWAY"]);
+    expect(route()).toEqual(["1M.CITY◀", "2S.SYSTEMNEXT", "3AIRPORT", "4SKY HIGH", "5HIGH-WAY", "6-", "7-"]);
+    expect(gadget("ROUTE").querySelectorAll(".route-none")).toHaveLength(2); // the normal course has five stages
     expect(textOf("BOSS")).toBe("in ~50 s"); // 600 ticks at 128 a frame, of 0x6F000
   });
 
@@ -47,7 +48,7 @@ describe("Armed Police Batrider overlay", () => {
     expect(gadget("LIVES").querySelectorAll(".pilot.on")).toHaveLength(2);
     expect(textOf("POWER", ".power-row")).toBe("SHOT2 small to go");
     expect(textOf("RANK", ".rank-change")).toBe("-1.56% death");
-    expect(route().slice(0, 3)).toEqual(["1MANHATTAN✓", "2SEWAGE◀", "3AIRPORTNEXT"]);
+    expect(route().slice(0, 3)).toEqual(["1M.CITY✓", "2S.SYSTEM◀", "3AIRPORTNEXT"]);
     expect(textOf("BOSS")).toBe("-"); // Sewage System's boss position isn't known yet
   });
 
@@ -79,6 +80,6 @@ describe("Armed Police Batrider overlay", () => {
     expect(textOf("LIVES")).toBe("-");
     expect(textOf("RANK")).toBe("- %");
     expect(textOf("🏅 NEXT MEDAL")).toBe("-");
-    expect(route()).toEqual(["1-", "2-", "3-", "4-", "5-"]);
+    expect(gadget("ROUTE").querySelectorAll(".route-none")).toHaveLength(7);
   });
 });

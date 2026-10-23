@@ -2,6 +2,7 @@
 
 start:
   stage.counter: 1
+  stage.scene: 1
   course: 2
   stage.order.2: 3
   stage.order.3: 1
@@ -13,12 +14,37 @@ start:
   p1.next_extend: 1500000
 
 scenarios:
-  the route on the normal course:
-    - expect: { route.1: MANHATTAN, route.2: SEWAGE, route.3: AIRPORT, route.4: SKY HIGH, route.5: HIGHWAY }
+  the normal course's five stages, the middle three in the chosen order:
+    - expect:
+        route.1: M.CITY
+        route.2: S.SYSTEM
+        route.3: AIRPORT
+        route.4: SKY HIGH
+        route.5: HIGH-WAY
+        route.6: null
+        route.at: 1
+        route.done: 0
+        route.extra: null
+    - set: { stage.counter: 3, stage.scene: 2 }
+      expect: { route.at: 3, route.done: 2 }
 
-  no route on the training course:
+  the training course's three:
     - set: { course: 0 }
-      expect: { route.1: null, route.2: null }
+      expect: { route.1: M.CITY, route.2: S.SYSTEM, route.3: HIGH-WAY, route.4: null }
+
+  the advanced course's seven:
+    - set: { course: 4, stage.counter: 7, stage.scene: 7 }
+      expect: { route.5: HIGH-WAY, route.6: Z.CITY, route.7: BUILDING, route.at: 7, route.done: 6 }
+
+  a hidden boss's stage, between the course's stages:
+    - set: { course: 4, stage.counter: 5, stage.scene: 8 }
+      expect: { route.at: null, route.done: 4, route.extra: BASHImk2 }
+    - set: { stage.counter: 6, stage.scene: 5 }
+      expect: { route.at: 5, route.done: 4, route.extra: null }
+
+  no route on the boss course:
+    - set: { course: 6 }
+      expect: { route.1: null, route.at: null, route.done: null }
 
   the score, and the points just scored adding up:
     - expect: { p1.score: 1000, p1.score_gain: null }

@@ -27,15 +27,16 @@ variables:
     type: u8
     address: 0x20E6AA
     description: >-
-      The id the stage loader (0xEE6A) was given. 1 Manhattan (stage 1), 4 Sewage System; stages 2-4 are probably 1 +
-      their stage order value. Title and attract screens use other ids.
+      The id the stage loader (0xEE6A) was given: 1 M.CITY, 2 AIRPORT, 3 SKY HIGH, 4 S.SYSTEM, 5 HIGH-WAY, 6 Z.CITY,
+      7 BUILDING, 8-11 the hidden bosses' stages (names from the table at 0x11C0C). A chosen stage is 1 + its stage
+      order value (0x21EE8). Title and attract screens use other ids.
     verified: true
   stage.order.2:
     type: u8
     address: 0x20F9E0
     description: >-
-      Which stage is second; read by the stage loader at 0x10BEC and set before character select. 3 is Sewage System
-      (Sobut); the overlay pairs 1 with Envy and 2 with Blunt.
+      Which stage is second: 1 AIRPORT, 2 SKY HIGH, 3 S.SYSTEM (scene = value + 1; the course scripts call it through
+      0x21EE8). Set before character select. The overlay pairs 1, 2, 3 with the Highway bosses Envy, Blunt, Sobut.
     verified: true
   stage.order.3:
     type: u8
