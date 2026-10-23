@@ -67,11 +67,9 @@ public sealed class DerivedScript
     {
         var engine = CreateEngine(tickLimit ?? TickLimit, out var deadline);
         var evaluator = new DerivedEvaluator(engine, Functions(engine, deadline, Source));
+        var decoder = new MapDecoder(map);
         foreach (var fill in (byte[])[0x00, 0x01, 0x11, 0x01])   // vary the values so scripts take more of their branches
-        {
-            var bytes = Enumerable.Repeat(fill, 8).ToArray();
-            evaluator.Evaluate(map.Variables.ToDictionary(v => v.Name, v => MapDecoder.Decode(v, bytes.AsSpan(0, v.Type.Size), map.Endianness)));
-        }
+            evaluator.Evaluate(decoder.DecodeFilled(fill));
         evaluator.Restart();
         return evaluator;
     }
@@ -214,15 +212,29 @@ public sealed class DerivedEvaluator : IDisposable
 
     public void Dispose() => _engine.Dispose();
 
-    private static JsValue ToJs(object? value) => value switch
+    private JsValue ToJs(object? value) => value switch
     {
         null => JsValue.Null,
         long l => new JsNumber(l),
         double d => new JsNumber(d),
         bool b => b ? JsBoolean.True : JsBoolean.False,
         string s => new JsString(s),
+        ArrayValue array => ToJs(array),
         _ => throw new NotSupportedException($"Can't pass {value.GetType().Name} to a derived value"),
     };
+
+    private JsArray ToJs(ArrayValue array)
+    {
+        var elements = new JsValue[array.Count];
+        for (var i = 0; i < array.Count; i++)
+        {
+            var element = new JsObject(_engine);
+            foreach (var (field, value) in array[i])
+                element.Set(field, ToJs(value));
+            elements[i] = element;
+        }
+        return new JsArray(_engine, elements);
+    }
 
     /// <summary>Whole numbers become <see cref="long"/>, like decoded variables; other numbers stay <see cref="double"/>.</summary>
     private static object? FromJs(JsValue value) => value switch

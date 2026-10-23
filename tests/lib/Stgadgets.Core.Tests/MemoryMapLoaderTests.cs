@@ -55,6 +55,7 @@ public class MemoryMapLoaderTests
     [InlineData("scale: 10", "unknown option 'scale'")]
     [InlineData("shift: 2", "shift needs a mask")]
     [InlineData("mask: 0x80\n    shift: 40", "shift must be 0-31")]
+    [InlineData("mask: 0x10000", "mask 0x10000 is wider than u16's 2 byte(s)")]
     public void Reports_bad_long_form_options(string options, string error)
     {
         var yaml = Yaml.Replace("    verified: true", "    verified: true\n    " + options);

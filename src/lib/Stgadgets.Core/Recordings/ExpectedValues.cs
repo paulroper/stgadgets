@@ -65,7 +65,7 @@ public sealed record ExpectedValues(
             }
             foreach (var (name, expected) in values)
             {
-                if (!ticks[tick].TryGetValue(name, out var actual))
+                if (!ValuePath.Parse(name).TryGet(ticks[tick], out var actual))
                     failures.Add($"at '{point}': the map has no variable '{name}'");
                 else if (!Equals(expected, actual))
                     failures.Add($"at '{point}' (tick {tick}): {name} is {PackYaml.FormatValue(actual)}, expected {PackYaml.FormatValue(expected)}");
@@ -74,12 +74,13 @@ public sealed record ExpectedValues(
 
         foreach (var (name, expected) in Sequences)
         {
-            if (ticks.Count > 0 && !ticks[0].ContainsKey(name))
+            var path = ValuePath.Parse(name);
+            if (ticks.Count > 0 && !path.TryGet(ticks[0], out _))
             {
                 failures.Add($"sequences: the map has no variable '{name}'");
                 continue;
             }
-            var actual = Distinct(ticks.Select(t => t[name]));
+            var actual = Distinct(ticks.Select(t => path.TryGet(t, out var value) ? value : null));
             if (!actual.SequenceEqual(expected))
                 failures.Add($"sequences: {name} is [{string.Join(", ", actual.Select(PackYaml.FormatValue))}], expected [{string.Join(", ", expected.Select(PackYaml.FormatValue))}]");
         }

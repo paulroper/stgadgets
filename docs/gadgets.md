@@ -31,7 +31,7 @@ Hooks:
 
 | Hook | Returns |
 |---|---|
-| `useVar<T>(name)` | The current value, or `undefined` if the map doesn't define it |
+| `useVar<T>(name)` | The current value, or `undefined` if the map doesn't define it. An [array](memory-maps.md#arrays) is `ArrayEntries`, one object per entry |
 | `useGame()` | `{ title, manufacturer, year, romset, screen: { width, height, rotation } }`, or `null` when nothing is running |
 | `usePack()` | The matched pack's ID, e.g. `'invaders'`, or `null` |
 | `useConnection()` | `{ state, detail }`; `state` is `'connected' \| 'no-emulator' \| 'no-content' \| 'no-pack' \| 'disconnected'` and a few more |
@@ -134,8 +134,9 @@ The SDK handles this, but for reference:
 // server → client, on connect and whenever the game changes
 { "type": "hello", "pack": "invaders",
   "game": { "title": "Space Invaders", "manufacturer": "Taito", "year": 1978, "romset": "invaders", "screen": { … } },
-  "variables": { "p1.score": { "type": "bcd2", "description": "…" }, "p1.accuracy": { "type": "derived", … }, … },
-  "values": { "p1.score": 0, … } }
+  "variables": { "p1.score": { "type": "bcd2", "description": "…" }, "p1.accuracy": { "type": "derived", … },
+                 "enemies": { "type": "array", "fields": { "hp": { "type": "u16", … }, … } }, … },
+  "values": { "p1.score": 0, "enemies": [{ "hp": 84, … }, …], … } }
 
 // server → client, every tick (changed values only); readAt and sentAt are Unix ms, for the latency meter
 { "type": "tick", "seq": 18234, "readAt": 1760900000123.4, "sentAt": 1760900000123.7, "changed": { "p1.score": 150 } }

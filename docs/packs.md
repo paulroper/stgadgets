@@ -139,6 +139,7 @@ sequences:                                  # every distinct value, in order, ov
 ```
 
 - Values are numbers (decimal or `0x` hex), `true`, `false` or `null` (bytes that don't decode, such as bad BCD). [Derived values](memory-maps.md#derived-values) can also be fractions or strings.
+- An [array](memory-maps.md#arrays)'s entries are checked one field at a time: `enemies[29].hp: 84`.
 - Derived values are checked like any other variable. A derived value that fails on any tick is reported too.
 - To check a value just before an event, use the marker's tick minus one.
 - A recording without `expected.yaml` is still checked: every tick must decode, so the map's variables have to fall inside the recorded regions.
@@ -180,6 +181,8 @@ scenarios:
   ticks. **`expect`** is checked on the step's last tick, and can name map variables as well as derived values.
 - Values are as decoded: a BCD score is its decimal value, a `bool` is `true` or `false`. A fraction matches to the
   decimal places it's written with, so `73.4` matches `73.396224`.
+- An [array](memory-maps.md#arrays) starts with every field of every entry at zero. Set, add to and expect one entry's
+  field as `enemies[3].hp`, quoted in a flow mapping: `set: { "enemies[3].hp": 84 }`.
 - To see what a real moment looks like before writing a scenario's `start`, use `stgadgets recording values
   <recording> --at <marker>` ([cli.md](cli.md)).
 - Every scenario starts afresh, with no previous tick. Values that compare with the previous tick, such as a hit or a

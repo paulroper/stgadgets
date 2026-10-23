@@ -17,7 +17,7 @@ internal static class HistoryCommand
         var recording = RecordingCommand.Argument();
         var target = new Argument<string>("address-or-name")
         {
-            Description = "An address (0x hex or decimal), or the name of a map variable or derived value in the recording's pack.",
+            Description = "An address (0x hex or decimal), or the name of a map variable or derived value in the recording's pack, or an array entry's field: enemies[3].hp.",
         };
         var type = new Option<string>("--type")
         {
@@ -57,9 +57,10 @@ internal static class HistoryCommand
 
     private static IEnumerable<object?> NamedValues(Recording recording, Pack pack, string name)
     {
+        var path = ValuePath.Parse(name);
         foreach (var tick in RecordingReplay.Run(recording, new MapDecoder(pack.Map), pack.Derived))
         {
-            yield return tick.Values.TryGetValue(name, out var value)
+            yield return path.TryGet(tick.Values, out var value)
                 ? value
                 : throw new UsageException($"{pack.Id} has no map variable or derived value '{name}'");
         }

@@ -1,4 +1,5 @@
 using System.Globalization;
+using Stgadgets.Core.Maps;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -58,6 +59,7 @@ public static class PackYaml
         null => "null",
         bool b => b ? "true" : "false",
         string s => $"'{s}'",
+        ArrayValue array => $"[{array.Count} entries]",
         _ => Convert.ToString(value, CultureInfo.InvariantCulture)!,
     };
 

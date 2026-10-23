@@ -48,7 +48,7 @@ Stop with Ctrl+C or `touch …/<name>/STOP`; mark with `echo "label" > …/<name
 | `--endpoint` | Where the emulator listens, in the provider's form. RetroArch: `host:port`, by default `127.0.0.1:55355` |
 | `--settings <file>` | The provider's settings, shaped like a pack's `providers/<id>.yaml`: for a game whose pack has none yet, or to try different ones ([providers.md](providers.md)) |
 | `--range [name=]start:size` | Memory to record; repeat for several regions. Without it, what the pack's map reads: small, and enough to check the map against play. Give the work RAM to hunt for new addresses |
-| `--watch <name or address[:type[:name]]>` | Logs a value to `changes.log` each time it changes: a map variable, or an address read as a `map.yaml` type (`u8` by default) in the map's byte order (`--endianness` to override) |
+| `--watch <name or address[:type[:name]]>` | Logs a value to `changes.log` each time it changes: a map variable or array entry's field (`'enemies[3].hp'`), or an address read as a `map.yaml` type (`u8` by default) in the map's byte order (`--endianness` to override) |
 | `--seconds` | Stops after this long (600) |
 | `--notes` | What happens in the recording, for the manifest |
 
@@ -108,12 +108,13 @@ The table shows each candidate at the start, every marker and the end. `--show` 
 
 Every distinct value over the recording, with the ticks it changed at and the markers there. Give an address to
 read it with `--type`, as in `map.yaml` (`u8` by default, `u16`, `s16be`, `bcd2`, …), in the pack map's byte order
-(`--endianness` for a recording not in a pack yet). Or give the name of a map variable or derived value, which is
-read through the pack:
+(`--endianness` for a recording not in a pack yet). Or give the name of a map variable or derived value, or an array
+entry's field, which is read through the pack:
 
 ```sh
 stgadgets recording history REC 0x20F8 --type bcd2
 stgadgets recording history REC p1.lives
+stgadgets recording history REC 'enemies[29].hp'
 ```
 
 ```

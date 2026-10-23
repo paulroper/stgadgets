@@ -70,7 +70,8 @@ Tools to find addresses (see [memory-maps.md](memory-maps.md#finding-addresses))
 
 - [x] 16-bit values and big-endian CPUs (68000), including FBNeo's byte-swapped 68000 RAM (`word_swapped` in a pack's `providers/retroarch.yaml`)
 - [x] Bit fields in maps (`mask`, `shift`)
-- [ ] Arrays and structs (enemy and bullet tables), and pointers
+- [x] Arrays (enemy and bullet tables): `count` entries `stride` bytes apart, each with the same fields
+- [ ] Pointers
 - [ ] Maps that extend other maps, for clone ROM sets
 - [ ] Calibrating the game picture position, and `GameSpace`
 

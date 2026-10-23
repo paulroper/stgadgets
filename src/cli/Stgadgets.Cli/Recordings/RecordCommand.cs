@@ -125,7 +125,7 @@ internal static class RecordCommand
         {
             if (pack is null)
                 throw new UsageException("Give --range, or record into a pack (packs/<id>/recordings/<name>) to record what its map reads");
-            return ReadPlan.Create(pack.Map.Variables.Select(v => v.Range)).Ranges.Select(r => ($"ram_{r.Start:X}", r)).ToList();
+            return ReadPlan.Create(pack.Map.Ranges).Ranges.Select(r => ($"ram_{r.Start:X}", r)).ToList();
         }
 
         return ranges.Select((text, i) =>
@@ -141,7 +141,7 @@ internal static class RecordCommand
     {
         if (!IsNumber(text.Split(':')[0]))
         {
-            var variable = pack?.Map.Variables.FirstOrDefault(v => v.Name == text)
+            var variable = (pack is null ? null : FindVariable(pack.Map, ValuePath.Parse(text)))
                 ?? throw new UsageException($"--watch {text}: not an address, or a variable in {(pack is null ? "a pack's map" : $"{pack.Id}'s map")}");
             return new Watch(text, variable);
         }
@@ -151,6 +151,18 @@ internal static class RecordCommand
         var type = parts.Length > 1 ? VariableType.Parse(parts[1]) : VariableType.Parse("u8");
         var name = parts.Length > 2 ? parts[2] : $"0x{address:X}";
         return new Watch(name, new Variable(name, address, type));
+    }
+
+    /// <summary>A map variable, or one field of an array entry (<c>enemies[3].hp</c>) as a variable at its address.</summary>
+    private static Variable? FindVariable(MemoryMap map, ValuePath path)
+    {
+        if (path.Index is not { } index)
+            return map.Variables.FirstOrDefault(v => v.Name == path.Name);
+
+        var array = map.Arrays.FirstOrDefault(a => a.Name == path.Name);
+        return array is not null && index < array.Count && array.Fields.FirstOrDefault(f => f.Name == path.Field) is { } field
+            ? field with { Name = path.ToString(), Address = array.EntryAddress(index) + field.Address }
+            : null;
     }
 
     private static bool IsNumber(string text) =>
