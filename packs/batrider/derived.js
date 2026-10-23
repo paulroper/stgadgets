@@ -85,6 +85,11 @@ const routeStage = (v, n) => {
   return null;
 };
 
+// Where each scene's boss arrives, in stage.scroll: the position its stage script waits for before spawning it (NOTES.md,
+// stage scripts). Only scenes whose boss has been seen arriving at that position are listed.
+const BOSS_AT = { 1: 0x6f000 };
+const FRAMES_PER_SECOND = 60;
+
 const playerIn = (v, n) => v['game.running'] && v[`p${n}.active`];
 
 const alive = (v, n) => (playerIn(v, n) ? (v[`p${n}.status`] & FLYING) === FLYING : null);
@@ -356,6 +361,22 @@ export default {
       if (v['boss.hp'] === null) return null;
       const same = prev !== null && prev['boss.name'] === v['boss.name'] && prev['boss.part'] === v['boss.part'];
       return same ? Math.max(prev['boss.hp_max'], v['boss.hp']) : v['boss.hp'];
+    },
+  },
+
+  'boss.progress': {
+    description: 'How far the stage has scrolled towards its boss (0-1), on stages whose boss position is known.',
+    value: v => {
+      const at = BOSS_AT[v['stage.scene']];
+      return v['game.running'] && at !== undefined ? Math.min(v['stage.scroll'] / at, 1) : null;
+    },
+  },
+  'boss.eta': {
+    description: 'Roughly how many seconds until the boss arrives, at the current scroll speed.',
+    value: v => {
+      const at = BOSS_AT[v['stage.scene']];
+      if (v['boss.progress'] === null || v['boss.progress'] >= 1 || v['stage.scroll_speed'] <= 0) return null;
+      return (at - v['stage.scroll']) / v['stage.scroll_speed'] / FRAMES_PER_SECOND;
     },
   },
 

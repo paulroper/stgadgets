@@ -47,3 +47,19 @@ scenarios:
         enemies[29].status: 0x8200
         enemies[29].hp: 84
       expect: { boss.hp: null }
+
+  stage 1's boss approaching, then arrived:
+    - set: { stage.scene: 1, stage.scroll: 0x37800, stage.scroll_speed: 128 }
+      expect: { boss.progress: 0.5, boss.eta: 29.6 }
+    - set: { stage.scroll: 0x6F000 }
+      expect: { boss.progress: 1, boss.eta: null }
+    - set: { stage.scroll: 0x6F0A2 }
+      expect: { boss.progress: 1 }
+
+  no estimate while the scroll stands still:
+    - set: { stage.scene: 1, stage.scroll: 0x1000, stage.scroll_speed: 0 }
+      expect: { boss.eta: null }
+
+  a stage whose boss position isn't known:
+    - set: { stage.scene: 4, stage.scroll: 0x1000, stage.scroll_speed: 128 }
+      expect: { boss.progress: null, boss.eta: null }

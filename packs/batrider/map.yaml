@@ -47,6 +47,21 @@ variables:
     address: 0x20F9E2
     description: Which stage is fourth, as stage.order.2.
     verified: true
+  stage.scroll:
+    type: u32
+    address: 0x2034DA
+    description: >-
+      How far the stage has scrolled, cleared by the stage loader (0xEEDA) and moved by stage.scroll_speed each frame
+      (0x70EC). The stage script's waits are positions in it, so a boss arrives at the same value every time: stage 1's
+      read 454,818 when it appeared in four games (its script waits for 0x6F000).
+    verified: true
+  stage.scroll_speed:
+    type: s32
+    address: 0x2034C8
+    description: >-
+      Scroll per frame, easing towards a target the script sets (0x2034D0, by 0x2034CC a frame; 0x7128). Stage 1
+      cruises at 128.
+    verified: true
   course:
     type: u8
     address: 0x20E6A6

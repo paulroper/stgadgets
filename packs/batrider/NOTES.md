@@ -218,6 +218,41 @@ From trap15's breakdown, with its code addresses found in the Japan B ROM:
 
 Shown as a percentage, the overlay uses `1 − rank / 0x1000000`, and the patch `(min − rank) / 0x687` (0.01% steps).
 
+## Stage scripts and boss positions
+
+Each scene's stage script drives the stage: the stage loader (`0xEE6A`) takes the scene's record from the table at
+`0xEF94` (by `stage.scene`), and the record's long at offset 22 is the main script, run by `0x10750` against
+`stage.scroll` (`0x2034DA`). A script is a list of commands, each a word (class byte, op byte) and its arguments:
+
+- **Classes 0-7 spawn enemies** through the handler tables at `0x107AA`; class 2 is the bosses (each handler sits just
+  before its boss's routine: op `0x00` CONFRICT, `0x14` SOBUT, ...). Their arguments vary by enemy: 8 bytes of position
+  for most (`0x3A092`), more for some (`0x39F92` reads 16).
+- **Class 8 is control** (table at `0x107D2`). The ones that matter here: `0x0830` waits until the scroll reaches a
+  position (absolute, or relative to now with bit 31 set) and stops the script there; `0x0814` jumps, `0x0818` and
+  `0x081C` call and return, `0x0828` branches by course, `0x0878` calls by the stage order, `0x0810` sets the scroll's
+  target speed and acceleration.
+
+Stage 1's script (`0x220F0`) waits for `0x6F000` (`0x221B0`), then after three setup commands spawns CONFRICT. The
+boss appeared at a scroll of 454,818 in four games, two frames' scroll past it. `stage.scroll_speed` (`0x2034C8`, 128
+a frame when cruising) gives the time left.
+
+Walking forward from each wait over control commands to a class 2 spawn finds these, not yet checked in play (scene
+ids are `stage.scene`):
+
+| Scene | Boss spawns after a wait for |
+|---|---|
+| 3 | BOREDOM `0x168000` |
+| 4 (Sewage System) | DEVIATE `0x5B000`, and `0x3000` |
+| 6 | GRUBBY `0x9DC00`, and `0x8000` |
+| 7 | DISCHARGE `0xD3800` and `0x15800`; an unnamed boss (handler `0x64F20`) `0xE4000` and `0x2A000` |
+| 8 | BASHINET MK2 `0x8400` |
+| 11 | GLOW SQUID `0x40800` |
+
+Scenes 2 and 5 have none this way: their bosses must come from a sub-script or after a relative wait. Two waits in a
+scene may be two scroll sections or two courses' branches. Envy, Blunt and Sobut are the Highway's bosses (picked by
+the stage order), not stages 2-4's. To add a stage to the boss gadget, check its position in a recording (the boss
+arrives just past it) and add it to `BOSS_AT` in `derived.js`.
+
 ## Stage order and hidden bosses
 
 - `0x20F9E0`-`0x20F9E2`: the order of stages 2-4, read by the stage loader (`0x10BEC`), set before character select.
@@ -264,14 +299,16 @@ items let fall towards a special, and latency.
   would take rank past `rank.min` or 0, it's counted only as far as rank went. Not seen, so in the rest: small shots
   at the top level, cash, bombs used, bullet seals. Over the recorded games the parts added up to the rank's change
   since play started.
-- **Boss HP** uses the MAME layout's table of boss routines and parts; checked on CONFRICT only.
-- **Route** names: Manhattan, then the stage order (1 airport, 2 Sky High, 3 Sewage System, from the overlay's pairings
-  and the shmups wiki; only 3 seen), then the Highway (the shmups wiki), on the normal and advanced courses.
+- **Boss HP** uses the MAME layout's table of boss routines and parts; checked on CONFRICT only. Before the boss
+  arrives, the gadget shows the scroll's progress towards it and the time left, on stages in `BOSS_AT` (stage 1 so far).
+- **Route** names: Manhattan, then the stage order (1 airport, 2 Sky High, 3 Sewage System, from the shmups wiki's
+  colours; only 3 seen), then the Highway (the shmups wiki), on the normal and advanced courses.
 
 ## Future ideas
 
 - Lives as the team's portraits: who's up, who's next.
 - The item drop cycle (`drop.position`): what's coming.
 - A hidden boss checklist for the current team and stage order.
-- Boss timers, from the overlay's timer fields.
+- Boss time-out timers: how long until a boss leaves, from the MAME layout's per-boss timer fields (enemy table
+  offsets 66, 70, 72, 74, 96 and 104, and `0x20E9B8`), as a second line in the boss gadget.
 - The hidden option formations: what each ship needs dropped for each one.

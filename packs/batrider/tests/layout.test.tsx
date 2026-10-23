@@ -30,7 +30,7 @@ describe("Armed Police Batrider overlay", () => {
     expect(textOf("RANK", ".rank-change")).toBe("+0.20% large shot");
     expect(textOf("RANK", ".rank-parts")).toBe("time+0.01%shots & graze0.00%items+0.20%extends0.00%deaths0.00%");
     expect(route()).toEqual(["1MANHATTAN◀", "2SEWAGENEXT", "3AIRPORT", "4SKY HIGH", "5HIGHWAY"]);
-    expect(textOf("BOSS")).toBe("- HP");
+    expect(textOf("BOSS")).toBe("in ~50 s"); // 600 ticks at 128 a frame, of 0x6F000
   });
 
   it("shows the boss's name and the HP left in its body", async () => {
@@ -48,6 +48,7 @@ describe("Armed Police Batrider overlay", () => {
     expect(textOf("POWER", ".power-row")).toBe("SHOT2 small to go");
     expect(textOf("RANK", ".rank-change")).toBe("-1.56% death");
     expect(route().slice(0, 3)).toEqual(["1MANHATTAN✓", "2SEWAGE◀", "3AIRPORTNEXT"]);
+    expect(textOf("BOSS")).toBe("-"); // Sewage System's boss position isn't known yet
   });
 
   it("says which items are one away from special", async () => {

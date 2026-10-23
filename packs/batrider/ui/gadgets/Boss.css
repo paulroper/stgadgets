@@ -5,3 +5,17 @@
 .boss-here .value {
   color: var(--bad);
 }
+
+.boss-approaching .bar-fill {
+  background: var(--orange);
+}
+
+/* The boss, waiting at the end of the bar. */
+.boss-marker {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0.1875rem;
+  height: 100%;
+  background: var(--bad);
+}

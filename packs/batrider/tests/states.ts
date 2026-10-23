@@ -27,6 +27,8 @@ export default {
     "stage.order.2": 3,
     "stage.order.3": 1,
     "stage.order.4": 2,
+    "stage.scroll": 0,
+    "stage.scroll_speed": 128,
     course: 2,
     "team.last_index": 2,
     frame_counter: 5000,
@@ -94,7 +96,7 @@ export default {
     enemies: enemies(),
   },
   // A frame passes every tick, and the timer rank takes its share.
-  add: { frame_counter: 1, rank: -DRIFT },
+  add: { frame_counter: 1, rank: -DRIFT, "stage.scroll": 128 },
 
   states: {
     /** Ten seconds into stage 1: a chain of three medals, then a large shot that has just raised the shot level. */
@@ -106,13 +108,22 @@ export default {
 
     /** Stage 1's boss, its body worn down from 84 HP to 60. */
     bossFight: [
-      { set: { enemies: enemies({ 29: { status: BOSS_BODY, active: true, routine: CONFRICT, hp: 84 } }) }, repeat: 60 },
+      {
+        set: {
+          "stage.scroll": 0x6f000,
+          enemies: enemies({ 29: { status: BOSS_BODY, active: true, routine: CONFRICT, hp: 84 } }),
+        },
+        repeat: 60,
+      },
       { set: { enemies: enemies({ 29: { status: BOSS_BODY, active: true, routine: CONFRICT, hp: 60 } }) } },
     ],
 
     /** Sewage System, stage 2, just after the first pilot went down: two left, and rank eased. */
     afterDeath: [
-      { set: { "stage.counter": 2, "stage.scene": 4, "p1.shot_level": 2, "p1.option_level": 1 }, repeat: 300 },
+      {
+        set: { "stage.counter": 2, "stage.scene": 4, "stage.scroll": 0, "p1.shot_level": 2, "p1.option_level": 1 },
+        repeat: 300,
+      },
       { set: { "p1.status": 0x81 }, repeat: 90 },
       {
         set: {
