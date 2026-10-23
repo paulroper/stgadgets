@@ -15,7 +15,8 @@ packs/<parent-romset>/
     retroarch.yaml           # settings for one provider, e.g. per-core address translation
   ui/
     layout.tsx               # default export: the pack's layout (optional)
-    gadgets/                 # the pack's own React components (optional)
+    gadgets/                 # the pack's own React components (optional), one folder each:
+      Boss/Boss.tsx, Boss.css  #   docs/conventions.md
   tests/
     derived/*.yaml           # scenarios for derived.js: made-up ticks and the values they must produce (optional)
     states.ts                # game states as map values, for showing the UI without an emulator (optional)

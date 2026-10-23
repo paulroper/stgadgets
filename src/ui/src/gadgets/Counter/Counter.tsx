@@ -1,4 +1,4 @@
-import { useVar } from "../sdk/react";
+import { useVar } from "../../sdk/react";
 
 interface Props {
   name: string;

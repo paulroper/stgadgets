@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { latency, type LatencyStats } from "../sdk";
+import { latency, type LatencyStats } from "../../sdk";
 
 const REFRESH_MS = 250;
 

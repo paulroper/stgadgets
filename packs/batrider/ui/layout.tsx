@@ -1,12 +1,12 @@
 import { Counter, LatencyMeter, Score } from "@stgadgets/gadgets";
-import { Bombs } from "./gadgets/Bombs";
-import { Boss } from "./gadgets/Boss";
-import { Drops } from "./gadgets/Drops";
-import { Lives } from "./gadgets/Lives";
-import { Medal } from "./gadgets/Medal";
-import { Power } from "./gadgets/Power";
-import { Rank } from "./gadgets/Rank";
-import { Route } from "./gadgets/Route";
+import { Bombs } from "./gadgets/Bombs/Bombs";
+import { Boss } from "./gadgets/Boss/Boss";
+import { Drops } from "./gadgets/Drops/Drops";
+import { Lives } from "./gadgets/Lives/Lives";
+import { Medal } from "./gadgets/Medal/Medal";
+import { Power } from "./gadgets/Power/Power";
+import { Rank } from "./gadgets/Rank/Rank";
+import { Route } from "./gadgets/Route/Route";
 import "./layout.css";
 
 /**

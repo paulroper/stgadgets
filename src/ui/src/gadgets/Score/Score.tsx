@@ -1,4 +1,4 @@
-import { useVar } from "../sdk/react";
+import { useVar } from "../../sdk/react";
 
 interface Props {
   /** Variable to show, e.g. "p1.score" or "hiscore". */

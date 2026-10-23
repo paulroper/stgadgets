@@ -1,14 +1,14 @@
 import { Counter, LatencyMeter, Score } from "@stgadgets/gadgets";
-import { Bees } from "./gadgets/Bees";
-import { Boss } from "./gadgets/Boss";
-import { Chain } from "./gadgets/Chain";
-import { Lives } from "./gadgets/Lives";
-import { Power } from "./gadgets/Power";
-import { Rank } from "./gadgets/Rank";
-import { SecondLoop } from "./gadgets/SecondLoop";
-import { Slowdown } from "./gadgets/Slowdown";
-import { Splits } from "./gadgets/Splits";
-import { StageClear } from "./gadgets/StageClear";
+import { Bees } from "./gadgets/Bees/Bees";
+import { Boss } from "./gadgets/Boss/Boss";
+import { Chain } from "./gadgets/Chain/Chain";
+import { Lives } from "./gadgets/Lives/Lives";
+import { Power } from "./gadgets/Power/Power";
+import { Rank } from "./gadgets/Rank/Rank";
+import { SecondLoop } from "./gadgets/SecondLoop/SecondLoop";
+import { Slowdown } from "./gadgets/Slowdown/Slowdown";
+import { Splits } from "./gadgets/Splits/Splits";
+import { StageClear } from "./gadgets/StageClear/StageClear";
 import "./layout.css";
 
 /**
