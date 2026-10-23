@@ -1,0 +1,253 @@
+schema: 1
+
+system:
+  cpu: m68000
+  endianness: big
+  regions:
+    main_ram: { start: 0x200000, size: 0x10000 }   # MAME raizing_batrider.cpp batrider_68k_mem
+
+# Sources (NOTES.md): trap15's rank breakdown, the Batrider MAME layout by baf, Olifante and DUBS, sergiopolog's
+# batrider-patches (GPL-3.0), mountainmanjed's batrider.lua, and the Japan B program ROMs, whose code addresses are
+# quoted below. Variables marked verified have been checked against a running game (RetroArch, FBNeo, batriderj).
+#
+# P1's block starts at 0x204062 and P2's 0x172 bytes later, at 0x2041D4. P2's variables are the same offsets, not yet
+# seen in a two-player game.
+variables:
+  # --- Game flow ---------------------------------------------------------------------------------------------------
+
+  stage.counter:
+    type: u8
+    address: 0x20E6A9
+    description: >-
+      1 for the first stage, 2 for the second, ...; stepped by the stage advance at 0x10B92. 0x80 in the attract
+      demo, 0 on the title and character select, and it keeps its value through the continue screen and after game
+      over. `stage` is derived from it.
+    verified: true
+  stage.scene:
+    type: u8
+    address: 0x20E6AA
+    description: >-
+      The id the stage loader (0xEE6A) was given. 1 Manhattan (stage 1), 4 Sewage System; stages 2-4 are probably 1 +
+      their stage order value. Title and attract screens use other ids.
+    verified: true
+  stage.order.2:
+    type: u8
+    address: 0x20F9E0
+    description: >-
+      Which stage is second; read by the stage loader at 0x10BEC and set before character select. 3 is Sewage System
+      (Sobut); the overlay pairs 1 with Envy and 2 with Blunt.
+    verified: true
+  stage.order.3:
+    type: u8
+    address: 0x20F9E1
+    description: Which stage is third, as stage.order.2.
+    verified: true
+  stage.order.4:
+    type: u8
+    address: 0x20F9E2
+    description: Which stage is fourth, as stage.order.2.
+    verified: true
+  course:
+    type: u8
+    address: 0x20E6A6
+    description: 0 training, 2 normal, 4 advanced, 6 boss only (trap15). Read 2 on Normal.
+    verified: true
+  team.last_index:
+    type: u8
+    address: 0x20F9FD
+    description: The team's size − 1; the death and extend code loop over pN.team that many times + 1 (0x2FA7C, 0x30152).
+    verified: true
+  credits:
+    type: u8
+    address: 0x203400
+    description: Credits not yet used. Each one also adds 1 to the rank every frame (trap15).
+    verified: true
+
+  # --- Settings ----------------------------------------------------------------------------------------------------
+
+  settings.difficulty:
+    type: u8
+    address: 0x20F9FA
+    description: Difficulty DIP, 0 easy, 1 normal, 2 hard, 3 very hard (trap15). Read 1 at the defaults.
+  settings.timer_rank:
+    type: u8
+    address: 0x20F9FB
+    description: Timer rank DIP, 0 low, 1 normal, 2 high, 3 highest (trap15). Read 1 at the defaults.
+
+  # --- Rank (trap15; stored inverted: lower is harder) -------------------------------------------------------------
+
+  rank:
+    type: u32
+    address: 0x20F9D0
+    description: >-
+      Set to rank.min at character select, then lowered every frame and by events; never above rank.min or below 0.
+      Lower is harder.
+    verified: true
+  rank.per_frame:
+    type: u32
+    address: 0x20F9D4
+    description: Taken off the rank every frame, along with the unused credits. 4 with the timer rank DIP at normal.
+    verified: true
+  rank.min:
+    type: u32
+    address: 0x20F9D8
+    description: >-
+      The easiest rank, and where it starts: rank_start[difficulty] × rank.start_multiplier × the course's multiplier.
+      0xF80000 on Normal at the defaults.
+    verified: true
+  rank.start_multiplier:
+    type: u16
+    address: 0x20F9CE
+    description: 0x100 if Start left test mode or was held at boot, else 0xC0, until the board is reset (trap15).
+    verified: true
+
+  # --- Player 1 ----------------------------------------------------------------------------------------------------
+
+  p1.status:
+    type: u8
+    address: 0x204062
+    description: >-
+      0x8E/0x8F in play, 0x81 while dying, bits 4-5 set while a bomb goes off, 0 on the continue screen and after
+      game over.
+    verified: true
+  p1.active:
+    type: bool
+    address: 0x204062
+    mask: 0x80
+    description: Player 1 is in the game (patch, overlay). Stays set through a death and a stage clear.
+    verified: true
+  p1.ship:
+    type: u16
+    address: 0x204074
+    description: The ship in play; ship id (v >> 4) & 31, type (v >> 2) & 3 (overlay). Changes at each respawn.
+    verified: true
+  p1.team.0:
+    type: u16
+    address: 0x20407C
+    description: >-
+      The team list, one word per pilot (team.last_index + 1 of them), as p1.ship; bit 0 set means that pilot is
+      down. An extend revives the first pilot and moves them to the end (0x3014E).
+    verified: true
+  p1.team.1:
+    type: u16
+    address: 0x20407E
+    description: As p1.team.0.
+    verified: true
+  p1.team.2:
+    type: u16
+    address: 0x204080
+    description: As p1.team.0.
+    verified: true
+  p1.score:
+    type: u32
+    address: 0x204156
+    description: Standard. Binary, matched the screen exactly.
+    verified: true
+  p1.bombs:
+    type: u8
+    address: 0x204174
+    description: Standard. Full bombs; each pilot keeps their own, so it can go up at a respawn.
+    verified: true
+  p1.bomb_fragments:
+    type: u8
+    address: 0x204175
+    description: Fragments towards the next bomb; at 40 they wrap to 0 and add a bomb. Matched the screen.
+    verified: true
+  p1.shot_charge:
+    type: u8
+    address: 0x204179
+    description: Shot charge, full at 0x48 (overlay).
+    verified: true
+
+  # --- Player 2 (P1's offsets + 0x172; not yet seen in a two-player game) -------------------------------------------
+
+  p2.status: u8 @ 0x2041D4
+  p2.active: { type: bool, address: 0x2041D4, mask: 0x80 }
+  p2.ship: u16 @ 0x2041E6
+  p2.team.0: u16 @ 0x2041EE
+  p2.team.1: u16 @ 0x2041F0
+  p2.team.2: u16 @ 0x2041F2
+  p2.score: u32 @ 0x2042C8
+  p2.bombs: u8 @ 0x2042E6
+  p2.bomb_fragments: u8 @ 0x2042E7
+  p2.shot_charge: u8 @ 0x2042EB
+
+  # --- Items and medals --------------------------------------------------------------------------------------------
+
+  medal.value:
+    type: u8
+    address: 0x20E459
+    description: >-
+      The next medal's value, written by the medal routine (0x30010). Went 0, 2, 4, 6 as medals were taken in a row,
+      and back to 0 when one dropped.
+    verified: true
+  drop.position:
+    type: u8
+    address: 0x20E457
+    description: Position in the fixed cycle of 25 item drops; stepped and wrapped at 0x39DA6 (overlay).
+    verified: true
+  dropped.small_shot:
+    type: u8
+    address: 0x20E45A
+    description: Small shot items let fall since one was taken; at 3 the next is a special level-up (overlay).
+    verified: true
+  dropped.bomb:
+    type: u8
+    address: 0x20E45B
+    description: Bomb fragments let fall since one was taken (overlay highlights 5).
+    verified: true
+  dropped.medal:
+    type: u8
+    address: 0x20E45C
+    description: Medals let fall since one was taken.
+    verified: true
+  dropped.large_shot:
+    type: u8
+    address: 0x20E45D
+    description: Large shot items let fall since one was taken (overlay highlights 3).
+    verified: true
+  dropped.large_bomb: u8 @ 0x20E45E
+  dropped.option:
+    type: u8
+    address: 0x20E45F
+    description: Option items let fall since one was taken; at 3 the next is a special level-up (overlay).
+    verified: true
+  dropped.extend:
+    type: u8
+    address: 0x20E460
+    description: 1UP items let fall; with 3 the extend code takes its secret extend path (0x30194).
+
+  # --- Hidden bosses (overlay; counters not yet seen to change) ----------------------------------------------------
+
+  special.shot:
+    type: u8
+    address: 0x20E463
+    description: Non-zero once a special shot level-up has been taken (set at 0x2FDF8).
+  special.option:
+    type: u8
+    address: 0x20E464
+    description: Non-zero once a special option level-up has been taken (overlay).
+  hidden.glow_squid:
+    type: u8
+    address: 0x20E6B2
+    description: Glow Squid's trigger counter; 4 meets it (counted at 0x7D2B6).
+  hidden.bashinet_r:
+    type: u8
+    address: 0x20E6B3
+    description: Bashinet-R's trigger counter; 3 meets it.
+  hidden.bashinet_mk2:
+    type: u8
+    address: 0x20E6B4
+    description: Bashinet Mk2's trigger counter; 2 meets it.
+  hidden.gob_robo:
+    type: u8
+    address: 0x20E6B5
+    description: Gob-Robo's trigger counter; 2 meets it.
+  hidden.bashinet:
+    type: u8
+    address: 0x20E6B6
+    description: Bashinet's trigger; met at 0 (the overlay's condition).
+  hidden.black_heart:
+    type: u8
+    address: 0x20E6B7
+    description: Black Heart's trigger counter; 5 meets it (counted at 0x77AB8).
