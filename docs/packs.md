@@ -73,6 +73,17 @@ cores:
 
 Set `word_swapped: true` when the core returns each 16-bit word byte-swapped, as FBNeo does for 68000 games such as DoDonPachi. The provider then reads whole words and swaps them back, so maps keep the original hardware's byte order.
 
+Some cores lay the game's RAM out in a different order from the hardware, with other memory in between. Give those `segments` instead of `ram_base` and `ram_size`: each one is a stretch of the hardware's `address` space, its `size`, and the `READ_CORE_RAM` `offset` it starts at. A read that crosses from one segment into the next is split between them. Armed Police Batrider on FBNeo, for example:
+
+```yaml
+cores:
+  fb_alpha:
+    word_swapped: true
+    segments:
+      - { address: 0x203000, offset: 0x2000, size: 0x5000 }
+      - { address: 0x208000, offset: 0xF000, size: 0x8000 }
+```
+
 Without an entry for the running core, the provider reports that the core isn't supported yet. Each core needs checking by hand for now (see [providers.md](providers.md#retroarch-provider)).
 
 ## UI

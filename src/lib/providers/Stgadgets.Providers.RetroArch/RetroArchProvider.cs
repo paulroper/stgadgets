@@ -119,8 +119,8 @@ public sealed class RetroArchProvider(IPEndPoint endpoint) : IEmulatorProvider
         var readRanges = plan.Ranges.Select(profile.ToReadRange).ToArray();
         var buffers = readRanges.Select(r => new byte[r.Length]).ToArray();
         var reads = readRanges
-            .SelectMany((range, i) => Chunks(range.Length).Select(c =>
-                (Offset: profile.ToOffset(range) + (uint)c.Start, Destination: buffers[i].AsMemory(c.Start, c.Length))))
+            .SelectMany((range, i) => profile.ToReads(range).SelectMany(read => Chunks(read.Length).Select(c =>
+                (Offset: read.Offset + (uint)c.Start, Destination: buffers[i].AsMemory(read.Start + c.Start, c.Length)))))
             .ToList();
 
         var clock = Stopwatch.StartNew();
