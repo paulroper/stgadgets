@@ -130,9 +130,10 @@ stgadgets dev stop
 
 Then each change goes:
 
-1. Edit `derived.js`, the layout or a gadget.
-2. `stgadgets dev restart --build-ui`: rebuilds the UI, and restarts the server (which loads packs at startup, so
-   this picks up `map.yaml` and `derived.js` changes) and the overlay, with the same options as before.
+1. Edit `map.yaml`, `derived.js`, the layout or a gadget.
+2. For `map.yaml` and `derived.js`, nothing: the server reloads them as they're saved, and `dev status` says if they
+   didn't load. For the layout or a gadget, `stgadgets dev restart --build-ui`, which rebuilds the UI and restarts
+   the server and the overlay with the same options as before.
 3. `stgadgets dev snapshot`, and look at it.
 
 A freshly started overlay takes its size from the emulator's window, and only finds it while it's on screen. If

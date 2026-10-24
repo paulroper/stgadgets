@@ -7,11 +7,11 @@ namespace Stgadgets.Server.GameState;
 
 /// <summary>
 /// The main loop: find what's running, pick its pack, then decode, derive and publish every snapshot the provider
-/// pushes (docs/architecture.md#the-loop).
+/// pushes (docs/architecture.md#the-loop). When the packs are reloaded, it starts again from finding what's running.
 /// </summary>
 public sealed class GameStateService(
     IEmulatorProvider provider,
-    PackCatalog packs,
+    PackLibrary packs,
     VariableBroadcaster broadcaster,
     ILogger<GameStateService> logger) : BackgroundService
 {
@@ -19,15 +19,21 @@ public sealed class GameStateService(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("Loaded {Count} pack(s): {Ids}", packs.Packs.Count, string.Join(", ", packs.Packs.Select(p => p.Id)));
+        LogPacks("Loaded");
 
         string? lastWarning = null;
         while (!stoppingToken.IsCancellationRequested)
         {
+            var reloaded = packs.Changed;
+            using var run = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, reloaded);
             try
             {
-                await RunOnceAsync(stoppingToken);
+                await RunOnceAsync(packs.Catalog, run.Token);
                 lastWarning = null;
+            }
+            // However the provider reacts to being cancelled, a reload just starts the loop again.
+            catch (Exception) when (reloaded.IsCancellationRequested && !stoppingToken.IsCancellationRequested)
+            {
             }
             catch (Exception ex) when (ex is TimeoutException or NotSupportedException)
             {
@@ -43,11 +49,19 @@ public sealed class GameStateService(
                 logger.LogError(ex, "{Provider} failed; retrying", provider.Id);
             }
 
+            if (reloaded.IsCancellationRequested)
+            {
+                LogPacks("Pack files changed; reloaded");
+                continue;
+            }
             await Task.Delay(RetryDelay, stoppingToken);
         }
     }
 
-    private async Task RunOnceAsync(CancellationToken cancellationToken)
+    private void LogPacks(string what) =>
+        logger.LogInformation("{What} {Count} pack(s): {Ids}", what, packs.Catalog.Packs.Count, string.Join(", ", packs.Catalog.Packs.Select(p => p.Id)));
+
+    private async Task RunOnceAsync(PackCatalog packs, CancellationToken cancellationToken)
     {
         var content = await provider.GetContentAsync(cancellationToken);
         if (content is null)
@@ -84,7 +98,8 @@ public sealed class GameStateService(
             broadcaster.PublishTick(values, readAt);
         }
 
-        logger.LogInformation("Content changed or emulator went away");
+        if (!cancellationToken.IsCancellationRequested)
+            logger.LogInformation("Content changed or emulator went away");
     }
 
     /// <summary>Logs when a derived value starts failing, and when it recovers, rather than on every tick.</summary>

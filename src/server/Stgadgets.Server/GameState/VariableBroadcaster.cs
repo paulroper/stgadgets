@@ -7,10 +7,10 @@ using Stgadgets.Core.Packs;
 namespace Stgadgets.Server.GameState;
 
 /// <summary>
-/// What the server is doing, for <c>GET /api/status</c>: the connection state, the matched pack, ticks sent, and the
-/// provider reading the game, so tools can tell live play from a replay.
+/// What the server is doing, for <c>GET /api/status</c>: the connection state, the matched pack, ticks sent, the
+/// provider reading the game, so tools can tell live play from a replay, and why the latest pack reload failed.
 /// </summary>
-public sealed record ServerStatus(string State, string? Detail, string? Pack, long Ticks, string? Provider = null);
+public sealed record ServerStatus(string State, string? Detail, string? Pack, long Ticks, string? Provider = null, string? PackError = null);
 
 /// <summary>
 /// Sends game state to connected layouts over WebSocket. Every tick is delivered, in order, to every client

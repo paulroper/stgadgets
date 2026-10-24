@@ -28,7 +28,7 @@ internal sealed record DevOptions(string Provider, string? Endpoint, bool Overla
 internal sealed record DevStackState(DevOptions Options, int ServerProcessId, DateTimeOffset StartedAt);
 
 /// <summary>The server's answer to GET /api/status.</summary>
-internal sealed record ServerStatus(string State, string? Detail, string? Pack, long Ticks, string? Provider = null);
+internal sealed record ServerStatus(string State, string? Detail, string? Pack, long Ticks, string? Provider = null, string? PackError = null);
 
 /// <summary>
 /// Starts and stops the parts of stgadgets for development: the server (live or replaying) and, on macOS, the overlay
@@ -64,6 +64,7 @@ internal sealed class DevStack(string repoRoot, TextWriter output)
     [
         "run", "--project", "src/server/Stgadgets.Server", "--",
         $"--Stgadgets:Provider={options.Provider}",
+        "--Stgadgets:WatchPacks=true",
         .. options.Endpoint is null ? [] : new[] { $"--Stgadgets:ProviderEndpoint={options.Endpoint}" },
     ];
 
@@ -177,9 +178,11 @@ internal sealed class DevStack(string repoRoot, TextWriter output)
         }
     }
 
-    private static string Describe(ServerStatus status) => status.State == "connected"
-        ? $"connected, playing {status.Pack} ({status.Ticks} ticks sent)"
-        : $"{status.State}{(status.Detail is null ? "" : $": {status.Detail}")}";
+    private static string Describe(ServerStatus status) =>
+        (status.State == "connected"
+            ? $"connected, playing {status.Pack} ({status.Ticks} ticks sent)"
+            : $"{status.State}{(status.Detail is null ? "" : $": {status.Detail}")}")
+        + (status.PackError is null ? "" : $". Pack files changed but didn't load, so the last ones are still in use: {status.PackError}");
 
     // The server is up once it answers; then give it a few seconds to find the game. A replay held at a point is ready
     // once it's there: when ticks stop coming.

@@ -15,13 +15,13 @@ public sealed class DevStackTests : IDisposable
     [Fact]
     public void Runs_the_server_with_the_provider_and_its_endpoint() =>
         Assert.Equal(
-            ["run", "--project", "src/server/Stgadgets.Server", "--", "--Stgadgets:Provider=replay", "--Stgadgets:ProviderEndpoint=packs/x/recordings/y#boss"],
+            ["run", "--project", "src/server/Stgadgets.Server", "--", "--Stgadgets:Provider=replay", "--Stgadgets:WatchPacks=true", "--Stgadgets:ProviderEndpoint=packs/x/recordings/y#boss"],
             DevStack.ServerArguments(new DevOptions("replay", "packs/x/recordings/y#boss", Overlay: false, SnapshotPort: 5198)));
 
     [Fact]
     public void Leaves_the_endpoint_to_the_provider_when_there_isnt_one() =>
         Assert.Equal(
-            ["run", "--project", "src/server/Stgadgets.Server", "--", "--Stgadgets:Provider=retroarch"],
+            ["run", "--project", "src/server/Stgadgets.Server", "--", "--Stgadgets:Provider=retroarch", "--Stgadgets:WatchPacks=true"],
             DevStack.ServerArguments(new DevOptions("retroarch", null, Overlay: true, SnapshotPort: 5198)));
 
     [Fact]
