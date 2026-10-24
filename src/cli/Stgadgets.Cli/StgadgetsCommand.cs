@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Stgadgets.Cli.Dev;
 using Stgadgets.Cli.Latency;
+using Stgadgets.Cli.Peek;
 using Stgadgets.Cli.Recordings;
 
 namespace Stgadgets.Cli;
@@ -13,6 +14,7 @@ internal static class StgadgetsCommand
         RecordingCommand.Create(),
         DevCommand.Create(),
         LatencyCommand.Create(),
+        PeekCommand.Create(),
     };
 
     /// <summary>

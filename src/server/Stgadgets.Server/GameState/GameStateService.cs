@@ -7,11 +7,11 @@ namespace Stgadgets.Server.GameState;
 
 /// <summary>
 /// The main loop: find what's running, pick its pack, then decode, derive and publish every snapshot the provider
-/// pushes (docs/architecture.md#the-loop).
+/// pushes (docs/architecture.md#the-loop). When the packs are reloaded, it starts again from finding what's running.
 /// </summary>
 public sealed class GameStateService(
     IEmulatorProvider provider,
-    PackCatalog packs,
+    PackLibrary packs,
     VariableBroadcaster broadcaster,
     ILogger<GameStateService> logger) : BackgroundService
 {
@@ -19,15 +19,22 @@ public sealed class GameStateService(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("Loaded {Count} pack(s): {Ids}", packs.Packs.Count, string.Join(", ", packs.Packs.Select(p => p.Id)));
+        LogPacks("Loaded");
 
         string? lastWarning = null;
         while (!stoppingToken.IsCancellationRequested)
         {
+            var reloaded = packs.Changed;
+            var (catalog, version) = packs.Current;
+            using var run = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, reloaded);
             try
             {
-                await RunOnceAsync(stoppingToken);
+                await RunOnceAsync(catalog, version, run.Token);
                 lastWarning = null;
+            }
+            // However the provider reacts to being cancelled, a reload just starts the loop again.
+            catch (Exception) when (reloaded.IsCancellationRequested && !stoppingToken.IsCancellationRequested)
+            {
             }
             catch (Exception ex) when (ex is TimeoutException or NotSupportedException)
             {
@@ -43,11 +50,19 @@ public sealed class GameStateService(
                 logger.LogError(ex, "{Provider} failed; retrying", provider.Id);
             }
 
+            if (reloaded.IsCancellationRequested)
+            {
+                LogPacks("Pack files changed; reloaded");
+                continue;
+            }
             await Task.Delay(RetryDelay, stoppingToken);
         }
     }
 
-    private async Task RunOnceAsync(CancellationToken cancellationToken)
+    private void LogPacks(string what) =>
+        logger.LogInformation("{What} {Count} pack(s): {Ids}", what, packs.Catalog.Packs.Count, string.Join(", ", packs.Catalog.Packs.Select(p => p.Id)));
+
+    private async Task RunOnceAsync(PackCatalog packs, int packsVersion, CancellationToken cancellationToken)
     {
         var content = await provider.GetContentAsync(cancellationToken);
         if (content is null)
@@ -69,11 +84,11 @@ public sealed class GameStateService(
         logger.LogInformation("Playing {Game} (pack {Pack}, {Romset} on {System}, chip CRCs {ChipCrcs}); reading {Ranges}",
             pack.Game.Title, pack.Id, content.Romset, content.System, content.ChipCrcs is null ? "not found" : "read",
             string.Join(", ", decoder.Plan.Ranges));
-        broadcaster.SetGame(pack, content.Romset);
+        broadcaster.SetGame(pack, content.Romset, packsVersion);
         broadcaster.SetStatus("connected");
 
         using var derived = pack.Derived?.CreateEvaluator(pack.Map);
-        var failing = new HashSet<string>();
+        var failing = new Dictionary<string, string>();
         var settings = pack.ProviderSettings.GetValueOrDefault(provider.Id);
         await foreach (var snapshot in provider.StreamAsync(content, decoder.Plan, settings, cancellationToken))
         {
@@ -84,24 +99,35 @@ public sealed class GameStateService(
             broadcaster.PublishTick(values, readAt);
         }
 
-        logger.LogInformation("Content changed or emulator went away");
+        if (!cancellationToken.IsCancellationRequested)
+            logger.LogInformation("Content changed or emulator went away");
     }
 
-    /// <summary>Logs when a derived value starts failing, and when it recovers, rather than on every tick.</summary>
-    private void LogDerivedErrors(IReadOnlyList<DerivedError> errors, HashSet<string> failing)
+    /// <summary>
+    /// Logs when a derived value starts failing, and when it recovers, rather than on every tick, and tells the
+    /// broadcaster, for <c>/api/status</c>.
+    /// </summary>
+    private void LogDerivedErrors(IReadOnlyList<DerivedError> errors, Dictionary<string, string> failing)
     {
+        var changed = false;
         foreach (var error in errors)
         {
-            if (failing.Add(error.Name))
+            if (failing.TryAdd(error.Name, error.Message))
+            {
                 logger.LogWarning("Derived value '{Name}' failed (null until it recovers): {Message}", error.Name, error.Message);
+                changed = true;
+            }
         }
         if (failing.Count > errors.Count)
         {
-            foreach (var name in failing.Where(name => errors.All(e => e.Name != name)).ToList())
+            foreach (var name in failing.Keys.Where(name => errors.All(e => e.Name != name)).ToList())
             {
                 failing.Remove(name);
                 logger.LogInformation("Derived value '{Name}' recovered", name);
+                changed = true;
             }
         }
+        if (changed)
+            broadcaster.SetDerivedErrors(failing);
     }
 }

@@ -18,18 +18,20 @@ internal static class DevCommand
         Stop(),
     };
 
+    // Recordings are played back with `stgadgets recording play`; restart keeps a replay going, as any other provider.
+    private static readonly string[] LiveProviders = [.. EmulatorProviders.All.Keys.Where(id => id != "replay")];
+
     // Options shared by start and restart. On restart, those not given keep their values from the last start.
     private sealed class StackOptions
     {
         public Option<string> Provider { get; } = new("--provider")
         {
-            Description = $"The emulator to read from: {string.Join(", ", EmulatorProviders.All.Keys)}. Default: retroarch, or the last start's.",
+            Description = $"The emulator to read from: {string.Join(", ", LiveProviders)}. Default: retroarch, or the last start's.",
         };
 
         public Option<string> Endpoint { get; } = new("--endpoint")
         {
-            Description = "Where the emulator listens, in the provider's form; for replay, a recording's folder (relative to the repository), " +
-                "optionally #<marker> to hold there.",
+            Description = "Where the emulator listens, in the provider's form (retroarch: host:port).",
         };
 
         public Option<bool?> Overlay { get; } = new("--overlay") { Description = "Also run the macOS overlay, with snapshots on." };
@@ -40,7 +42,7 @@ internal static class DevCommand
 
         public void AddTo(Command command)
         {
-            Provider.AcceptOnlyFromAmong([.. EmulatorProviders.All.Keys]);
+            Provider.AcceptOnlyFromAmong(LiveProviders);
             foreach (var option in (Option[])[Provider, Endpoint, Overlay, BuildUi, SnapshotPort])
                 command.Options.Add(option);
         }
@@ -75,7 +77,10 @@ internal static class DevCommand
         command.SetAction(StgadgetsCommand.HandleAsync(async (result, cancellationToken) =>
         {
             var stack = Stack(result);
-            var next = options.Read(result, stack.Load()?.Options);
+            var last = stack.Load()?.Options;
+            if (last?.Provider == "replay" && result.GetValue(options.Endpoint) is not null)
+                throw new UsageException("The server is replaying a recording; to play another, or another point, use `stgadgets recording play`");
+            var next = options.Read(result, last);
             await stack.StopAsync();
             await stack.StartAsync(next, result.GetValue(options.BuildUi), cancellationToken);
         }));
@@ -98,8 +103,11 @@ internal static class DevCommand
         {
             var root = DevStack.FindRepoRoot(Directory.GetCurrentDirectory());
             var path = result.GetValue(file)?.FullName ?? Path.Combine(root, ".stgadgets", "dev", "snapshot.png");
-            var visible = await new DevStack(root, result.InvocationConfiguration.Output).SaveSnapshotAsync(path, result.GetValue(width), cancellationToken);
-            result.InvocationConfiguration.Output.WriteLine($"{path}{(visible ? "" : " (the overlay is hidden; drawn off screen)")}");
+            var console = result.InvocationConfiguration;
+            var (visible, warnings) = await new DevStack(root, console.Output).SaveSnapshotAsync(path, result.GetValue(width), cancellationToken);
+            console.Output.WriteLine($"{path}{(visible ? "" : " (the overlay is hidden; drawn off screen)")}");
+            foreach (var warning in warnings)
+                console.Error.WriteLine($"warning: {warning}");
         }));
         return command;
     }

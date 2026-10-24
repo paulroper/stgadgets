@@ -63,7 +63,8 @@ Grow the platform by adding packs, and pick each game for what it needs that the
 Tools to find addresses (see [memory-maps.md](memory-maps.md#finding-addresses)):
 
 - [x] RAM search on recordings (changed, unchanged, went up, went down, equals a value): `stgadgets recording search` ([cli.md](cli.md)), used by the `game-recording` skill
-- [ ] Watch view: show chosen addresses live while playing (for now, `recording record --watch` logs them to `changes.log`)
+- [x] Read map variables from the game being played, once: `stgadgets peek memory`, to check a variable against the screen without a recording ([cli.md](cli.md#peeking-at-live-play))
+- [ ] Watch view: show chosen addresses live while playing (for now, `recording record --watch` logs them to `changes.log`, and `peek memory` reads them once)
 - [ ] Import helpers for MAME cheat files
 
 ### Map format
@@ -167,10 +168,13 @@ Found while building the DoDonPachi pack:
 - [x] `stgadgets dev`: start, restart, check and stop the server (live or replaying) and the overlay, and take snapshots, in one command each ([cli.md](cli.md#development))
 - [x] CI: a GitHub Actions workflow (`.github/workflows/ci.yml`) that builds every module in parallel and runs the committed tests and linting on every push to `main` and every pull request: the server and CLI with their tests, the macOS overlay, and the UI with its tests, Oxlint and Oxfmt. No emulator is needed, and recordings are local, so their checks are skipped there ([conventions](conventions.md#linting))
 - [x] A tool to show a pack's derived values over a recording, for working out `expected.yaml` and debugging `derived.js`: `stgadgets recording history <name>` and `values` ([cli.md](cli.md))
+- [x] The latest values from live play, map and derived alike: `stgadgets peek values` asks the running server ([cli.md](cli.md#peeking-at-live-play))
+- [x] Everything to do with recordings under `stgadgets recording`, other commands for live play only: `recording play <rec> --at <point>` replaces `dev start --provider replay`, switches a running stack to another recording or point, and does nothing when it's already playing that one ([cli.md](cli.md#stgadgets-recording-play-recording---at-point))
 - [ ] A gadget interview: a guided conversation about what a game's players would want to see, drawing on existing packs and the game's own systems, ending in a list of gadgets to build and the data each needs ([choosing gadgets](pack-development.md#2-decide-which-gadgets-are-worth-having))
 - [ ] `/add-pack <game>`: one Claude skill that runs the whole workflow (research, recording, map, derived values, gadget interview, gadgets, game states and tests), built from the pieces above
-- [ ] Hot reload packs in the server: watch `packs/` and reload the matched pack when its `pack.yaml`, `map.yaml`, `derived.js` or provider settings change, so a `derived.js` change shows up in the overlay without restarting the server
-- [ ] Keep derived state, such as stage splits, across reloads and server restarts: today a restart resets the splits
+- [x] Hot reload packs in the server: with `Stgadgets:WatchPacks` (on in `stgadgets dev`), it watches `packs/` and reloads the packs when a `pack.yaml`, `map.yaml`, `derived.js` or provider settings change, so a `derived.js` change shows up in the overlay without restarting the server. A change that doesn't load keeps the last packs, and `dev status` says why ([cli.md](cli.md#development))
+- [x] `dev snapshot` waits until the server has caught up with the pack files, a held replay included, so a snapshot right after an edit shows it; `dev status`, `dev snapshot` and `peek values` warn about packs that didn't load and derived values failing ([cli.md](cli.md#development))
+- [ ] Keep derived state, such as stage splits, across reloads and server restarts: today a reload or restart resets the splits
 - [ ] Find why an overlay can get stuck painting at half the display's rate until it's restarted ([latency.md](latency.md#2026-10-20-end-to-end-test-l2))
 - [ ] Say in the docs and UI that RetroArch's run-ahead puts the overlay N frames behind the picture
 - [ ] Show the read → paint latency meter as idle while the overlay is hidden: a hidden overlay doesn't paint, so its numbers stop meaning anything

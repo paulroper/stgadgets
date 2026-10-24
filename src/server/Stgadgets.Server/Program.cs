@@ -12,7 +12,10 @@ builder.WebHost.UseUrls("http://127.0.0.1:5199");
 string RepoPath(string key) => Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, builder.Configuration[key]!));
 
 var packsPath = RepoPath("Stgadgets:PacksPath");
-builder.Services.AddSingleton(PackCatalog.LoadDirectory(packsPath));
+// Stgadgets:WatchPacks reloads packs as their files change; `stgadgets dev` turns it on (docs/cli.md#development).
+builder.Services.AddSingleton(services => new PackLibrary(
+    packsPath, builder.Configuration.GetValue<bool>("Stgadgets:WatchPacks"),
+    ex => services.GetRequiredService<ILogger<PackLibrary>>().LogError("Couldn't reload packs; keeping the last ones that loaded: {Message}", ex.Message)));
 // The emulator to read from (docs/providers.md): Stgadgets:Provider, and optionally where it listens. Relative paths
 // in the endpoint, such as a recording to replay, are relative to the folder holding packs/: the repository's root.
 var providerId = builder.Configuration["Stgadgets:Provider"]
@@ -42,8 +45,10 @@ app.MapGet("/api/emulator", (IEmulatorProvider provider) =>
         ? Results.Ok(new { provider = provider.Id, process.AppName, process.ProcessId })
         : Results.NoContent());
 
-// What the server is doing, for tools such as `stgadgets dev` (docs/cli.md): state, detail, pack and ticks sent.
-app.MapGet("/api/status", (VariableBroadcaster broadcaster) => broadcaster.Status());
+// What the server is doing, for tools such as `stgadgets dev` (docs/cli.md): state, pack, ticks sent, failing derived
+// values, the provider, and where the packs on disk stand.
+app.MapGet("/api/status", (VariableBroadcaster broadcaster, IEmulatorProvider provider, PackLibrary packs) =>
+    broadcaster.Status() with { Provider = provider.Id, Packs = packs.Status() });
 
 // Built layouts (npm run build in src/ui). During development use the Vite dev server instead.
 var webRoot = RepoPath("Stgadgets:WebRoot");
