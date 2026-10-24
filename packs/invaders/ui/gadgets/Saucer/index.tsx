@@ -1,5 +1,5 @@
 import { useVar } from "@stgadgets/sdk";
-import "./Saucer.css";
+import "./index.css";
 
 const FRAMES_PER_SECOND = 60;
 const TIMER_RELOAD = 0x600; // frames between saucers (code at 0x0921)
@@ -22,6 +22,11 @@ const note: Record<Status, string> = {
   none: "under 8 invaders this wave",
 };
 
+function shotsNote(shotsTo300: number | null | undefined) {
+  if (shotsTo300 == null) return "";
+  return shotsTo300 === 1 ? "300 on this shot!" : `300 on shot ${shotsTo300}`;
+}
+
 /** When the mystery ship comes, and what hitting it is worth. Values come from derived.js. */
 export function Saucer() {
   const status = useVar<Status | null>("saucer.status");
@@ -37,16 +42,13 @@ export function Saucer() {
       <div className={`gadget saucer saucer-${status ?? "unknown"}`}>
         <div className="label">MYSTERY SHIP</div>
         <div className="value saucer-headline">
-          {counting ? (
+          {counting && (
             <>
               {(appearsIn / FRAMES_PER_SECOND).toFixed(1)}
               <span className="unit"> s</span>
             </>
-          ) : status === null ? (
-            "-"
-          ) : (
-            headline[status]
           )}
+          {!counting && (status === null ? "-" : headline[status])}
         </div>
         <div className="bar">
           {counting && (
@@ -58,9 +60,7 @@ export function Saucer() {
       <div className="gadget">
         <div className="label">NEXT HIT</div>
         <div className={nextScore === 300 ? "value saucer-300" : "value"}>{nextScore ?? "-"}</div>
-        <div className="note">
-          {shotsTo300 == null ? "" : shotsTo300 === 1 ? "300 on this shot!" : `300 on shot ${shotsTo300}`}
-        </div>
+        <div className="note">{shotsNote(shotsTo300)}</div>
         <div className="pips saucer-shots">
           {Array.from({ length: shotsTo300 ?? 0 }, (_, i) => (
             <span key={i} className={i === shotsTo300! - 1 ? "saucer-shot jackpot" : "saucer-shot"} />

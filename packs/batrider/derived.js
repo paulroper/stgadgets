@@ -31,7 +31,11 @@ const FRAGMENT_RANK = 0x800;
 const LARGE_SHOT_RANK = 0x8000;
 const OPTION_RANK = 0x8000;
 const LARGE_BOMB_RANK = 0x20000;
-const MEDAL_RANK = points => (points >= 10000 ? 0x200 : points >= 1000 ? 0x100 : 0);
+const MEDAL_RANK = points => {
+  if (points >= 10000) return 0x200;
+  if (points >= 1000) return 0x100;
+  return 0;
+};
 const CHANGE_TICKS = 180; // how long a rank change stays "latest"
 const GAIN_TICKS = 60; // how long a score gain stays on screen, and how long between points still adds to it
 
@@ -213,6 +217,18 @@ function rankTick(v, prev) {
 
 const RANK_PARTS = ['time', 'shots', 'items', 'deaths', 'extends'];
 
+/** How much of one tick's rank change is down to one part. */
+function partAmount({ drift, events, shots }, part) {
+  switch (part) {
+    case 'time':
+      return drift;
+    case 'shots':
+      return shots;
+    default:
+      return events.filter(e => e.part === part).reduce((sum, e) => sum + e.amount, 0);
+  }
+}
+
 const percent = amount => Math.round((amount / RANK_SCALE) * 1e4) / 100;
 
 function findBoss(enemies) {
@@ -321,14 +337,7 @@ export default {
         value: (v, prev) => {
           if (!v['game.running']) return null;
           if (!bothRunning(v, prev)) return 0;
-          const { drift, events, shots } = rankTick(v, prev);
-          const amount =
-            part === 'time'
-              ? drift
-              : part === 'shots'
-                ? shots
-                : events.filter(e => e.part === part).reduce((sum, e) => sum + e.amount, 0);
-          return prev[`rank.from_${part}`] + amount;
+          return prev[`rank.from_${part}`] + partAmount(rankTick(v, prev), part);
         },
       },
     ]),

@@ -1,5 +1,5 @@
 import { useVar } from "@stgadgets/sdk";
-import "./Lives.css";
+import "./index.css";
 
 const TEAM_MAX = 3; // pN.team.0-2
 
@@ -24,13 +24,10 @@ export function Lives() {
         </span>
       </div>
       <div className="note">
-        {lives === null ? (
-          ""
-        ) : nextAt === null ? (
-          "no more extends"
-        ) : (
+        {lives !== null && nextAt === null && "no more extends"}
+        {lives !== null && nextAt != null && (
           <>
-            next at <span className="lives-next-score">{nextAt?.toLocaleString("en")}</span>
+            next at <span className="lives-next-score">{nextAt.toLocaleString("en")}</span>
           </>
         )}
       </div>

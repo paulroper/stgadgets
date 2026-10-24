@@ -1,8 +1,14 @@
 import { useVar } from "@stgadgets/sdk";
-import "./Bombs.css";
+import "./index.css";
 
 const BOMBS_MAX = 4; // 0x2FD48
 const FRAGMENTS_PER_BOMB = 40;
+
+function fragmentsNote(shown: number | null, fragments: number | null, full: boolean) {
+  if (shown === null || fragments === null) return "";
+  if (full) return "FULL: fragments score 1,000";
+  return `${fragments} / ${FRAGMENTS_PER_BOMB} fragments`;
+}
 
 /** Player 1's full bombs, and the fragments towards the next one. */
 export function Bombs() {
@@ -33,13 +39,7 @@ export function Bombs() {
           style={{ width: `${shown === null || fragments === null ? 0 : (fragments / FRAGMENTS_PER_BOMB) * 100}%` }}
         />
       </div>
-      <div className="note">
-        {shown === null || fragments === null
-          ? ""
-          : full
-            ? "FULL: fragments score 1,000"
-            : `${fragments} / ${FRAGMENTS_PER_BOMB} fragments`}
-      </div>
+      <div className="note">{fragmentsNote(shown, fragments, full)}</div>
     </div>
   );
 }

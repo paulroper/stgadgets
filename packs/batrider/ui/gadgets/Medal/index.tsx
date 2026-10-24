@@ -1,8 +1,14 @@
 import { useVar } from "@stgadgets/sdk";
-import "./Medal.css";
+import "./index.css";
 
 const STEPS = 19; // 100-900, then 1,000-10,000
 const TOP = 10000;
+
+function chainNote(next: number | null, step: number | null) {
+  if (next === null) return "";
+  if (next === TOP) return "MAX: keep the chain!";
+  return `step ${step} of ${STEPS}`;
+}
 
 /** What the next medal released is worth, and how far up the chain that is. */
 export function Medal() {
@@ -21,9 +27,7 @@ export function Medal() {
       <div className="bar">
         <div className="bar-fill" style={{ width: `${step === null ? 0 : (step / STEPS) * 100}%` }} />
       </div>
-      <div className="note">
-        {next === null ? "" : next === TOP ? "MAX: keep the chain!" : `step ${step} of ${STEPS}`}
-      </div>
+      <div className="note">{chainNote(next, step)}</div>
     </div>
   );
 }

@@ -22,15 +22,15 @@
   text-align: right;
 }
 
-.route-stages .done {
+.route-stages .route-done {
   color: var(--good);
 }
 
-.route-stages .current {
+.route-stages .route-current {
   color: var(--live);
 }
 
-.route-stages .next {
+.route-stages .route-next {
   color: var(--text);
 }
 

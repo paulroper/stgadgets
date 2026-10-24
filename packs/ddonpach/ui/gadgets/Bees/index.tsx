@@ -1,5 +1,5 @@
 import { useVar } from "@stgadgets/sdk";
-import "./Bees.css";
+import "./index.css";
 
 const STAGES = [1, 2, 3, 4, 5, 6, 7];
 
@@ -13,6 +13,18 @@ function useStageBees() {
     6: useVar<number | null>("bees.stage6"),
     7: useVar<number | null>("bees.stage7"),
   } as Record<number, number | null | undefined>;
+}
+
+function beesNote(
+  collected: number | null,
+  of: number,
+  possible: boolean | null | undefined,
+  next: number | null | undefined,
+) {
+  if (collected === null) return "";
+  if (collected >= of) return "PERFECT!";
+  if (possible === false) return "no perfect this stage";
+  return next != null ? `next +${next.toLocaleString("en")}` : "";
 }
 
 /** Bees this stage out of 13, what the next is worth, and each stage's count this loop (stage 7 is loop 2's). */
@@ -45,17 +57,7 @@ export function Bees() {
           <span key={i} className={collected !== null && i < collected ? "bee on" : "bee"} />
         ))}
       </div>
-      <div className="note">
-        {collected === null
-          ? ""
-          : collected >= of
-            ? "PERFECT!"
-            : possible === false
-              ? "no perfect this stage"
-              : next != null
-                ? `next +${next.toLocaleString("en")}`
-                : ""}
-      </div>
+      <div className="note">{beesNote(collected, of, possible, next)}</div>
       <div className="bees-stages">
         {STAGES.map(n => {
           const count = byStage[n];

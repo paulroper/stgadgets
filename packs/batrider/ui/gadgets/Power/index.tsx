@@ -1,7 +1,13 @@
 import { useVar } from "@stgadgets/sdk";
-import "./Power.css";
+import "./index.css";
 
 const SHOT_MAX = 3; // 0x2FCA2
+
+function shotProgress(level: number | null, needed: number | null | undefined) {
+  if (level === null) return "-";
+  if (level === SHOT_MAX) return "MAX";
+  return `${needed ?? "-"} small to go`;
+}
 
 /** Player 1's shot level (0-3) with the small shot items still needed, and the option level. */
 export function Power() {
@@ -24,9 +30,7 @@ export function Power() {
             <span key={i} className={shotShown !== null && i < shotShown ? "power-pip on" : "power-pip"} />
           ))}
         </span>
-        <span className="power-level">
-          {shotShown === null ? "-" : shotShown === SHOT_MAX ? "MAX" : `${needed ?? "-"} small to go`}
-        </span>
+        <span className="power-level">{shotProgress(shotShown, needed)}</span>
       </div>
       <div className="power-row">
         <span className="power-name">OPTION</span>

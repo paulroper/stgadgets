@@ -1,5 +1,5 @@
 import { useVar } from "@stgadgets/sdk";
-import "./Rank.css";
+import "./index.css";
 
 const RANK_SCALE = 0x1000000; // rank units in the whole scale (derived.js)
 const CHANGE_TICKS = 180; // rank.change_age stops counting here
@@ -18,6 +18,12 @@ function percent(units: number) {
   const value = (units / RANK_SCALE) * 100;
   if (units !== 0 && Math.abs(value) < 0.005) return units > 0 ? "+<0.01%" : "-<0.01%";
   return `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
+}
+
+/** Which way a part has moved rank: up is harder. */
+function partDirection(value: number | null | undefined) {
+  if (value == null || value === 0) return "";
+  return value > 0 ? "up" : "down";
 }
 
 function usePart(name: string) {
@@ -61,15 +67,7 @@ export function Rank() {
           <li key={name} className={value ? "" : "rank-part-none"}>
             <span className={`rank-key ${name.replace(".", "-")}`} />
             {label}
-            <span
-              className={
-                value == null || value === 0
-                  ? "rank-part-value"
-                  : value > 0
-                    ? "rank-part-value up"
-                    : "rank-part-value down"
-              }
-            >
+            <span className={`rank-part-value ${partDirection(value)}`.trim()}>
               {value == null ? "-" : percent(value)}
             </span>
           </li>

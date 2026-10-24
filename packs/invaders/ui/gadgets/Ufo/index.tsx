@@ -1,6 +1,6 @@
 import { useVar } from "@stgadgets/sdk";
-import { Sprite } from "./Sprite";
-import "./Ufo.css";
+import { Sprite } from "../Sprite";
+import "./index.css";
 
 const SAUCER = [
   ".....#####.....",

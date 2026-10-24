@@ -1,5 +1,5 @@
 import { useVar } from "@stgadgets/sdk";
-import "./SecondLoop.css";
+import "./index.css";
 
 const SCORE_NEEDED = 50_000_000;
 const PERFECT_NEEDED = 4;
@@ -13,6 +13,23 @@ function Condition({ met, label, progress }: { met: boolean | null | undefined; 
       <span className="loop2-progress">{progress}</span>
     </li>
   );
+}
+
+function headlineText(
+  possible: boolean | null,
+  eligible: boolean | null | undefined,
+  running: boolean | null | undefined,
+  loop: number | null | undefined,
+) {
+  if (possible === null) return running && loop ? "LOOP 2" : "-";
+  if (!eligible) return "NOT THIS CREDIT";
+  return possible ? "ON TRACK" : "NEEDS ONE";
+}
+
+function headlineClass(possible: boolean | null, eligible: boolean | null | undefined) {
+  if (possible) return "loop2-on";
+  if (eligible === false) return "loop2-off";
+  return "";
 }
 
 /** Whether clearing stage 6 leads to the second loop, and how each condition stands. */
@@ -32,19 +49,10 @@ export function SecondLoop() {
   const running = useVar<boolean | null>("game.running");
   if (possible === undefined) return null;
 
-  const headline =
-    possible === null
-      ? running && loop
-        ? "LOOP 2"
-        : "-"
-      : !eligible
-        ? "NOT THIS CREDIT"
-        : possible
-          ? "ON TRACK"
-          : "NEEDS ONE";
+  const headline = headlineText(possible, eligible, running, loop);
 
   return (
-    <div className={`gadget loop2 ${possible ? "loop2-on" : eligible === false ? "loop2-off" : ""}`}>
+    <div className={`gadget loop2 ${headlineClass(possible, eligible)}`}>
       <div className="label">2ND LOOP</div>
       <div className="value loop2-headline">{headline}</div>
       <div className="note">{eligible === false && "needs one credit, solo"}</div>

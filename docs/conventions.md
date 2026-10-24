@@ -24,7 +24,8 @@ Why:
 - **Folder = namespace.** `Stgadgets.Core/Memory/` is `Stgadgets.Core.Memory`. Nothing lives in a project's root namespace unless it's genuinely about the project as a whole, such as `Program.cs`.
 - **Add a folder when a responsibility emerges, not before.** One or two files can sit at the project root until a clear group forms.
 - **Small, single-purpose files** are fine. A file can hold a few closely related types, such as a record and the class that produces it.
-- **Each gadget gets its own folder**, named after it, holding its component, its stylesheet and anything only it uses: `ui/gadgets/Boss/Boss.tsx` and `Boss.css`, in the platform (`src/ui/src/gadgets/`) and in packs. The files keep the gadget's name rather than becoming `index.tsx`, so searching for a gadget finds its files. Import it by its file: `./gadgets/Boss/Boss`.
+- **Avoid nested ternaries.** A chain of conditions reads better as `if` statements or a `switch` in a small helper function, as `stageState` does in Batrider's Route gadget. A single ternary is fine. Oxlint enforces it for TypeScript and JavaScript (`no-nested-ternary`).
+- **Each gadget gets its own folder**, named after it, holding its component as `index.tsx`, its stylesheet as `index.css`, and anything only it uses: `ui/gadgets/Boss/index.tsx` and `index.css`, in the platform (`src/ui/src/gadgets/`) and in packs. Import it by its folder: `./gadgets/Boss`.
 
 ## The same idea at every level
 

@@ -1,6 +1,6 @@
 import { useVar } from "@stgadgets/sdk";
-import { Sprite } from "./Sprite";
-import "./Lives.css";
+import { Sprite } from "../Sprite";
+import "./index.css";
 
 const SHIP = [".....#.....", ".....#.....", "....###....", ".#########.", "###########", "###########", "#.#.#.#.#.#"];
 

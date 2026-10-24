@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useVar } from "@stgadgets/sdk";
-import "./Splits.css";
+import "./index.css";
 
 const FRAMES_PER_SECOND = 15625 / 271.5; // the board's refresh rate
 
@@ -36,9 +36,14 @@ function parse(json: string | null | undefined): Split[] {
   }
 }
 
+function rowClass(split: Split, current: boolean | undefined) {
+  if (current) return "splits-current";
+  return split.frames === null ? "splits-ahead" : "";
+}
+
 function Row({ split, current }: { split: Split; current?: boolean }) {
   return (
-    <tr className={current ? "splits-current" : split.frames === null ? "splits-ahead" : ""}>
+    <tr className={rowClass(split, current)}>
       <td>{split.stage}</td>
       <td>{time(split.frames)}</td>
       <td>{split.points === null ? "-" : split.points.toLocaleString("en")}</td>

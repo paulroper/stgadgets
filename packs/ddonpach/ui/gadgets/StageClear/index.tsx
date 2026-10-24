@@ -1,5 +1,5 @@
 import { useVar } from "@stgadgets/sdk";
-import "./StageClear.css";
+import "./index.css";
 
 const points = (n: number) => n.toLocaleString("en");
 

@@ -1,5 +1,5 @@
 import { useVar } from "@stgadgets/sdk";
-import "./Lives.css";
+import "./index.css";
 
 /** Player 1's lives, and the score that gives the next one. */
 export function Lives() {
@@ -13,13 +13,12 @@ export function Lives() {
       <div className="label">LIVES</div>
       <div className="value">{lives ?? "-"}</div>
       <div className="note">
-        {more == null ? null : more && nextAt != null ? (
+        {more != null && more && nextAt != null && (
           <>
             next at <span className="lives-next-score">{nextAt.toLocaleString("en")}</span>
           </>
-        ) : (
-          "no more extends"
         )}
+        {more != null && !(more && nextAt != null) && "no more extends"}
       </div>
     </div>
   );

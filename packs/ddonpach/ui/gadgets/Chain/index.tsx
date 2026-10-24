@@ -1,5 +1,5 @@
 import { useVar } from "@stgadgets/sdk";
-import "./Chain.css";
+import "./index.css";
 
 /** Player 1's chain: hits so far and the gauge that ends it, plus the best chain this credit. */
 export function Chain() {

@@ -1,5 +1,5 @@
 import { useVar } from "@stgadgets/sdk";
-import "./Drops.css";
+import "./index.css";
 
 const SPECIAL_AT = 3; // three let fall, then the next one taken is special (0x2FCAC, 0x2FD9E, 0x2FEC8, 0x30194)
 

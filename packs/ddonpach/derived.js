@@ -86,10 +86,12 @@ const slowdownFrames = prev => {
   return still <= PAUSED_AFTER_TICKS ? still : 0;
 };
 
+const STAGES_BY_LOOP = [6, 7]; // by loop: loop 2 adds stage 7, and loop value 2 (loop 2's credits) has none
+
 // "1-3" for loop 1 stage 3; null outside the stages (loop 1's ending, loop 2's credits).
 function stageKey(v) {
   const stage = v['stage.index'];
-  const stages = v.loop === 0 ? 6 : v.loop === 1 ? 7 : 0;
+  const stages = STAGES_BY_LOOP[v.loop] ?? 0;
   return stage < stages ? `${v.loop + 1}-${stage + 1}` : null;
 }
 
@@ -192,7 +194,10 @@ const players = Object.fromEntries(
       `${p}.chain`,
       {
         description: `Hits in player ${p[1]}'s chain while it's alive (the gauge hasn't run out), else 0.`,
-        value: v => (v['game.running'] ? (v[`${p}.hit_timer`] > 0 ? v[`${p}.hits`] : 0) : null),
+        value: v => {
+          if (!v['game.running']) return null;
+          return v[`${p}.hit_timer`] > 0 ? v[`${p}.hits`] : 0;
+        },
       },
     ],
     [

@@ -1,5 +1,5 @@
 import { useVar } from "@stgadgets/sdk";
-import "./Rank.css";
+import "./index.css";
 
 const RANK_MAX = 63;
 const CHANGE_TICKS = 180; // how long the latest change stays highlighted

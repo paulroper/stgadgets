@@ -1,7 +1,12 @@
 import { useVar } from "@stgadgets/sdk";
-import "./Power.css";
+import "./index.css";
 
 const MAX_LEVEL = 4;
+
+function levelText(level: number | null) {
+  if (level === null) return "-";
+  return level === MAX_LEVEL ? "MAX" : level;
+}
 
 function Level({ label, level, strong }: { label: string; level: number | null; strong: boolean }) {
   return (
@@ -12,7 +17,7 @@ function Level({ label, level, strong }: { label: string; level: number | null; 
           <span key={i} className={level !== null && i < level ? "power-pip on" : "power-pip"} />
         ))}
       </span>
-      <span className="power-level">{level === null ? "-" : level === MAX_LEVEL ? "MAX" : level}</span>
+      <span className="power-level">{levelText(level)}</span>
     </div>
   );
 }
