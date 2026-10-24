@@ -1,0 +1,30 @@
+import { useVar } from "@stgadgets/sdk";
+import "./index.css";
+
+function approachText(progress: number | null, eta: number | null | undefined) {
+  if (progress === null) return "-";
+  if (progress >= 1) return "HERE!";
+  if (eta != null) return `in ~${Math.ceil(eta)} s`;
+  return `${Math.round(progress * 100)}%`;
+}
+
+/** How far the stage has scrolled towards its boss, and roughly how long until it arrives. */
+export function Boss() {
+  const progress = useVar<number | null>("boss.progress");
+  const eta = useVar<number | null>("boss.eta");
+  const stage = useVar<string | null>("split.stage");
+  if (progress === undefined) return null;
+
+  const reached = progress !== null && progress >= 1;
+
+  return (
+    <div className={reached ? "gadget boss boss-here" : "gadget boss"}>
+      <div className="label">BOSS{stage && progress !== null ? ` · ${stage}` : ""}</div>
+      <div className="value small">{approachText(progress, eta)}</div>
+      <div className="bar">
+        <div className="bar-fill" style={{ width: `${(progress ?? 0) * 100}%` }} />
+        <span className="boss-marker" />
+      </div>
+    </div>
+  );
+}

@@ -3,8 +3,9 @@
 
 import { act } from "@testing-library/react";
 import { vi } from "vitest";
+import type { Value } from "../../src/ui/src/sdk";
 
-type Values = Record<string, number | boolean | string | null>;
+type Values = Record<string, Value>;
 
 /** Stands in for the browser's WebSocket; the UI opens one per connection attempt. */
 class FakeSocket {

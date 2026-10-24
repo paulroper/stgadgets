@@ -1,0 +1,27 @@
+.power-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--value-small-size);
+}
+
+.power-name {
+  width: 7ch;
+  color: var(--dim);
+}
+
+.power-pip {
+  width: 0.875rem;
+  height: 0.625rem;
+  border-radius: 0.125rem;
+  background: var(--track);
+}
+
+.power-pip.on {
+  background: var(--blue);
+}
+
+.power-level {
+  min-width: 13ch;
+  font-variant-numeric: tabular-nums;
+}

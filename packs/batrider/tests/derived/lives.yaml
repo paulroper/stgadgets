@@ -1,0 +1,55 @@
+# Game flow, lives and alive. Lives are the pilots in pN.team without bit 0 (pilot down); the game only sets that
+# bit when the next pilot comes in (0x2FA6E), so the pilot exploding is taken off until then.
+
+# Stage 1, P1 alone with a three-pilot team, all up.
+start:
+  stage.counter: 1
+  team.last_index: 2
+  p1.status: 0x8E
+  p1.active: true
+  p1.ship: 0x00
+  p1.team.0: 0x00
+  p1.team.1: 0x10
+  p1.team.2: 0x20
+
+scenarios:
+  a full team in play:
+    - expect: { game.running: true, stage: 1, p1.alive: true, p1.lives: 3, p2.alive: null, p2.lives: null }
+
+  a bomb going off doesn't stop the ship flying:
+    - set: { p1.status: 0xBE }
+      expect: { p1.alive: true, p1.lives: 3 }
+
+  the pilot exploding stops counting before the game marks them down:
+    - set: { p1.status: 0x81 }
+      expect: { p1.alive: false, p1.lives: 2 }
+    - set: { p1.status: 0x8E, p1.ship: 0x10, p1.team.0: 0x01 }
+      expect: { p1.alive: true, p1.lives: 2 }
+
+  the last pilot down, then the continue screen:
+    - set: { p1.team.0: 0x01, p1.team.1: 0x11, p1.ship: 0x20 }
+      expect: { p1.lives: 1 }
+    - set: { p1.status: 0x81 }
+      expect: { p1.alive: false, p1.lives: 0 }
+    - set: { p1.status: 0, p1.active: false }
+      expect: { game.running: false, stage: null, p1.lives: null, p1.alive: null }
+
+  an extend brings a pilot back:
+    - set: { p1.team.0: 0x10, p1.team.1: 0x20, p1.team.2: 0x01, p1.ship: 0x10 }
+      expect: { p1.lives: 2 }
+    - set: { p1.team.0: 0x10, p1.team.1: 0x20, p1.team.2: 0x00 }
+      expect: { p1.lives: 3 }
+
+  a one-pilot team only counts its own pilot:
+    - set: { team.last_index: 0, p1.team.1: 0, p1.team.2: 0 }
+      expect: { p1.lives: 1 }
+
+  the second stage:
+    - set: { stage.counter: 2 }
+      expect: { stage: 2 }
+
+  outside play:
+    - set: { stage.counter: 0 }
+      expect: { game.running: false, stage: null, p1.lives: null }
+    - set: { stage.counter: 0x81 }
+      expect: { game.running: false, stage: null }

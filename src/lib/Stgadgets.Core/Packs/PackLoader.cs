@@ -17,7 +17,7 @@ public static class PackLoader
         var map = MemoryMapLoader.LoadFile(Path.Combine(directory, "map.yaml"));
         var derivedPath = Path.Combine(directory, DerivedScript.FileName);
         var derived = File.Exists(derivedPath) ? DerivedScript.Load(derivedPath) : null;
-        if (derived?.Values.FirstOrDefault(d => map.Variables.Any(v => v.Name == d.Name))?.Name is { } clash)
+        if (derived?.Values.FirstOrDefault(d => map.Names.Contains(d.Name))?.Name is { } clash)
             throw new FormatException($"{derivedPath}: '{clash}' is already a variable in map.yaml");
 
         return new Pack(

@@ -21,6 +21,11 @@
     // modules and game states, caught errors.
     "typescript/no-unsafe-type-assertion": "off",
 
+    // A chain of conditions reads better as if statements or a switch in a helper (docs/conventions.md).
+    "no-nested-ternary": "error",
+    // Callbacks are arrows: no function expressions with their own `this`.
+    "prefer-arrow-callback": "error",
+
     // React rules from categories we don't turn on wholesale.
     "react/only-export-components": "error",
     "react/no-unknown-property": "error",

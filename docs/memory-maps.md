@@ -117,14 +117,14 @@ variables:
 | `u8` `u16` `u32` | Unsigned integer, in the system's byte order |
 | `s8` `s16` `s32` | Signed integer |
 | `u16le` `u16be` … | Byte order given explicitly, overriding the system's |
-| `bool` | Zero is false, anything else is true |
+| `bool` | One byte: zero is false, anything else is true |
 | `bcdN` | Binary-coded decimal across *N* bytes (2 digits per byte), common for scores. Bytes are read in the system's byte order |
 
 Long-form options. Following the [roadmap principle](roadmap.md#principles), anything beyond what the packs need gets built only when a real game needs it:
 
 | Option | Meaning |
 |---|---|
-| `mask`, `shift` | Pick out bits: the value is `(raw & mask) >> shift`, from the unsigned value whatever the type. A `bool` with a mask is whether any of its bits are set: `{ type: bool, address: 0x102C8C, mask: 0x80 }`. `shift` (0-31) needs a `mask`; neither applies to `bcdN` |
+| `mask`, `shift` | Pick out bits: the value is `(raw & mask) >> shift`, from the unsigned value whatever the type. A `bool` with a mask is whether any of its bits are set: `{ type: bool, address: 0x102C8C, mask: 0x80 }`. `shift` (0-31) needs a `mask`; neither applies to `bcdN`. The mask must fit in the type's bytes, so a flag in a word's high byte is a `bool` at the word's first byte with a mask under `0x100` (on a big-endian CPU) |
 | `description` | Free text, shown in tooling |
 | `verified` | `true` once checked against a running game |
 
@@ -134,9 +134,37 @@ Expected later, once a game needs them:
 
 - **`scale`:** multiply after decoding, e.g. `10` for games that store the score without its last digit. DoDonPachi's last digit means something else, so its `derived.js` builds the score instead
 - **`bytes[N]`:** a raw block of *N* bytes, sent to the layout as an array
-
-- **Arrays and structs:** enemy tables, bullet lists, per-player blocks with an address step between them
 - **Pointers:** an address that comes from reading another variable, common on 68000 games such as DoDonPachi
+- **Filtering arrays:** sending only an array's entries in use, if a table's size ever costs too much
+
+### Arrays
+
+A table of entries the same size, such as the enemies on screen, is one variable with `count` entries from `address`,
+`stride` bytes apart. Its `fields` are the same in every entry, written like variables but with an `offset` from the
+entry's start instead of an address:
+
+```yaml
+# packs/batrider/map.yaml
+enemies:
+  address: 0x20869A
+  count: 96
+  stride: 0x72
+  description: Every enemy and boss part on screen
+  fields:
+    status: u16 @ 0x00                                  # short form: "<type> @ <offset>"
+    active: { type: bool, offset: 0x00, mask: 0x80 }   # long form, with the same options as a variable
+    hp: u16 @ 0x50
+```
+
+- **The value** is a list with one object per entry, every entry included, whether in use or not:
+  `[{ status: 0x8008, active: true, hp: 84 }, …]`. Layouts and `derived.js` get it as a JavaScript array
+  (`v.enemies.filter(e => e.active)`), and it only counts as changed when an entry did.
+- **What's read** for each entry is the span its fields cover, not the whole stride, so leave out fields nobody uses.
+- **One entry's field** is written `enemies[3].hp` in tests and tools: `expected.yaml`, `derived.js` scenarios, and the
+  CLI's `history` and `--watch`. In a YAML flow mapping (`{ … }`) quote it, `{ "enemies[3].hp": 84 }`, since `[` is
+  YAML syntax there; block style needs no quotes.
+- **Cost:** Batrider's 96 entries of five fields add about 0.1 ms a tick (decoding, and handing them to `derived.js`)
+  and 10 KB a tick to read from RetroArch.
 
 ### Standard variable names
 

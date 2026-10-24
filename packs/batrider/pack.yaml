@@ -1,0 +1,15 @@
+schema: 1
+
+id: batrider                    # the MAME parent ROM set; must match the folder name
+title: Armed Police Batrider
+manufacturer: Raizing / Eighting
+year: 1998
+screen: { width: 320, height: 240, rotation: 270 }   # native raster; MAME lists ROT270
+
+match:
+  # The Feb 1998 ("B") sets, which run the same code: their prg0 ROMs differ only in the region byte (NOTES.md). The
+  # Dec 1997 sets (batriderja, batriderhk, batridert) have another prg1 and haven't been checked.
+  #
+  # No program_crcs: a split clone zip such as batriderj.zip holds only its own prg0, and a pack's CRCs must all be
+  # in the zip, so no one list matches every set. The names are enough to tell the B sets from the older ones.
+  romsets: [batrider, batriderj, batrideru, batriderc, batriderk]

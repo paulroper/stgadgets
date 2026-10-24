@@ -15,7 +15,8 @@ packs/<parent-romset>/
     retroarch.yaml           # settings for one provider, e.g. per-core address translation
   ui/
     layout.tsx               # default export: the pack's layout (optional)
-    gadgets/                 # the pack's own React components (optional)
+    gadgets/                 # the pack's own React components (optional), one folder each:
+      Boss/index.tsx, index.css  # docs/conventions.md
   tests/
     derived/*.yaml           # scenarios for derived.js: made-up ticks and the values they must produce (optional)
     states.ts                # game states as map values, for showing the UI without an emulator (optional)
@@ -73,6 +74,17 @@ cores:
 
 Set `word_swapped: true` when the core returns each 16-bit word byte-swapped, as FBNeo does for 68000 games such as DoDonPachi. The provider then reads whole words and swaps them back, so maps keep the original hardware's byte order.
 
+Some cores lay the game's RAM out in a different order from the hardware, with other memory in between. Give those `segments` instead of `ram_base` and `ram_size`: each one is a stretch of the hardware's `address` space, its `size`, and the `READ_CORE_RAM` `offset` it starts at. A read that crosses from one segment into the next is split between them. Armed Police Batrider on FBNeo, for example:
+
+```yaml
+cores:
+  fb_alpha:
+    word_swapped: true
+    segments:
+      - { address: 0x203000, offset: 0x2000, size: 0x5000 }
+      - { address: 0x208000, offset: 0xF000, size: 0x8000 }
+```
+
 Without an entry for the running core, the provider reports that the core isn't supported yet. Each core needs checking by hand for now (see [providers.md](providers.md#retroarch-provider)).
 
 ## UI
@@ -128,6 +140,7 @@ sequences:                                  # every distinct value, in order, ov
 ```
 
 - Values are numbers (decimal or `0x` hex), `true`, `false` or `null` (bytes that don't decode, such as bad BCD). [Derived values](memory-maps.md#derived-values) can also be fractions or strings.
+- An [array](memory-maps.md#arrays)'s entries are checked one field at a time: `enemies[29].hp: 84`.
 - Derived values are checked like any other variable. A derived value that fails on any tick is reported too.
 - To check a value just before an event, use the marker's tick minus one.
 - A recording without `expected.yaml` is still checked: every tick must decode, so the map's variables have to fall inside the recorded regions.
@@ -169,6 +182,8 @@ scenarios:
   ticks. **`expect`** is checked on the step's last tick, and can name map variables as well as derived values.
 - Values are as decoded: a BCD score is its decimal value, a `bool` is `true` or `false`. A fraction matches to the
   decimal places it's written with, so `73.4` matches `73.396224`.
+- An [array](memory-maps.md#arrays) starts with every field of every entry at zero. Set, add to and expect one entry's
+  field as `enemies[3].hp`, quoted in a flow mapping: `set: { "enemies[3].hp": 84 }`.
 - To see what a real moment looks like before writing a scenario's `start`, use `stgadgets recording values
   <recording> --at <marker>` ([cli.md](cli.md)).
 - Every scenario starts afresh, with no previous tick. Values that compare with the previous tick, such as a hit or a

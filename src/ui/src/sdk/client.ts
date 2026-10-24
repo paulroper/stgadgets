@@ -2,7 +2,10 @@
 
 import { LatencyTracker } from "./latency";
 
-export type Value = number | boolean | string | null; // strings come from derived values
+export type Scalar = number | boolean | string | null; // strings come from derived values
+/** An array variable: one entry per element of a table in memory, each its fields by name (docs/memory-maps.md#arrays). */
+export type ArrayEntries = readonly Readonly<Record<string, number | boolean | null>>[];
+export type Value = Scalar | ArrayEntries;
 export type Vars = Readonly<Record<string, Value>>;
 
 export type ConnectionState =

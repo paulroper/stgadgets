@@ -1,0 +1,10 @@
+schema: 1
+
+# Where each core's READ_CORE_RAM offsets land in the original hardware's address space. Keyed by RetroArch's system
+# id for the core. See "core profiles" in docs/providers.md.
+cores:
+  fb_alpha:                     # FBNeo; its RAM block isn't in the 68000's order (NOTES.md, FBNeo's RAM layout)
+    word_swapped: true          # 68000 words come back little-endian: rank reads F7 00 6C FA at 0x20F9D0
+    segments:
+      - { address: 0x203000, offset: 0x2000, size: 0x5000 }   # work RAM: system, player blocks
+      - { address: 0x208000, offset: 0xF000, size: 0x8000 }   # work RAM: objects, game state, rank

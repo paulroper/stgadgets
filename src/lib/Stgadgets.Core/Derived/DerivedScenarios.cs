@@ -42,14 +42,12 @@ public sealed record DerivedScenarios(
     public IReadOnlyList<string> Check(MemoryMap map, DerivedScript derived)
     {
         var failures = new List<string>();
-        var zero = new byte[8];
-        var mapVariables = map.Variables.ToDictionary(
-            v => v.Name,
-            v => MapDecoder.Decode(v, zero.AsSpan(0, v.Type.Size), map.Endianness));
+        var mapVariables = new MapDecoder(map).DecodeFilled(0);
         var derivedNames = derived.Values.Select(v => v.Name).ToHashSet();
+        bool IsSettable(string path) => ValuePath.Parse(path).TryGet(mapVariables, out _);
 
-        failures.AddRange(Start.Keys.Where(name => !mapVariables.ContainsKey(name)).Select(name => $"start: {NotSettable(name, derivedNames)}"));
-        failures.AddRange(Add.Keys.Where(name => !mapVariables.ContainsKey(name)).Select(name => $"add: {NotSettable(name, derivedNames)}"));
+        failures.AddRange(Start.Keys.Where(name => !IsSettable(name)).Select(name => $"start: {NotSettable(name, derivedNames)}"));
+        failures.AddRange(Add.Keys.Where(name => !IsSettable(name)).Select(name => $"add: {NotSettable(name, derivedNames)}"));
 
         using var evaluator = derived.CreateEvaluator(map, DerivedScript.ReplayTickLimit);
         foreach (var (name, steps) in Scenarios)
@@ -60,14 +58,14 @@ public sealed record DerivedScenarios(
             evaluator.Restart();
             var memory = new Dictionary<string, object?>(mapVariables);
             foreach (var (variable, value) in Start)
-                memory[variable] = value;
+                ValuePath.Parse(variable).TrySet(memory, value);
 
             var tick = 0;
             for (var i = 0; i < steps.Count; i++)
             {
                 var step = steps[i];
                 var where = $"'{name}' step {i + 1}";
-                foreach (var variable in step.Set.Keys.Concat(step.Add.Keys).Where(v => !mapVariables.ContainsKey(v)))
+                foreach (var variable in step.Set.Keys.Concat(step.Add.Keys).Where(v => !IsSettable(v)))
                     failures.Add($"{where}: {NotSettable(variable, derivedNames)}");
                 Dictionary<string, object?> values = [];
                 for (var repeat = 0; repeat < step.Repeat; repeat++, tick++)
@@ -75,13 +73,17 @@ public sealed record DerivedScenarios(
                     // Adds first, so the step's first tick has exactly the values it sets.
                     if (tick > 0)
                     {
-                        foreach (var (variable, amount) in Add.Concat(step.Add).Where(v => mapVariables.ContainsKey(v.Key)))
-                            memory[variable] = memory[variable] is long current ? current + amount : null;
+                        foreach (var (variable, amount) in Add.Concat(step.Add).Where(v => IsSettable(v.Key)))
+                        {
+                            var path = ValuePath.Parse(variable);
+                            path.TryGet(memory, out var current);
+                            path.TrySet(memory, current is long number ? number + amount : null);
+                        }
                     }
                     if (repeat == 0)
                     {
-                        foreach (var (variable, value) in step.Set.Where(v => mapVariables.ContainsKey(v.Key)))
-                            memory[variable] = value;
+                        foreach (var (variable, value) in step.Set)
+                            ValuePath.Parse(variable).TrySet(memory, value);
                     }
                     values = new Dictionary<string, object?>(memory);
                     foreach (var error in evaluator.Evaluate(values))
@@ -90,7 +92,7 @@ public sealed record DerivedScenarios(
 
                 foreach (var (variable, expected) in step.Expect)
                 {
-                    if (!values.TryGetValue(variable, out var actual))
+                    if (!ValuePath.Parse(variable).TryGet(values, out var actual))
                         failures.Add($"{where}: no map variable or derived value '{variable}'");
                     else if (!expected.Matches(actual))
                         failures.Add($"{where} (tick {tick - 1}): {variable} is {PackYaml.FormatValue(actual)}, expected {expected}");
