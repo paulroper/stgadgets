@@ -46,7 +46,7 @@ trusting one:
    implements it. For DoDonPachi this found details no write-up mentioned (rank drops a dying player's terms, and
    the World set's rank tables differ from the Japanese set's).
 3. **Check against the screen.** Read the values live while the game runs and compare them with what's shown:
-   score, lives, bombs.
+   score, lives, bombs. `stgadgets peek memory` reads the map's variables from the running game ([cli.md](cli.md#peeking-at-live-play)).
 
 ### Record and verify
 
@@ -146,9 +146,9 @@ without anyone looking at the screen. It shows the layout only, not the game und
 When a gadget needs a particular moment in the game (a boss, a death, a continue), there are three ways to see it
 without asking someone to play to it:
 
-- **Replay a recording held at that moment:** `stgadgets dev start --provider replay --endpoint
-  "packs/<id>/recordings/<name>#<marker>"` ([replay provider](providers.md#replay-provider)), then `npm run
-  screenshot` in `src/ui`.
+- **Replay a recording held at that moment:** `stgadgets recording play packs/<id>/recordings/<name> --at
+  "<marker>"` ([cli.md](cli.md#stgadgets-recording-play-recording---at-point)), then `stgadgets dev snapshot`, or
+  `npm run screenshot` in `src/ui`.
 - **Add it as a game state**, and screenshot that ([looking at game states](#looking-at-game-states)).
 - Otherwise, ask whoever is playing to get there.
 

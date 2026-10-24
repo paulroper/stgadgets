@@ -162,16 +162,84 @@ something happened.
 Copies the ticks from one point to another, with their markers, to a new recording, so a long session can shrink to
 the part worth keeping. Timestamps start again from 0, and the manifest's notes say where it came from.
 
+### `stgadgets recording play <recording> [--at <point>]`
+
+Starts the [dev stack](#development) with the server replaying the recording instead of reading an emulator
+([replay provider](providers.md#replay-provider)), so the browser, `npm run screenshot` and the overlay's snapshots
+show real play with nobody playing. With `--at`, it fast-forwards to the point and holds there, and is ready once it
+has; without, it plays in real time from the start, over and over. It takes `--overlay`, `--build-ui` and
+`--snapshot-port` as `dev start` does.
+
+```sh
+stgadgets recording play packs/<id>/recordings/<name> --at "boss appears" --overlay
+stgadgets dev snapshot
+stgadgets dev stop
+```
+
+The point is checked before anything starts. It's the one way to choose what's replayed: on a running dev stack, live
+or replaying, it restarts it with this recording and point, keeping the overlay as it was unless `--overlay` says
+otherwise, and says so when that ends live play. When the stack is already playing that recording at that point, it
+does nothing (unless `--build-ui`), so it's safe to run before every snapshot. Once it's running, the `dev` commands work on it as on live play: `dev restart` after a change replays the
+same recording to the same point, and refuses `--endpoint`.
+
+## Peeking at live play
+
+`peek` reads values from the game being played now. Everything to do with recordings is under `recording`, so `peek`
+never reads one: for a recording at a point, use `recording values`.
+
+Both subcommands take names, array entries' fields (`'enemies[3].hp'`) or patterns where `*` matches anything; with
+none, they show everything except arrays. An array, by name or pattern, shows each entry's fields on a line of their
+own.
+
+### `stgadgets peek memory [names]…`
+
+Reads map variables once from the game running in an emulator, through the pack in `packs/` that matches it, to
+check a variable against the screen without making a recording: pause the game at a moment ("2 lives, 3 bombs") and
+peek. It doesn't need the server.
+
+```sh
+stgadgets peek memory 'p1.*' 'enemies[0].hp'
+```
+
+```
+p1.lives       2
+p1.bombs       3
+enemies[0].hp  84
+```
+
+| Option | |
+|---|---|
+| `--provider <id>` | The emulator to read from: `retroarch` (the default) |
+| `--endpoint` | Where the emulator listens, as for `recording record` |
+| `--packs <dir>` | The folder of packs to find the game's in; by default the repository's `packs/` |
+
+It shows map variables only. Many derived values build up over play, so one snapshot can't give them.
+
+### `stgadgets peek values [names]…`
+
+The latest values the running server published, map and `derived.js` alike, as gadgets see them. The server has run
+`derived.js` on every tick since the game started, so derived values are right at any moment. Start the server with
+`stgadgets dev start` first; it refuses a server that's replaying a recording.
+
+```sh
+stgadgets peek values 'rank*'
+```
+
+```
+rank                25
+rank.change_reason  'ship & power -9'
+```
+
 ## Development
 
-`stgadgets dev` runs stgadgets for development: the server, live or replaying, and on macOS the overlay with
-snapshots on. Each part runs as its own process, in the background, as it would for a user; the CLI launches them,
+`stgadgets dev` runs stgadgets for development: the server and, on macOS, the overlay with snapshots on. `dev start`
+follows live play; to replay a recording instead, start it with [`recording play`](#stgadgets-recording-play-recording---at-point),
+and the other `dev` commands work on it the same way. Each part runs as its own process, in the background, as it would for a user; the CLI launches them,
 waits until they answer, and talks to them over HTTP. Their output and the record of what's running go to
 `.stgadgets/dev/` (git-ignored). Run it from inside the repository.
 
 ```sh
 stgadgets dev start --overlay                     # live from RetroArch, with the overlay
-stgadgets dev start --provider replay --endpoint "packs/<id>/recordings/<name>#<marker>"
 stgadgets dev status
 stgadgets dev restart --build-ui                  # after a change; options not given are kept
 stgadgets dev snapshot --width 1000               # the overlay's picture, to .stgadgets/dev/snapshot.png
@@ -180,15 +248,15 @@ stgadgets dev stop
 
 | Command | |
 |---|---|
-| `start` | Starts the server, waits until it answers, then gives it a few seconds to find the game, and says what it's doing. A replay held at a point (`#<marker>`) is ready once it's there. With `--overlay`, also starts the overlay and waits for its snapshots. Refuses if something is already serving on the server's port |
-| `restart` | Stops and starts again, for a change to `map.yaml`, `derived.js` or the UI. Options not given keep their last values; a different `--provider` starts without the last endpoint |
+| `start` | Starts the server, waits until it answers, then gives it a few seconds to find the game, and says what it's doing. With `--overlay`, also starts the overlay and waits for its snapshots. Refuses if something is already serving on the server's port |
+| `restart` | Stops and starts again, for a change to `map.yaml`, `derived.js` or the UI. Options not given keep their last values, a replay's included; a different `--provider` starts without the last endpoint. On a replay it won't take `--endpoint`: choose another recording or point with `recording play` |
 | `status` | What was started, what the server's doing (`GET /api/status`: state, pack, ticks sent), and whether the overlay answers |
 | `snapshot` | Saves a PNG of the layout as the overlay draws it, even while it's hidden (`--out`, `--width`) |
 | `stop` | Stops what `start` started |
 
 | Option (start, restart) | |
 |---|---|
-| `--provider`, `--endpoint` | The emulator, as in the server's configuration ([providers.md](providers.md#choosing-a-provider)); default `retroarch`. A replay's recording is relative to the repository |
+| `--provider`, `--endpoint` | The emulator, as in the server's configuration ([providers.md](providers.md#choosing-a-provider)); default `retroarch`. Not `replay`: that's `recording play` |
 | `--overlay` | Also run the macOS overlay, with snapshots on |
 | `--snapshot-port` | The overlay's snapshot port (5198) |
 | `--build-ui` | Run `npm run build` in `src/ui` first, so the server and overlay serve the latest UI |

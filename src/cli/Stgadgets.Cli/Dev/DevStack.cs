@@ -28,7 +28,7 @@ internal sealed record DevOptions(string Provider, string? Endpoint, bool Overla
 internal sealed record DevStackState(DevOptions Options, int ServerProcessId, DateTimeOffset StartedAt);
 
 /// <summary>The server's answer to GET /api/status.</summary>
-internal sealed record ServerStatus(string State, string? Detail, string? Pack, long Ticks);
+internal sealed record ServerStatus(string State, string? Detail, string? Pack, long Ticks, string? Provider = null);
 
 /// <summary>
 /// Starts and stops the parts of stgadgets for development: the server (live or replaying) and, on macOS, the overlay

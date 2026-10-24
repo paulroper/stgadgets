@@ -57,4 +57,10 @@ public sealed class DevStackTests : IDisposable
     [Fact]
     public void Says_when_its_not_in_the_repository() =>
         Assert.Throws<UsageException>(() => DevStack.FindRepoRoot(_dir.Path));
+
+    [Fact]
+    public void Start_leaves_replays_to_recording_play() =>
+        Assert.Contains(
+            StgadgetsCommand.Create().Parse(["dev", "start", "--provider", "replay"]).Errors,
+            e => e.Message.Contains("'replay' not recognized", StringComparison.Ordinal));
 }

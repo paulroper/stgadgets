@@ -105,7 +105,7 @@ src/
   server/                            # Stgadgets.Server.slnx (includes lib/): any OS, plain .NET 10
     Stgadgets.Server/                # Kestrel: game loop, WebSocket, /api/emulator and /api/status, serves src/ui/dist
   cli/                               # Stgadgets.Cli.slnx (includes lib/): any OS, plain .NET 10
-    Stgadgets.Cli/                   # the stgadgets command: recording tools, and `dev` to run the server and overlay (docs/cli.md)
+    Stgadgets.Cli/                   # the stgadgets command: recording tools, `peek` at live play, and `dev` to run the server and overlay (docs/cli.md)
   host/
     lib/                             # shared by every host; plain net10.0, no OS-specific code
       Stgadgets.Host.Lib.Api/        # client for the server's HTTP API (EmulatorLocator → /api/emulator)

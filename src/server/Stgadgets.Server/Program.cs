@@ -42,8 +42,8 @@ app.MapGet("/api/emulator", (IEmulatorProvider provider) =>
         ? Results.Ok(new { provider = provider.Id, process.AppName, process.ProcessId })
         : Results.NoContent());
 
-// What the server is doing, for tools such as `stgadgets dev` (docs/cli.md): state, detail, pack and ticks sent.
-app.MapGet("/api/status", (VariableBroadcaster broadcaster) => broadcaster.Status());
+// What the server is doing, for tools such as `stgadgets dev` (docs/cli.md): state, detail, pack, ticks sent and provider.
+app.MapGet("/api/status", (VariableBroadcaster broadcaster, IEmulatorProvider provider) => broadcaster.Status() with { Provider = provider.Id });
 
 // Built layouts (npm run build in src/ui). During development use the Vite dev server instead.
 var webRoot = RepoPath("Stgadgets:WebRoot");
