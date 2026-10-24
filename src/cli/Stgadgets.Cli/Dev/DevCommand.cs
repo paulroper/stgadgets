@@ -103,8 +103,11 @@ internal static class DevCommand
         {
             var root = DevStack.FindRepoRoot(Directory.GetCurrentDirectory());
             var path = result.GetValue(file)?.FullName ?? Path.Combine(root, ".stgadgets", "dev", "snapshot.png");
-            var visible = await new DevStack(root, result.InvocationConfiguration.Output).SaveSnapshotAsync(path, result.GetValue(width), cancellationToken);
-            result.InvocationConfiguration.Output.WriteLine($"{path}{(visible ? "" : " (the overlay is hidden; drawn off screen)")}");
+            var console = result.InvocationConfiguration;
+            var (visible, warnings) = await new DevStack(root, console.Output).SaveSnapshotAsync(path, result.GetValue(width), cancellationToken);
+            console.Output.WriteLine($"{path}{(visible ? "" : " (the overlay is hidden; drawn off screen)")}");
+            foreach (var warning in warnings)
+                console.Error.WriteLine($"warning: {warning}");
         }));
         return command;
     }

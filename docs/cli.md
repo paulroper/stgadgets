@@ -243,6 +243,11 @@ The server it starts watches `packs/` (`Stgadgets:WatchPacks`) and reloads the p
 point fast-forwards back to it. Derived values start afresh, as at a restart. If the changed files don't load, it
 keeps the last packs that did, and `dev status` says why. Only a change to the UI needs `dev restart --build-ui`.
 
+`dev snapshot` waits for that to finish, so a snapshot taken right after saving `derived.js` shows the change: until
+the server has read every pack file written since, is following the game with them, and a held replay is back at its
+point. `dev status`, `dev snapshot` and `peek values` warn about pack files that didn't load and derived values that
+are failing, with each one's error.
+
 ```sh
 stgadgets dev start --overlay                     # live from RetroArch, with the overlay
 stgadgets dev status
@@ -255,8 +260,8 @@ stgadgets dev stop
 |---|---|
 | `start` | Starts the server, waits until it answers, then gives it a few seconds to find the game, and says what it's doing. With `--overlay`, also starts the overlay and waits for its snapshots. Refuses if something is already serving on the server's port |
 | `restart` | Stops and starts again, for a change to the UI (with `--build-ui`) or to the server's own code. Options not given keep their last values, a replay's included; a different `--provider` starts without the last endpoint. On a replay it won't take `--endpoint`: choose another recording or point with `recording play` |
-| `status` | What was started, what the server's doing (`GET /api/status`: state, pack, ticks sent, and why the latest pack reload failed, if it did), and whether the overlay answers |
-| `snapshot` | Saves a PNG of the layout as the overlay draws it, even while it's hidden (`--out`, `--width`) |
+| `status` | What was started, what the server's doing (`GET /api/status`: state, pack, ticks sent, why the latest pack reload failed, and the derived values failing), and whether the overlay answers |
+| `snapshot` | Saves a PNG of the layout as the overlay draws it, even while it's hidden (`--out`, `--width`), once the server has caught up with the pack files |
 | `stop` | Stops what `start` started |
 
 | Option (start, restart) | |

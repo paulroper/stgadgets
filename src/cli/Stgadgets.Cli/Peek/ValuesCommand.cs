@@ -43,6 +43,8 @@ internal static class ValuesCommand
 
                 var (pack, values) = await LatestValuesAsync(server, timeout.Token);
                 PeekCommand.Write(values, result.GetValue(names) ?? [], pack, result.InvocationConfiguration.Output);
+                foreach (var warning in DevStack.Warnings(status))
+                    result.InvocationConfiguration.Error.WriteLine($"warning: {warning}");
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {

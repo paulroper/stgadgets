@@ -96,6 +96,15 @@ public sealed class ValuesCommandTests : IDisposable
     }
 
     [Fact]
+    public void Warns_about_failing_derived_values()
+    {
+        _server.Status = """{ "state": "connected", "pack": "test", "ticks": 10, "derivedErrors": { "rank": "v.x is undefined" } }""";
+        _server.Messages = [Hello];
+
+        Assert.Equal("warning: Derived value 'rank' is failing (null until it recovers): v.x is undefined\n", Peek("p1.score").Error);
+    }
+
+    [Fact]
     public void Says_when_a_value_isnt_published()
     {
         _server.Status = Connected;

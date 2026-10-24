@@ -33,10 +33,24 @@ public sealed class PackLibraryTests : IDisposable
         Assert.Equal(isPackFile, PackLibrary.IsPackFile(path));
 
     [Fact]
+    public void Finds_when_a_pack_file_was_last_written()
+    {
+        _packs.Write("test/providers/retroarch.yaml", "cores: {}");
+        _packs.Write("test/recordings/run/ram.bin", [1]);
+        File.SetLastWriteTimeUtc(Path.Combine(_packs.Path, "test", "pack.yaml"), new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        File.SetLastWriteTimeUtc(Path.Combine(_packs.Path, "test", "map.yaml"), new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        File.SetLastWriteTimeUtc(Path.Combine(_packs.Path, "test", "providers", "retroarch.yaml"), new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc));
+        File.SetLastWriteTimeUtc(Path.Combine(_packs.Path, "test", "recordings", "run", "ram.bin"), new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc));
+
+        Assert.Equal(new DateTimeOffset(2026, 2, 1, 0, 0, 0, TimeSpan.Zero), PackLibrary.NewestPackFile(_packs.Path));
+    }
+
+    [Fact]
     public void A_reload_swaps_in_the_new_packs_and_says_so()
     {
         using var library = new PackLibrary(_packs.Path, watch: false);
         var changed = library.Changed;
+        var before = library.Status();
         WriteMap("y");
 
         library.Reload();
@@ -44,6 +58,8 @@ public sealed class PackLibraryTests : IDisposable
         Assert.Equal("y", Variable(library));
         Assert.True(changed.IsCancellationRequested);
         Assert.False(library.Changed.IsCancellationRequested);
+        Assert.Equal((2, 2), (library.Version, library.Status().Version));
+        Assert.True(library.Status().ReadAt >= before.ReadAt);
     }
 
     [Fact]
@@ -60,6 +76,7 @@ public sealed class PackLibraryTests : IDisposable
         Assert.NotNull(library.Error);
         Assert.Single(failures);
         Assert.False(changed.IsCancellationRequested);
+        Assert.Equal((1, library.Error), (library.Status().Version, library.Status().Error));
 
         WriteMap("y");
         library.Reload();
