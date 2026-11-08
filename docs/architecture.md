@@ -45,6 +45,10 @@ Lag is the top requirement (see [requirements](requirements.md#latency-highest-p
 4. The **server** immediately sends the variables that changed to every connected layout over WebSocket.
 5. The **gadgets** re-render.
 
+In development the server also watches the packs' files (`Stgadgets:WatchPacks`, which `stgadgets dev` turns on). When
+they change it reloads them and starts again from step 1, so an edit to `map.yaml` or `derived.js` shows up without a
+restart. The watcher only signals the loop; nothing is added to the work done per tick.
+
 The core sends every tick in order and doesn't drop or merge any, so a layout sees every value the core saw. Logic that watches for changes, such as counting shots fired, belongs in the pack's `derived.js`, not the layout. Layouts display state; they don't compute it ([ADR 0012](decisions/0012-derived-values-in-javascript.md)).
 
 ### Polling isn't frame-synced
@@ -105,7 +109,7 @@ src/
   server/                            # Stgadgets.Server.slnx (includes lib/): any OS, plain .NET 10
     Stgadgets.Server/                # Kestrel: game loop, WebSocket, /api/emulator and /api/status, serves src/ui/dist
   cli/                               # Stgadgets.Cli.slnx (includes lib/): any OS, plain .NET 10
-    Stgadgets.Cli/                   # the stgadgets command: recording tools, and `dev` to run the server and overlay (docs/cli.md)
+    Stgadgets.Cli/                   # the stgadgets command: recording tools, `peek` at live play, and `dev` to run the server and overlay (docs/cli.md)
   host/
     lib/                             # shared by every host; plain net10.0, no OS-specific code
       Stgadgets.Host.Lib.Api/        # client for the server's HTTP API (EmulatorLocator → /api/emulator)

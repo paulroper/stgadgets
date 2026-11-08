@@ -1,4 +1,5 @@
 using Stgadgets.Cli.Dev;
+using Stgadgets.Core.Packs;
 
 namespace Stgadgets.Cli.Tests.Dev;
 
@@ -15,13 +16,13 @@ public sealed class DevStackTests : IDisposable
     [Fact]
     public void Runs_the_server_with_the_provider_and_its_endpoint() =>
         Assert.Equal(
-            ["run", "--project", "src/server/Stgadgets.Server", "--", "--Stgadgets:Provider=replay", "--Stgadgets:ProviderEndpoint=packs/x/recordings/y#boss"],
+            ["run", "--project", "src/server/Stgadgets.Server", "--", "--Stgadgets:Provider=replay", "--Stgadgets:WatchPacks=true", "--Stgadgets:ProviderEndpoint=packs/x/recordings/y#boss"],
             DevStack.ServerArguments(new DevOptions("replay", "packs/x/recordings/y#boss", Overlay: false, SnapshotPort: 5198)));
 
     [Fact]
     public void Leaves_the_endpoint_to_the_provider_when_there_isnt_one() =>
         Assert.Equal(
-            ["run", "--project", "src/server/Stgadgets.Server", "--", "--Stgadgets:Provider=retroarch"],
+            ["run", "--project", "src/server/Stgadgets.Server", "--", "--Stgadgets:Provider=retroarch", "--Stgadgets:WatchPacks=true"],
             DevStack.ServerArguments(new DevOptions("retroarch", null, Overlay: true, SnapshotPort: 5198)));
 
     [Fact]
@@ -57,4 +58,32 @@ public sealed class DevStackTests : IDisposable
     [Fact]
     public void Says_when_its_not_in_the_repository() =>
         Assert.Throws<UsageException>(() => DevStack.FindRepoRoot(_dir.Path));
+
+    [Fact]
+    public void Start_leaves_replays_to_recording_play() =>
+        Assert.Contains(
+            StgadgetsCommand.Create().Parse(["dev", "start", "--provider", "replay"]).Errors,
+            e => e.Message.Contains("'replay' not recognized", StringComparison.Ordinal));
+
+    [Fact]
+    public void Warns_about_packs_that_didnt_load_and_failing_derived_values() =>
+        Assert.Equal(
+            [
+                "Pack files changed but didn't load, so the last ones are still in use: bad YAML",
+                "Derived value 'rank' is failing (null until it recovers): v.x is undefined",
+            ],
+            DevStack.Warnings(new ServerStatus("connected", null, "test", 10, 1, new Dictionary<string, string> { ["rank"] = "v.x is undefined" })
+            {
+                Packs = new PacksStatus(DateTimeOffset.UnixEpoch, 1, "bad YAML"),
+            }));
+
+    [Fact]
+    public void A_replay_held_at_a_point_is_holding() =>
+        Assert.Equal(
+            [true, false, false],
+            [
+                new DevOptions("replay", "packs/x/recordings/y#boss", false, 5198).Holding,
+                new DevOptions("replay", "packs/x/recordings/y", false, 5198).Holding,
+                new DevOptions("retroarch", null, false, 5198).Holding,
+            ]);
 }

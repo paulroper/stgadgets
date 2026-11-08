@@ -46,7 +46,7 @@ trusting one:
    implements it. For DoDonPachi this found details no write-up mentioned (rank drops a dying player's terms, and
    the World set's rank tables differ from the Japanese set's).
 3. **Check against the screen.** Read the values live while the game runs and compare them with what's shown:
-   score, lives, bombs.
+   score, lives, bombs. `stgadgets peek memory` reads the map's variables from the running game ([cli.md](cli.md#peeking-at-live-play)).
 
 ### Record and verify
 
@@ -130,10 +130,11 @@ stgadgets dev stop
 
 Then each change goes:
 
-1. Edit `derived.js`, the layout or a gadget.
-2. `stgadgets dev restart --build-ui`: rebuilds the UI, and restarts the server (which loads packs at startup, so
-   this picks up `map.yaml` and `derived.js` changes) and the overlay, with the same options as before.
-3. `stgadgets dev snapshot`, and look at it.
+1. Edit `map.yaml`, `derived.js`, the layout or a gadget.
+2. For `map.yaml` and `derived.js`, nothing: the server reloads them as they're saved. For the layout or a gadget, `stgadgets dev restart --build-ui`, which rebuilds the UI and restarts
+   the server and the overlay with the same options as before.
+3. `stgadgets dev snapshot`, and look at it. It waits until the server has picked up the change, and warns if the
+   files didn't load or a derived value is failing.
 
 A freshly started overlay takes its size from the emulator's window, and only finds it while it's on screen. If
 RetroArch is fullscreen (in its own Space), bring it to the front once after restarting the overlay, or snapshots
@@ -146,9 +147,9 @@ without anyone looking at the screen. It shows the layout only, not the game und
 When a gadget needs a particular moment in the game (a boss, a death, a continue), there are three ways to see it
 without asking someone to play to it:
 
-- **Replay a recording held at that moment:** `stgadgets dev start --provider replay --endpoint
-  "packs/<id>/recordings/<name>#<marker>"` ([replay provider](providers.md#replay-provider)), then `npm run
-  screenshot` in `src/ui`.
+- **Replay a recording held at that moment:** `stgadgets recording play packs/<id>/recordings/<name> --at
+  "<marker>"` ([cli.md](cli.md#stgadgets-recording-play-recording---at-point)), then `stgadgets dev snapshot`, or
+  `npm run screenshot` in `src/ui`.
 - **Add it as a game state**, and screenshot that ([looking at game states](#looking-at-game-states)).
 - Otherwise, ask whoever is playing to get there.
 

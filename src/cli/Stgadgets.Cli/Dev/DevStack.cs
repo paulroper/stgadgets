@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Stgadgets.Core.Packs;
 
 namespace Stgadgets.Cli.Dev;
 
@@ -22,13 +23,18 @@ internal sealed record DevOptions(string Provider, string? Endpoint, bool Overla
             overlay ?? last?.Overlay ?? false,
             snapshotPort ?? last?.SnapshotPort ?? 5198);
     }
+
+    /// <summary>A replay held at a point: it fast-forwards there, then sends no more ticks.</summary>
+    public bool Holding => Provider == "replay" && Endpoint?.Contains('#') == true;
 }
 
 /// <summary>What's running: the options, and the server's process (dotnet run).</summary>
 internal sealed record DevStackState(DevOptions Options, int ServerProcessId, DateTimeOffset StartedAt);
 
 /// <summary>The server's answer to GET /api/status.</summary>
-internal sealed record ServerStatus(string State, string? Detail, string? Pack, long Ticks);
+internal sealed record ServerStatus(
+    string State, string? Detail, string? Pack, long Ticks, int? PacksVersion = null,
+    IReadOnlyDictionary<string, string>? DerivedErrors = null, string? Provider = null, PacksStatus? Packs = null);
 
 /// <summary>
 /// Starts and stops the parts of stgadgets for development: the server (live or replaying) and, on macOS, the overlay
@@ -64,6 +70,7 @@ internal sealed class DevStack(string repoRoot, TextWriter output)
     [
         "run", "--project", "src/server/Stgadgets.Server", "--",
         $"--Stgadgets:Provider={options.Provider}",
+        "--Stgadgets:WatchPacks=true",
         .. options.Endpoint is null ? [] : new[] { $"--Stgadgets:ProviderEndpoint={options.Endpoint}" },
     ];
 
@@ -90,7 +97,7 @@ internal sealed class DevStack(string repoRoot, TextWriter output)
         var server = StartLogged("dotnet", ServerArguments(options), ServerLog, environment: []);
         File.WriteAllText(StateFile, JsonSerializer.Serialize(new DevStackState(options, server.Id, DateTimeOffset.Now), Json));
 
-        var status = await WaitForServerAsync(server, holding: options.Provider == "replay" && options.Endpoint?.Contains('#') == true, cancellationToken);
+        var status = await WaitForServerAsync(server, options.Holding, cancellationToken);
         output.WriteLine($"Server: {Describe(status)}. http://127.0.0.1:{ServerPort}, log {ServerLog}");
 
         if (options.Overlay)
@@ -152,17 +159,63 @@ internal sealed class DevStack(string repoRoot, TextWriter output)
         }
     }
 
-    /// <summary>Saves the overlay's snapshot (a PNG of the layout as it draws it) to <paramref name="file"/>.</summary>
-    public async Task<bool> SaveSnapshotAsync(string file, int? width, CancellationToken cancellationToken)
+    /// <summary>
+    /// Saves the overlay's snapshot (a PNG of the layout as it draws it) to <paramref name="file"/>, once the server has
+    /// caught up with the pack files (<see cref="WaitForPacksAsync"/>). Returns whether the overlay was visible, and
+    /// anything wrong with what the snapshot shows: packs that didn't load, derived values failing.
+    /// </summary>
+    public async Task<(bool Visible, IReadOnlyList<string> Warnings)> SaveSnapshotAsync(string file, int? width, CancellationToken cancellationToken)
     {
         var state = Load() ?? throw new UsageException("The dev stack isn't running: `stgadgets dev start --overlay`");
         if (!state.Options.Overlay)
             throw new UsageException("The overlay isn't running: `stgadgets dev restart --overlay`");
+        var warnings = Warnings(await WaitForPacksAsync(state.Options.Holding, cancellationToken)).ToList();
         var snapshot = await SnapshotAsync(state.Options.SnapshotPort, width, cancellationToken)
             ?? throw new UsageException($"The overlay isn't answering; see {OverlayLog}");
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(file))!);
         await File.WriteAllBytesAsync(file, snapshot.Png, cancellationToken);
-        return snapshot.Visible;
+        return (snapshot.Visible, warnings);
+    }
+
+    /// <summary>
+    /// Waits until the server shows the pack files as they are on disk: it has read them since they last changed, the
+    /// game is being followed with what it read, and a held replay is back at its point. Gives up after a while, and
+    /// the snapshot is taken anyway, with a warning, since an old picture is better than none.
+    /// </summary>
+    private async Task<ServerStatus?> WaitForPacksAsync(bool holding, CancellationToken cancellationToken)
+    {
+        var changedAt = PackLibrary.NewestPackFile(Path.Combine(repoRoot, "packs"));
+        var clock = Stopwatch.StartNew();
+        ServerStatus? last = null;
+        while (clock.Elapsed < CatchUpLimit)
+        {
+            var status = await StatusAsync(cancellationToken);
+            if (status is null)
+                return null;
+            if (status.Packs is { } packs && packs.ReadAt >= changedAt)
+            {
+                var followingLatest = status.State != "connected" || status.PacksVersion == packs.Version;
+                var settled = !holding || (last?.Ticks == status.Ticks && last.PacksVersion == status.PacksVersion);
+                if (packs.Error is not null || (followingLatest && settled))
+                    return status;
+            }
+            last = status;
+            await Task.Delay(500, cancellationToken);
+        }
+        output.WriteLine($"warning: the server hasn't caught up with the pack files after {CatchUpLimit.TotalSeconds:F0} s, so the snapshot may be out of date; " +
+            "`stgadgets dev restart` reloads everything");
+        return last;
+    }
+
+    private static readonly TimeSpan CatchUpLimit = TimeSpan.FromSeconds(60);
+
+    /// <summary>What's wrong with what the server is showing: packs that didn't load, derived values failing.</summary>
+    public static IEnumerable<string> Warnings(ServerStatus? status)
+    {
+        if (status?.Packs?.Error is { } error)
+            yield return $"Pack files changed but didn't load, so the last ones are still in use: {error}";
+        foreach (var (name, message) in status?.DerivedErrors ?? new Dictionary<string, string>())
+            yield return $"Derived value '{name}' is failing (null until it recovers): {message}";
     }
 
     public static async Task<ServerStatus?> StatusAsync(CancellationToken cancellationToken)
@@ -177,9 +230,10 @@ internal sealed class DevStack(string repoRoot, TextWriter output)
         }
     }
 
-    private static string Describe(ServerStatus status) => status.State == "connected"
-        ? $"connected, playing {status.Pack} ({status.Ticks} ticks sent)"
-        : $"{status.State}{(status.Detail is null ? "" : $": {status.Detail}")}";
+    private static string Describe(ServerStatus status) =>
+        string.Join("\n  ", Warnings(status).Prepend(status.State == "connected"
+            ? $"connected, playing {status.Pack} ({status.Ticks} ticks sent)"
+            : $"{status.State}{(status.Detail is null ? "" : $": {status.Detail}")}"));
 
     // The server is up once it answers; then give it a few seconds to find the game. A replay held at a point is ready
     // once it's there: when ticks stop coming.

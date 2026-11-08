@@ -13,7 +13,7 @@ stgadgets runs alongside the emulator. It reads the game's memory through the em
 3. Start stgadgets with the CLI: `bin/stgadgets dev start --build-ui`, then open http://127.0.0.1:5199. Add `--overlay` on macOS for the transparent overlay over the emulator (see below).
 4. When you're done: `bin/stgadgets dev stop`
 
-`dev start` builds the UI, starts the server (and the overlay) in the background, waits until it's up, and says whether it has found a game. `bin/stgadgets dev restart` picks up changes, and `bin/stgadgets dev status` says what's running. To play back a recording instead of the emulator: `bin/stgadgets dev start --provider replay --endpoint packs/<id>/recordings/<name>` ([providers](docs/providers.md#replay-provider)). Everything the CLI does is in [docs/cli.md](docs/cli.md).
+`dev start` builds the UI, starts the server (and the overlay) in the background, waits until it's up, and says whether it has found a game. `bin/stgadgets dev restart` picks up changes, and `bin/stgadgets dev status` says what's running. To play back a recording instead of the emulator: `bin/stgadgets recording play packs/<id>/recordings/<name>` ([providers](docs/providers.md#replay-provider)). Everything the CLI does is in [docs/cli.md](docs/cli.md).
 
 `bin/stgadgets` builds the CLI from source when it's changed, and runs from anywhere in the repository. With [direnv](https://direnv.net) (`eval "$(direnv hook zsh)"` in `~/.zshrc`, then `direnv allow` here), `bin/` is on your PATH inside the repository, so it's just `stgadgets`.
 
