@@ -58,5 +58,10 @@ if (Directory.Exists(webRoot))
     app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = files });
     app.UseStaticFiles(new StaticFileOptions { FileProvider = files });
 }
+else
+{
+    // Checked once, here: a build made later is only served after a restart.
+    app.Logger.LogWarning("No UI build at {WebRoot}, so layouts answer 404: run npm run build in src/ui, then restart", webRoot);
+}
 
 app.Run();

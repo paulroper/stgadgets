@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Stgadgets.Host.Lib.Api\Stgadgets.Host.Lib.Api.csproj" />
+  </ItemGroup>
+</Project>

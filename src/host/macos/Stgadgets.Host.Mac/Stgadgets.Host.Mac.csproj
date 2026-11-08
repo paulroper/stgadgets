@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\..\lib\Stgadgets.Host.Lib.Api\Stgadgets.Host.Lib.Api.csproj" />
+    <ProjectReference Include="..\..\lib\Stgadgets.Host.Lib.Overlay\Stgadgets.Host.Lib.Overlay.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <TargetFramework>net10.0-macos</TargetFramework>

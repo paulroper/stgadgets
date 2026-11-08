@@ -20,7 +20,7 @@ internal static class PlayCommand
         };
         var overlay = new Option<bool?>("--overlay")
         {
-            Description = "Also run the macOS overlay, with snapshots on. Default: as the running stack, else no.",
+            Description = "Also run the overlay host for this OS (macOS or Windows), with snapshots on. Default: as the running stack, else no.",
         };
         var buildUi = new Option<bool>("--build-ui") { Description = "Build the UI first (npm run build in src/ui)." };
         var snapshotPort = new Option<int?>("--snapshot-port") { Description = "The overlay's snapshot port (5198)." };
@@ -52,6 +52,7 @@ internal static class PlayCommand
                 output.WriteLine($"Already playing {endpoint}");
                 return;
             }
+            stack.OverlayFor(options);   // refuses an overlay this OS can't run before stopping anything
             if (running is not null)
             {
                 if (running.Options.Provider != "replay")

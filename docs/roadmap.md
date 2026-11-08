@@ -96,9 +96,15 @@ and see a pack's layout over their game.
 
 ### Windows host
 
-- [ ] Overlay host for Windows (separate session): a transparent, click-through window with WebView2, sharing
-  `host/lib`, including the L1 check for independent flip
-- [ ] The same development hooks as the macOS host, such as snapshots
+- [x] Overlay host for Windows: a transparent, click-through window with WebView2, sharing `host/lib`, including the
+  L1 check for independent flip (`src/host/windows`, [ADR 0007](decisions/0007-native-overlay-host.md#windows-implementation)).
+  Without multiplane overlays, it adds about 10 ms in borderless fullscreen; accepted and documented
+  ([ADR 0007](decisions/0007-native-overlay-host.md#windows-decision))
+- [ ] Say in the overlay's UI (the tray menu) what it costs in borderless fullscreen, and add a tray toggle to hide the
+  overlay without stopping stgadgets
+- [ ] Try the overlay on a GPU with multiplane overlays, to see whether DWM gives it its own plane
+- [ ] End-to-end latency test (L2) and CPU use on Windows
+- [x] The same development hooks as the macOS host, such as snapshots
 
 ### Linux host
 
@@ -183,4 +189,5 @@ Found while building the DoDonPachi pack:
 
 - Input display gadget. Needs its own input source: reading the controller directly (GameController/HID on macOS) or the game's input bytes in RAM. Emulator APIs don't give us controller input.
 - Using a layout as an OBS browser source
+- An overlay that adds no lag in fullscreen on Windows: a Vulkan layer that draws the gadgets into RetroArch's own frames. Needs a native renderer and a rethink of [ADR 0003](decisions/0003-transparent-overlay-window.md) and [0006](decisions/0006-react-gadgets-in-a-webview.md) ([ADR 0007](decisions/0007-native-overlay-host.md#windows-decision))
 - Distribution: see [milestone 4](#4-single-distributable)

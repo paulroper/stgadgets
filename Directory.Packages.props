@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Jint" Version="4.17.0" />
+    <PackageVersion Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
     <PackageVersion Include="System.CommandLine" Version="2.0.13" />
     <PackageVersion Include="YamlDotNet" Version="18.1.0" />
   </ItemGroup>

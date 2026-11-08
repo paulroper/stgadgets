@@ -118,7 +118,7 @@ them together, at moments that are hard to reach in play, without the server or 
 
 ### The build-and-look loop
 
-To see changes as they'll really appear, run the server and the macOS overlay with snapshots on, using the CLI's
+To see changes as they'll really appear, run the server and the overlay (macOS or Windows) with snapshots on, using the CLI's
 `dev` commands ([cli.md](cli.md#development)). They start everything in the background, wait until it's ready, and
 stop it all again:
 

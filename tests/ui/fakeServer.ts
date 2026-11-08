@@ -2,7 +2,7 @@
 // (docs/gadgets.md#wire-protocol-internal) the same way the server does.
 
 import { act } from "@testing-library/react";
-import { vi } from "vitest";
+import { afterEach, vi } from "vitest";
 import type { Value } from "../../src/ui/src/sdk";
 
 type Values = Record<string, Value>;
@@ -29,6 +29,18 @@ class FakeSocket {
 }
 
 let sockets: FakeSocket[] = [];
+
+// Each test loads its own copy of the app. Unmounting it afterwards stops its effects (the latency meter's timers,
+// say), so React has no work left to run once Vitest tears down jsdom: that fails the run with "window is not
+// defined", even though every test passed.
+let app: { unmount(): void } | undefined;
+
+function stopApp() {
+  if (app) act(() => app!.unmount());
+  app = undefined;
+}
+
+afterEach(stopApp);
 
 export class FakeServer {
   private seq = 0;
@@ -81,6 +93,7 @@ export class FakeServer {
  * @param url the page URL, e.g. "/?overlay"
  */
 export async function startApp(url = "/") {
+  stopApp();
   sockets = [];
   vi.stubGlobal("WebSocket", FakeSocket);
   vi.resetModules(); // a fresh client for every test
@@ -89,7 +102,7 @@ export async function startApp(url = "/") {
   document.documentElement.className = "";
   document.body.innerHTML = `<div id="root"></div>`;
 
-  await act(() => import("../../src/ui/src/main"));
+  ({ appRoot: app } = await act(() => import("../../src/ui/src/main")));
   return new FakeServer();
 }
 

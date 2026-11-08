@@ -54,6 +54,23 @@ jobs:
           name: coverage-cli
           path: coverage/**/coverage.cobertura.xml
 
+  host-lib:
+    name: Host library (shared by every overlay host)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+      - run: dotnet build src/host/lib
+      - run: dotnet test src/host/lib --no-build --collect:"XPlat Code Coverage" --results-directory coverage
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage-host-lib
+          path: coverage/**/coverage.cobertura.xml
+
   macos-host:
     name: macOS overlay
     # The macOS workload needs Xcode 27, which only the xcode-27 image has so far (macos-latest stops at Xcode 26).
@@ -71,6 +88,18 @@ jobs:
           xcode-version: "27.0"
       - run: dotnet workload install macos
       - run: dotnet build src/host/macos
+
+  windows-host:
+    name: Windows overlay
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+      - run: dotnet build src/host/windows
 
   ui:
     name: UI (with packs' UI, tests and derived.js)
@@ -98,7 +127,7 @@ jobs:
   # One report for every job's coverage: a summary on the run's page, and the full HTML report as an artifact.
   coverage:
     name: Coverage report
-    needs: [server, cli, ui]
+    needs: [server, cli, host-lib, ui]
     runs-on: ubuntu-latest
     steps:
       # The reports point at the source files, which the HTML report shows line by line.

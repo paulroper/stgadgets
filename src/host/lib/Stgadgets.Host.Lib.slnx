@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Stgadgets.Host.Lib.Api/Stgadgets.Host.Lib.Api.csproj" />
+  <Project Path="Stgadgets.Host.Lib.Overlay/Stgadgets.Host.Lib.Overlay.csproj" />
+  <Project Path="../../../tests/host/lib/Stgadgets.Host.Lib.Overlay.Tests/Stgadgets.Host.Lib.Overlay.Tests.csproj" />
+</Solution>
