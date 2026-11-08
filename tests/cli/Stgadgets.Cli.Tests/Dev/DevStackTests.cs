@@ -55,8 +55,11 @@ public sealed class DevStackTests : IDisposable
     }
 
     [Fact]
-    public void Runs_through_sh_on_macOS_too() =>
+    public void Runs_through_sh_on_other_Unixes_too()
+    {
         Assert.Equal("/bin/sh", DevStack.LoggedStartInfo("dotnet", ["run"], Platform.MacOS).FileName);
+        Assert.Equal("/bin/sh", DevStack.LoggedStartInfo("dotnet", ["run"], Platform.Unknown).FileName);
+    }
 
     [Fact]
     public void Runs_through_cmd_on_Windows_with_each_argument_quoted()
@@ -97,7 +100,11 @@ public sealed class DevStackTests : IDisposable
     }
 
     [Fact]
-    public void Has_no_overlay_host_for_Linux_yet() => Assert.Null(OverlayHost.For(Platform.Linux));
+    public void Has_no_overlay_host_for_other_OSes_yet()
+    {
+        Assert.Null(OverlayHost.For(Platform.Linux));
+        Assert.Null(OverlayHost.For(Platform.Unknown));
+    }
 
     [Fact]
     public void Finds_the_repository_root_from_inside_it()

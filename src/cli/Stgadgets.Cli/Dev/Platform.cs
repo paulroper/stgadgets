@@ -10,8 +10,10 @@ internal enum Platform
     MacOS,
     Windows,
 
-    /// <summary>Linux, and any other Unix.</summary>
     Linux,
+
+    /// <summary>Any other OS, such as FreeBSD: treated as a Unix, with no overlay host.</summary>
+    Unknown,
 }
 
 internal static class Platforms
@@ -25,7 +27,9 @@ internal static class Platforms
                 return Platform.MacOS;
             if (OperatingSystem.IsWindows())
                 return Platform.Windows;
-            return Platform.Linux;
+            if (OperatingSystem.IsLinux())
+                return Platform.Linux;
+            return Platform.Unknown;
         }
     }
 }
