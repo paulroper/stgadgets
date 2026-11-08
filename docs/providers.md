@@ -127,7 +127,8 @@ server, the browser, `npm run screenshot` and the overlay's snapshots work again
 It's for working on layouts and gadgets, and for bug reports ("here's the recording where the accuracy counter goes
 wrong").
 
-Its endpoint is the recording's folder:
+In development, start it with `stgadgets recording play` ([cli.md](cli.md#stgadgets-recording-play-recording---at-point)),
+which runs the server like this for you. Its endpoint is the recording's folder:
 
 ```sh
 # play the recording at its own speed, again and again

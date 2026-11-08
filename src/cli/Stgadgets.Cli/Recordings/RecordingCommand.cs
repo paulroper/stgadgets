@@ -5,12 +5,13 @@ using Stgadgets.Core.Recordings;
 namespace Stgadgets.Cli.Recordings;
 
 /// <summary>
-/// <c>stgadgets recording</c>: find addresses in, inspect, mark and trim a pack's local recordings
-/// (docs/cli.md#recordings).
+/// <c>stgadgets recording</c>: make a pack's local recordings, find addresses in, inspect, mark and trim them, and play
+/// them back through the server (docs/cli.md#recordings). Every command that reads a recording is here; the others
+/// work on live play.
 /// </summary>
 internal static class RecordingCommand
 {
-    public static Command Create() => new("recording", "Record a game's memory, then find addresses in, inspect, mark and trim the recording.")
+    public static Command Create() => new("recording", "Record a game's memory, then find addresses in, inspect, mark, trim and play back the recording.")
     {
         MarkersCommand.Create(),
         SearchCommand.Create(),
@@ -19,6 +20,7 @@ internal static class RecordingCommand
         MarkCommand.Create(),
         TrimCommand.Create(),
         RecordCommand.Create(),
+        PlayCommand.Create(),
     };
 
     public static Argument<DirectoryInfo> Argument() => new("recording")

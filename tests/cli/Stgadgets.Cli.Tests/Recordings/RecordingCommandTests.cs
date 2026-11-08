@@ -130,5 +130,13 @@ public sealed class RecordingCommandTests : IDisposable
     public void Trim_wont_overwrite_a_folder() =>
         Assert.Equal(1, Run("recording", "trim", Recording, "start", "end", "--out", _fixture.Packs).ExitCode);
 
+    [Fact]
+    public void Play_checks_the_point_before_starting_anything() =>
+        Assert.Equal((1, "", "No tick or marker 'x goes down'. Markers: 'x goes up'\n"), Run("recording", "play", Recording, "--at", "x goes down"));
+
+    [Fact]
+    public void Play_only_plays_recordings() =>
+        Assert.EndsWith("isn't a recording: it has no manifest.json\n", Run("recording", "play", _fixture.Packs).Error);
+
     private static JsonNode Manifest(string recording) => JsonNode.Parse(File.ReadAllText(Path.Combine(recording, "manifest.json")))!;
 }
