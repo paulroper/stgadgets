@@ -18,7 +18,10 @@ if (source === "overlay") {
   document.documentElement.classList.add("overlay");
 }
 
-createRoot(document.getElementById("root")!).render(
+/** Exported so tests, which load a fresh copy of the app for each test, can unmount the last one. */
+export const appRoot = createRoot(document.getElementById("root")!);
+
+appRoot.render(
   <StrictMode>
     <App />
   </StrictMode>,
