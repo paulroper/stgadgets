@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\host\lib\Stgadgets.Host.Lib.Overlay\Stgadgets.Host.Lib.Overlay.csproj" />
+  </ItemGroup>
+
+</Project>

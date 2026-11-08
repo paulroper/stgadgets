@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using ObjCRuntime;
 using Stgadgets.Host.Lib.Api;
+using Stgadgets.Host.Lib.Overlay;
 
 namespace Stgadgets.Host.Mac;
 
@@ -8,7 +9,7 @@ namespace Stgadgets.Host.Mac;
 /// Finds the emulator's window on screen using CGWindowListCopyWindowInfo. Owner PIDs, names and bounds don't need the
 /// Screen Recording permission (window titles would).
 /// </summary>
-public static class EmulatorWindowTracker
+public sealed class EmulatorWindowTracker : IEmulatorWindows
 {
     private const uint OnScreenOnly = 1 << 0;           // kCGWindowListOptionOnScreenOnly
     private const uint ExcludeDesktopElements = 1 << 4; // kCGWindowListExcludeDesktopElements
@@ -16,16 +17,15 @@ public static class EmulatorWindowTracker
     [DllImport("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics")]
     private static extern IntPtr CGWindowListCopyWindowInfo(uint option, uint relativeToWindow);
 
-    /// <summary>True when the emulator is the active app, i.e. the user is looking at it.</summary>
-    public static bool IsFrontmost(EmulatorTarget target) =>
+    public bool IsFrontmost(EmulatorTarget target) =>
         NSWorkspace.SharedWorkspace.FrontmostApplication is { } app
         && (target.ProcessId is { } pid ? app.ProcessIdentifier == pid : app.LocalizedName == target.AppName);
 
     /// <summary>
-    /// The emulator's content area (window minus title bar) in Cocoa screen coordinates, or null if it has no
-    /// visible window. Uses the largest normal-level window the app owns, matched by process ID when known.
+    /// The emulator's content area in Cocoa screen coordinates. Uses the largest normal-level window the app owns,
+    /// matched by process ID when known.
     /// </summary>
-    public static CGRect? FindContentRect(EmulatorTarget target)
+    public ScreenRect? FindContentRect(EmulatorTarget target)
     {
         using var windows = Runtime.GetNSObject<NSArray>(
             CGWindowListCopyWindowInfo(OnScreenOnly | ExcludeDesktopElements, 0), owns: true);
@@ -49,7 +49,10 @@ public static class EmulatorWindowTracker
                 best = rect;
         }
 
-        return best is { } r ? ToCocoa(WithoutTitleBar(r)) : null;
+        if (best is not { } quartz)
+            return null;
+        var content = ToCocoa(WithoutTitleBar(quartz));
+        return new ScreenRect(content.X, content.Y, content.Width, content.Height);
     }
 
     private static bool IsOwnedBy(NSDictionary info, EmulatorTarget target) => target.ProcessId is { } pid

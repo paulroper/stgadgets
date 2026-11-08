@@ -70,6 +70,8 @@ The host is a thin shell with no business logic. For each OS, it:
 2. Hosts the system webview (WKWebView on macOS, WebView2 on Windows, WebKitGTK on Linux) with a transparent background, pointed at the local server.
 3. Tracks the emulator's window and keeps the overlay lined up with it.
 
+What doesn't depend on the OS lives in `host/lib/Stgadgets.Host.Lib.Overlay`, so every host behaves the same way: the environment variables `stgadgets dev` starts it with (`OverlaySettings`), when to show the overlay and where (`OverlayTracker`), and the snapshot endpoint (`SnapshotServer`). A host implements the native parts behind two small interfaces: `IEmulatorWindows` finds the emulator's window and says whether it's frontmost, and `IOverlayWindow` shows and hides the overlay without taking focus.
+
 .NET doesn't provide these window behaviours on any OS, so each one needs a few native calls. That's expected to be a few hundred lines per OS. macOS, Windows and Linux are equal targets ([ADR 0016](decisions/0016-macos-windows-and-linux.md)). macOS came first because development happens there ([ADR 0005](decisions/0005-macos-first.md)); Windows and Linux follow in the [single distributable](roadmap.md#4-single-distributable) milestone. Implementation details and pitfalls for each OS live in [ADR 0007](decisions/0007-native-overlay-host.md).
 
 ### Finding the game picture
@@ -107,8 +109,10 @@ src/
   cli/                               # Stgadgets.Cli.slnx (includes lib/): any OS, plain .NET 10
     Stgadgets.Cli/                   # the stgadgets command: recording tools, and `dev` to run the server and overlay (docs/cli.md)
   host/
-    lib/                             # shared by every host; plain net10.0, no OS-specific code
+    lib/                             # Stgadgets.Host.Lib.slnx: shared by every host; plain net10.0, no OS-specific code
       Stgadgets.Host.Lib.Api/        # client for the server's HTTP API (EmulatorLocator → /api/emulator)
+      Stgadgets.Host.Lib.Overlay/    # what every host does the same: settings from the environment, when to show
+                                     # the overlay and where (OverlayTracker), and the snapshot endpoint
     macos/                           # Stgadgets.Host.Mac.slnx (includes lib/): net10.0-macos, needs Xcode
       Stgadgets.Host.Mac/            # overlay window + menu bar app
     windows/                         # (later; its solution will include lib/ too)
@@ -126,7 +130,7 @@ tests/                               # mirrors src/: tests for src/<module>/X li
                                      # packs/*/tests, which import testing.ts as @stgadgets/testing
   lib/providers/Stgadgets.Providers.Replay.Tests/
   lib/providers/Stgadgets.Providers.RetroArch.Tests/
-  (later) host/lib/Stgadgets.Host.Lib.Api.Tests/
+  host/lib/Stgadgets.Host.Lib.Overlay.Tests/
 packs/                               # game packs: everything game-specific (docs/packs.md)
   invaders/                          # pack.yaml, map.yaml, derived.js, providers/, ui/, tests/, recordings/
   ddonpach/                          # the same, plus NOTES.md with the research behind the map

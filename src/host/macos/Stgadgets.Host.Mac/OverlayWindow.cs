@@ -1,3 +1,4 @@
+using Stgadgets.Host.Lib.Overlay;
 using WebKit;
 
 namespace Stgadgets.Host.Mac;
@@ -6,7 +7,7 @@ namespace Stgadgets.Host.Mac;
 /// A borderless, transparent, click-through window that floats above the emulator and shows a layout in a WKWebView.
 /// See docs/decisions/0007-native-overlay-host.md.
 /// </summary>
-public sealed class OverlayWindow : NSWindow
+public sealed class OverlayWindow : NSWindow, IOverlayWindow
 {
     private readonly WKWebView _webView;
 
@@ -42,27 +43,38 @@ public sealed class OverlayWindow : NSWindow
 
     public void Reload() => _webView.Reload();
 
+    void IOverlayWindow.ShowAt(ScreenRect frame)
+    {
+        SetFrame(ToCGRect(frame), display: true);
+        OrderFrontRegardless();   // show without activating our app
+    }
+
+    void IOverlayWindow.Hide() => OrderOut(null);
+
+    private static CGRect ToCGRect(ScreenRect rect) => new(rect.X, rect.Y, rect.Width, rect.Height);
+
     // WebKit doesn't draw a window that isn't on screen, so a hidden overlay is shown fully transparent for this long
     // before its snapshot: enough to lay out at the new size and paint.
     private static readonly TimeSpan HiddenSnapshotDelay = TimeSpan.FromMilliseconds(500);
 
     /// <summary>
-    /// A PNG of what the webview is drawing, and whether the overlay was on screen. For SnapshotServer. A hidden
+    /// A snapshot of what the webview is drawing, for SnapshotServer; null if WebKit couldn't take one. A hidden
     /// overlay (the emulator isn't the active app) is drawn invisibly at <paramref name="hiddenFrame"/>, the
     /// emulator's content area, so the snapshot shows the layout at the size it would have.
     /// </summary>
+    /// <param name="hiddenFrame">The emulator's content area, if it has one; called on the main thread.</param>
     /// <param name="width">Width in pixels; null for one pixel per point (half a Retina screen's pixels).</param>
     /// <param name="restored">Called on the main thread once a hidden overlay is hidden again, so its owner can
     /// re-check whether it should be showing (the emulator may have become active meanwhile).</param>
-    public async Task<(NSData? Png, bool Visible)> SnapshotAsync(CGRect? hiddenFrame, int? width, Action restored)
+    public async Task<OverlaySnapshot?> SnapshotAsync(Func<ScreenRect?> hiddenFrame, int? width, Action restored)
     {
         var visible = await OnMainThread(() => IsVisible);
         if (!visible)
         {
             await OnMainThread(() =>
             {
-                if (hiddenFrame is { } frame)
-                    SetFrame(frame, display: true);
+                if (hiddenFrame() is { } frame)
+                    SetFrame(ToCGRect(frame), display: true);
                 AlphaValue = 0;
                 OrderFrontRegardless();
                 return true;
@@ -85,7 +97,7 @@ public sealed class OverlayWindow : NSWindow
                 return true;
             });
         }
-        return (png, visible);
+        return png is null ? null : new OverlaySnapshot(png.ToArray(), visible);
     }
 
     /// <summary>Draws <paramref name="image"/> into a bitmap <paramref name="width"/> pixels wide, keeping its aspect.</summary>

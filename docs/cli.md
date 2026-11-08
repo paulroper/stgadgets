@@ -12,6 +12,9 @@ bin/stgadgets <command>
 bin/stgadgets --help
 ```
 
+On Windows, use `bin\stgadgets.cmd` from Command Prompt or PowerShell (`bin\stgadgets` works too, as cmd finds the
+`.cmd`). It does the same thing. In Git Bash, `bin/stgadgets` works as it is.
+
 With [direnv](https://direnv.net), the repository's `.envrc` puts `bin/` on your PATH whenever you're inside it, so
 it's just `stgadgets`. Once, after installing direnv: add `eval "$(direnv hook zsh)"` to `~/.zshrc` (or your shell's
 equivalent), then run `direnv allow` in the repository. Below, `stgadgets` means either.

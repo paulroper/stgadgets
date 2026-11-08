@@ -1,4 +1,5 @@
 using Stgadgets.Host.Lib.Api;
+using Stgadgets.Host.Lib.Overlay;
 
 namespace Stgadgets.Host.Mac;
 
@@ -11,17 +12,20 @@ public sealed class AppDelegate : NSApplicationDelegate
 {
     private const double TrackingInterval = 1.0 / 30;   // window tracking only; game data doesn't go through here
 
+    // Mac spike experiments, on top of always-show (OverlaySettings): activate, keyable, normal-level. See docs/latency.md.
+    internal static readonly OverlaySettings Settings = OverlaySettings.FromEnvironment();
+
+    private readonly EmulatorWindowTracker _windows = new();
     private EmulatorLocator? _locator;
     private OverlayWindow? _overlay;
+    private OverlayTracker? _tracker;
     private NSStatusItem? _statusItem;
     private NSMenuItem? _stateItem;
     private NSTimer? _timer;
-    private CGRect? _lastFrame;
-
-    // Never a real frame: makes Track's next run apply its decision even if the frame hasn't changed.
-    private static readonly CGRect Hidden = new(-1, -1, 0, 0);
     private NSObject? _activity;
     private SnapshotServer? _snapshots;
+
+    internal static bool Experiment(string name) => Settings.Experiment(name);
 
     public override void DidFinishLaunching(NSNotification notification)
     {
@@ -29,30 +33,30 @@ public sealed class AppDelegate : NSApplicationDelegate
         _activity = NSProcessInfo.ProcessInfo.BeginActivity(
             NSActivityOptions.UserInitiated | NSActivityOptions.LatencyCritical, "Overlay must keep up with the game");
 
-        var server = new Uri(Environment.GetEnvironmentVariable("STGADGETS_SERVER") ?? "http://127.0.0.1:5199/");
-        var url = new Uri(server, "?overlay").ToString();
-        _locator = new EmulatorLocator(server);
-        _overlay = new OverlayWindow(new NSUrl(url));
+        var locator = _locator = new EmulatorLocator(Settings.Server);
+        var overlay = _overlay = new OverlayWindow(new NSUrl(Settings.LayoutUrl.ToString()));
         CreateStatusItem();
+        var tracker = _tracker = new OverlayTracker(_windows, overlay, Settings.AlwaysShow, SetState);
 
-        if (int.TryParse(Environment.GetEnvironmentVariable("STGADGETS_SNAPSHOT_PORT"), out var snapshotPort))
+        if (Settings.SnapshotPort is { } snapshotPort)
         {
-            _snapshots = new SnapshotServer(snapshotPort, _overlay,
-                () => _locator.Target is { } target ? EmulatorWindowTracker.FindContentRect(target) : null,
-                () => _lastFrame = Hidden);   // forget what Track last did, so its next run shows or hides afresh
+            _snapshots = new SnapshotServer(snapshotPort, width => overlay.SnapshotAsync(
+                () => locator.Target is { } target ? _windows.FindContentRect(target) : null,
+                width,
+                tracker.Forget));   // the snapshot showed or hid the window behind the tracker's back
             Console.WriteLine($"stgadgets overlay: snapshots at http://127.0.0.1:{snapshotPort}/snapshot");
         }
 
-        _timer = NSTimer.CreateRepeatingScheduledTimer(TrackingInterval, _ => Track());
+        _timer = NSTimer.CreateRepeatingScheduledTimer(TrackingInterval, _ => tracker.Track(locator.Target, locator.ServerReachable));
 
         if (Experiment("activate"))
         {
             NSApplication.SharedApplication.ActivationPolicy = NSApplicationActivationPolicy.Regular;
             NSApplication.SharedApplication.Activate();
         }
-        if (Experiments.Length > 0)
-            Console.WriteLine($"stgadgets overlay: experiments {string.Join(",", Experiments)}");
-        Console.WriteLine($"stgadgets overlay: loading {url}");
+        if (Settings.Experiments.Count > 0)
+            Console.WriteLine($"stgadgets overlay: experiments {string.Join(",", Settings.Experiments)}");
+        Console.WriteLine($"stgadgets overlay: loading {Settings.LayoutUrl}");
     }
 
     public override void WillTerminate(NSNotification notification)
@@ -62,47 +66,6 @@ public sealed class AppDelegate : NSApplicationDelegate
         _snapshots?.Dispose();
         if (_activity is not null)
             NSProcessInfo.ProcessInfo.EndActivity(_activity);
-    }
-
-    // Spike experiments (STGADGETS_EXPERIMENT=always-show,activate,keyable,normal-level): see docs/latency.md.
-    private static readonly string[] Experiments =
-        (Environment.GetEnvironmentVariable("STGADGETS_EXPERIMENT") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
-
-    internal static bool Experiment(string name) => Experiments.Contains(name);
-
-    private void Track()
-    {
-        var target = _locator!.Target;
-        var frame = (target, Experiment("always-show")) switch
-        {
-            (null, true) => new CGRect(100, 100, 400, 600),
-            (null, false) => null,
-            ({ } t, true) => EmulatorWindowTracker.FindContentRect(t) ?? new CGRect(100, 100, 400, 600),
-            ({ } t, false) => EmulatorWindowTracker.IsFrontmost(t) ? EmulatorWindowTracker.FindContentRect(t) : null,
-        };
-
-        var state = (target, frame) switch
-        {
-            (null, _) => _locator.ServerReachable ? "Waiting for an emulator" : "stgadgets server not running",
-            (_, not null) => $"Following {target.AppName}",
-            _ => EmulatorWindowTracker.IsFrontmost(target) ? $"No {target.AppName} window" : $"Waiting for {target.AppName}",
-        };
-        if (state != _stateItem!.Title)
-            SetState(state);
-
-        if (frame == _lastFrame)
-            return;
-        _lastFrame = frame;
-
-        if (frame is { } f)
-        {
-            _overlay!.SetFrame(f, display: true);
-            _overlay.OrderFrontRegardless();   // show without activating our app
-        }
-        else
-        {
-            _overlay!.OrderOut(null);
-        }
     }
 
     private void CreateStatusItem()

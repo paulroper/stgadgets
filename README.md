@@ -15,7 +15,7 @@ stgadgets runs alongside the emulator. It reads the game's memory through the em
 
 `dev start` builds the UI, starts the server (and the overlay) in the background, waits until it's up, and says whether it has found a game. `bin/stgadgets dev restart` picks up changes, and `bin/stgadgets dev status` says what's running. To play back a recording instead of the emulator: `bin/stgadgets dev start --provider replay --endpoint packs/<id>/recordings/<name>` ([providers](docs/providers.md#replay-provider)). Everything the CLI does is in [docs/cli.md](docs/cli.md).
 
-`bin/stgadgets` builds the CLI from source when it's changed, and runs from anywhere in the repository. With [direnv](https://direnv.net) (`eval "$(direnv hook zsh)"` in `~/.zshrc`, then `direnv allow` here), `bin/` is on your PATH inside the repository, so it's just `stgadgets`.
+`bin/stgadgets` (`bin\stgadgets.cmd` on Windows) builds the CLI from source when it's changed, and runs from anywhere in the repository. With [direnv](https://direnv.net) (`eval "$(direnv hook zsh)"` in `~/.zshrc`, then `direnv allow` here), `bin/` is on your PATH inside the repository, so it's just `stgadgets`.
 
 For gadget development with hot reload, run `npm run dev` in `src/ui/` alongside the server and open the Vite URL instead. Without a server or an emulator, open `/?state=<pack>/<state>` there to see a pack's layout in one of its test game states ([developing a game pack](docs/pack-development.md#looking-at-game-states)).
 
@@ -23,6 +23,7 @@ Tests:
 
 - `dotnet test src/server`: the core, and every pack's `derived.js` scenarios (`packs/<id>/tests/derived/`) and local recordings (`packs/<id>/recordings/`, git-ignored)
 - `dotnet test src/cli`: the CLI
+- `dotnet test src/host/lib`: the library every overlay host shares
 - `npm test` in `src/ui/`: the UI (`tests/ui/`) and each pack's layout tests (`packs/<id>/tests/`)
 
 | Module | Path | Build |
@@ -30,6 +31,7 @@ Tests:
 | Shared libraries (core, emulator providers) | `src/lib/` | Built by the modules that use them |
 | Server | `src/server/` | `dotnet build src/server` (any OS) |
 | CLI: recording and pack tools ([docs/cli.md](docs/cli.md)) | `src/cli/` | `dotnet build src/cli` (any OS) |
+| Overlay hosts' shared library | `src/host/lib/` | `dotnet build src/host/lib` (any OS) |
 | macOS overlay | `src/host/macos/` | `dotnet build src/host/macos` (needs Xcode) |
 | UI (SDK, gadgets, layouts; builds pack UIs too) | `src/ui/` | `npm run build` |
 | Game packs | `packs/` | Data, plus UI built with `src/ui` |
