@@ -89,6 +89,18 @@ jobs:
       - run: dotnet workload install macos
       - run: dotnet build src/host/macos
 
+  windows-host:
+    name: Windows overlay
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+      - run: dotnet build src/host/windows
+
   ui:
     name: UI (with packs' UI, tests and derived.js)
     runs-on: ubuntu-latest

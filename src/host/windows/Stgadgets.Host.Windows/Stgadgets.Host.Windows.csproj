@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <!-- Window positions in physical pixels on every monitor, as the emulator's window reports them. -->
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <!-- Builds, but doesn't run, on macOS and Linux too, so analyzer and compile errors show up anywhere. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" />
+    <ProjectReference Include="..\..\lib\Stgadgets.Host.Lib.Api\Stgadgets.Host.Lib.Api.csproj" />
+    <ProjectReference Include="..\..\lib\Stgadgets.Host.Lib.Overlay\Stgadgets.Host.Lib.Overlay.csproj" />
+  </ItemGroup>
+
+  <!--
+    WebView2's package always references its WPF control too, which needs WPF's WindowsBase and warns about the
+    version conflict (MSB3277) in an app that doesn't use WPF. It has no switch for this, so drop the reference once
+    its targets have added it.
+  -->
+  <Target Name="DropWebView2Wpf" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <Reference Remove="@(Reference)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" />
+    </ItemGroup>
+  </Target>
+</Project>

@@ -45,6 +45,61 @@ public sealed class DevStackTests : IDisposable
             DevOptions.From(new DevOptions("replay", "packs/x/recordings/y", true, 6000), "retroarch", null, null, null));
 
     [Fact]
+    public void Runs_through_sh_on_Linux_with_the_arguments_untouched()
+    {
+        var start = DevStack.LoggedStartInfo("dotnet", ["run", "--", "a b", "%x%"], Platform.Linux);
+
+        Assert.Equal("/bin/sh", start.FileName);
+        Assert.Equal(["-c", "exec \"$0\" \"$@\" > \"$STGADGETS_LOG\" 2>&1", "dotnet", "run", "--", "a b", "%x%"], start.ArgumentList);
+        Assert.False(start.RedirectStandardOutput);
+    }
+
+    [Fact]
+    public void Runs_through_sh_on_macOS_too() =>
+        Assert.Equal("/bin/sh", DevStack.LoggedStartInfo("dotnet", ["run"], Platform.MacOS).FileName);
+
+    [Fact]
+    public void Runs_through_cmd_on_Windows_with_each_argument_quoted()
+    {
+        var start = DevStack.LoggedStartInfo("dotnet", ["run", "--Stgadgets:ProviderEndpoint=packs/x/recordings/a & b#boss"], Platform.Windows);
+
+        Assert.Equal("cmd.exe", start.FileName);
+        Assert.Equal(
+            "/d /s /c \"\"dotnet\" \"run\" \"--Stgadgets:ProviderEndpoint=packs/x/recordings/a & b#boss\" > \"%STGADGETS_LOG%\" 2>&1\"",
+            start.Arguments);
+        Assert.True(start.CreateNoWindow);
+        Assert.True(start.RedirectStandardInput && start.RedirectStandardOutput && start.RedirectStandardError);
+    }
+
+    [Theory]
+    [InlineData("say \"hi\"")]
+    [InlineData("100%")]
+    public void Refuses_arguments_cmd_would_change(string argument) =>
+        Assert.Throws<UsageException>(() => DevStack.LoggedStartInfo("dotnet", ["run", argument], Platform.Windows));
+
+    [Fact]
+    public void Runs_npm_through_cmd_on_Windows_so_it_finds_npm_cmd_or_npm_exe()
+    {
+        var (windows, windowsArguments) = DevStack.Npm(Platform.Windows, "run", "build");
+        Assert.Equal("cmd.exe", windows);
+        Assert.Equal(["/d", "/c", "npm", "run", "build"], windowsArguments);
+
+        var (macOS, macOSArguments) = DevStack.Npm(Platform.MacOS, "run", "build");
+        Assert.Equal("npm", macOS);
+        Assert.Equal(["run", "build"], macOSArguments);
+    }
+
+    [Fact]
+    public void Runs_the_overlay_host_for_macOS_and_Windows()
+    {
+        Assert.Equal("src/host/macos/Stgadgets.Host.Mac", OverlayHost.For(Platform.MacOS)?.Project);
+        Assert.Equal("src/host/windows/Stgadgets.Host.Windows", OverlayHost.For(Platform.Windows)?.Project);
+    }
+
+    [Fact]
+    public void Has_no_overlay_host_for_Linux_yet() => Assert.Null(OverlayHost.For(Platform.Linux));
+
+    [Fact]
     public void Finds_the_repository_root_from_inside_it()
     {
         _dir.Write("repo/global.json", "{}");

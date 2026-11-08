@@ -26,6 +26,12 @@ public sealed class RetroArchProvider(IPEndPoint endpoint) : IEmulatorProvider
 
     public EmulatorProcessInfo? Process => _process;
 
+    /// <summary>Finds RetroArch's process; replaced in tests.</summary>
+    internal Func<EmulatorProcessInfo> FindProcess { get; init; } = FindRetroArchProcess;
+
+    /// <summary>Whether the process with this ID is still running; replaced in tests.</summary>
+    internal Func<int, bool> IsRunning { get; init; } = IsProcessRunning;
+
     public async Task<ContentInfo?> GetContentAsync(CancellationToken cancellationToken)
     {
         var status = await GetStatusAsync(cancellationToken);
@@ -41,7 +47,8 @@ public sealed class RetroArchProvider(IPEndPoint endpoint) : IEmulatorProvider
         }
         catch (TimeoutException)
         {
-            _process = null;
+            if (!IsProcessStillRunning())
+                _process = null;
             throw;
         }
 
@@ -75,7 +82,7 @@ public sealed class RetroArchProvider(IPEndPoint endpoint) : IEmulatorProvider
     /// Network commands don't say which process answered, so look RetroArch up by name. With several copies running
     /// this picks one arbitrarily; good enough until it isn't.
     /// </summary>
-    private static EmulatorProcessInfo FindProcess()
+    private static EmulatorProcessInfo FindRetroArchProcess()
     {
         var process = System.Diagnostics.Process.GetProcessesByName(AppName)
             .Concat(System.Diagnostics.Process.GetProcessesByName(AppName.ToLowerInvariant()))   // Windows/Linux
@@ -97,11 +104,14 @@ public sealed class RetroArchProvider(IPEndPoint endpoint) : IEmulatorProvider
         }
     }
 
-    private static bool IsRunning(int pid)
+    private bool IsProcessStillRunning() => _process?.ProcessId is { } pid && IsRunning(pid);
+
+    private static bool IsProcessRunning(int pid)
     {
         try
         {
-            return !System.Diagnostics.Process.GetProcessById(pid).HasExited;
+            using var process = System.Diagnostics.Process.GetProcessById(pid);
+            return !process.HasExited;
         }
         catch (ArgumentException)
         {
@@ -109,6 +119,13 @@ public sealed class RetroArchProvider(IPEndPoint endpoint) : IEmulatorProvider
         }
     }
 
+    /// <summary>
+    /// Streams until the game changes or RetroArch goes. RetroArch stops answering while it's stalled: for as long as
+    /// its window is being dragged on Windows, say, which runs the move on its main thread and pauses the game. Once
+    /// streaming, that's a pause rather than the end, as long as its process is running: unanswered requests are
+    /// retried until it answers again, so the game and the overlay carry on where they were. Without a process to
+    /// check, <see cref="MaxConsecutiveTimeouts"/> in a row end the stream.
+    /// </summary>
     public async IAsyncEnumerable<Snapshot> StreamAsync(
         ContentInfo content, ReadPlan plan, ProviderSettings? settings, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -132,7 +149,16 @@ public sealed class RetroArchProvider(IPEndPoint endpoint) : IEmulatorProvider
             if (clock.Elapsed - lastStatusCheck > StatusCheckInterval)
             {
                 lastStatusCheck = clock.Elapsed;
-                if (!await IsStillPlayingAsync(content, cancellationToken))
+                bool playing;
+                try
+                {
+                    playing = await IsStillPlayingAsync(content, cancellationToken);
+                }
+                catch (TimeoutException) when (IsProcessStillRunning())
+                {
+                    playing = true;   // stalled; checked again at the next interval
+                }
+                if (!playing)
                     yield break;
             }
 
@@ -141,7 +167,7 @@ public sealed class RetroArchProvider(IPEndPoint endpoint) : IEmulatorProvider
                 await _client.ReadCoreRamAsync(reads, cancellationToken);
                 timeouts = 0;
             }
-            catch (TimeoutException) when (++timeouts < MaxConsecutiveTimeouts)
+            catch (TimeoutException) when (++timeouts < MaxConsecutiveTimeouts || IsProcessStillRunning())
             {
                 continue;
             }

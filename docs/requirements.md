@@ -17,6 +17,7 @@ stgadgets must add **zero** input or display latency to the emulator.
   - **Windows:** "independent flip" and multiplane overlays for borderless windows. A window on top may force DWM composition.
   - **Linux:** compositors show fullscreen windows directly (unredirection on X11, direct scanout on Wayland), and a window on top may stop that.
 - **Checked by measurement:** emulator latency with and without the overlay, on each OS and display mode we support. If an overlay mode adds latency, the docs and UI must say so.
+- **Known exception, accepted for now: Windows borderless fullscreen without multiplane overlays.** There, Windows has to compose any window over the game, which adds about 10 ms ([latency.md](latency.md#2026-11-08-windows-presentation-mode-with-and-without-the-overlay-l1), [ADR 0007](decisions/0007-native-overlay-host.md#windows-decision)). Only drawing inside the emulator's frames would avoid it, and that breaks the first rule above. Windowed play and a browser on another screen add nothing.
 
 ### L2. The overlay must keep up with the game
 

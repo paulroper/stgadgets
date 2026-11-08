@@ -4,13 +4,13 @@ A platform for adding M2 ShotTriggers-style gadgets to shmups (STGs) running in 
 
 stgadgets runs alongside the emulator. It reads the game's memory through the emulator's own APIs, turns it into named variables, and draws gadgets in a transparent window over the game. The game, the emulator and the ROMs are never modified.
 
-> **Status:** early, but playable. Packs for Space Invaders and DoDonPachi stream from RetroArch to React gadgets (DoDonPachi's include rank, chain, bees, the second loop, slowdown and stage splits), shown in the browser or in a transparent macOS overlay on top of the emulator.
+> **Status:** early, but playable. Packs for Space Invaders and DoDonPachi stream from RetroArch to React gadgets (DoDonPachi's include rank, chain, bees, the second loop, slowdown and stage splits), shown in the browser or in a transparent overlay on top of the emulator (macOS and Windows).
 
 ## Running it
 
 1. In `retroarch.cfg`, set `network_cmd_enable = "true"` (and turn off RetroAchievements hardcore mode). Load Space Invaders (`invaders`) or DoDonPachi (`ddonpach`, World set) with the FBNeo core.
 2. Once: `cd src/ui && npm install`
-3. Start stgadgets with the CLI: `bin/stgadgets dev start --build-ui`, then open http://127.0.0.1:5199. Add `--overlay` on macOS for the transparent overlay over the emulator (see below).
+3. Start stgadgets with the CLI: `bin/stgadgets dev start --build-ui`, then open http://127.0.0.1:5199. Add `--overlay` on macOS or Windows for the transparent overlay over the emulator (see below).
 4. When you're done: `bin/stgadgets dev stop`
 
 `dev start` builds the UI, starts the server (and the overlay) in the background, waits until it's up, and says whether it has found a game. `bin/stgadgets dev restart` picks up changes, and `bin/stgadgets dev status` says what's running. To play back a recording instead of the emulator: `bin/stgadgets dev start --provider replay --endpoint packs/<id>/recordings/<name>` ([providers](docs/providers.md#replay-provider)). Everything the CLI does is in [docs/cli.md](docs/cli.md).
@@ -33,14 +33,19 @@ Tests:
 | CLI: recording and pack tools ([docs/cli.md](docs/cli.md)) | `src/cli/` | `dotnet build src/cli` (any OS) |
 | Overlay hosts' shared library | `src/host/lib/` | `dotnet build src/host/lib` (any OS) |
 | macOS overlay | `src/host/macos/` | `dotnet build src/host/macos` (needs Xcode) |
+| Windows overlay | `src/host/windows/` | `dotnet build src/host/windows` (runs on Windows; builds anywhere) |
 | UI (SDK, gadgets, layouts; builds pack UIs too) | `src/ui/` | `npm run build` |
 | Game packs | `packs/` | Data, plus UI built with `src/ui` |
 
-### macOS overlay (in progress)
+### Overlay (in progress)
 
 For development, `bin/stgadgets dev snapshot` saves a PNG of the layout as the overlay draws it, even while it's hidden ([the build-and-look loop](docs/pack-development.md#the-build-and-look-loop)).
 
-For fullscreen play, **turn off Game Mode for RetroArch** (menu bar game controller icon → Turn Off Game Mode). Game Mode throttles the overlay to 5 Hz, about 100–200 ms behind the game ([docs/latency.md](docs/latency.md)). Windowed play isn't affected.
+On Windows, the overlay is a tray app (the icon may be under **^** next to the clock). It can't show over an emulator in exclusive fullscreen: for fullscreen play in RetroArch, turn on **Settings → Video → Fullscreen Mode → Windowed Fullscreen Mode**. It needs the WebView2 runtime, which comes with Windows 10 and 11.
+
+**On Windows, the overlay adds about 10 ms of display lag in borderless fullscreen** ("Windowed Fullscreen Mode"), unless your GPU supports multiplane overlays. Without them, Windows has to compose any window shown over a fullscreen game, so the game's frames no longer go straight to the screen ([docs/latency.md](docs/latency.md#2026-11-08-windows-presentation-mode-with-and-without-the-overlay-l1)). Windowed play is composed anyway, so the overlay costs nothing extra there. If you want every millisecond in fullscreen, show the layout in a browser on another screen instead (http://127.0.0.1:5199).
+
+On macOS, for fullscreen play, **turn off Game Mode for RetroArch** (menu bar game controller icon → Turn Off Game Mode). Game Mode throttles the overlay to 5 Hz, about 100–200 ms behind the game ([docs/latency.md](docs/latency.md)). Windowed play isn't affected.
 
 The overlay host needs Xcode and the .NET macOS workload (`sudo dotnet workload install macos`). Each workload release requires one exact Xcode version: workload 27.0.10722 wants Xcode 27.0. We build with Xcode 27.1, so the host project sets `ValidateXcodeVersion=false`. Remove that once a workload supports your Xcode, or if odd build errors appear.
 
@@ -82,7 +87,7 @@ See [Architecture](docs/architecture.md) for the full picture.
 | | |
 |---|---|
 | Runtime | .NET 10 |
-| Operating systems | macOS, Windows and Linux (overlay on macOS so far) |
+| Operating systems | macOS, Windows and Linux (overlay on macOS and Windows so far) |
 | First emulator | RetroArch ([ADR 0009](docs/decisions/0009-first-provider-retroarch.md)); MAME next |
 | Latency | No added lag in the game; overlay at most 1–2 frames behind |
 | Reference games | Space Invaders (Taito, 1978), DoDonPachi (Cave, 1997) |

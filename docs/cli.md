@@ -167,10 +167,13 @@ the part worth keeping. Timestamps start again from 0, and the manifest's notes 
 
 ## Development
 
-`stgadgets dev` runs stgadgets for development: the server, live or replaying, and on macOS the overlay with
-snapshots on. Each part runs as its own process, in the background, as it would for a user; the CLI launches them,
-waits until they answer, and talks to them over HTTP. Their output and the record of what's running go to
-`.stgadgets/dev/` (git-ignored). Run it from inside the repository.
+`stgadgets dev` runs stgadgets for development: the server, live or replaying, and the overlay with snapshots on.
+Each part runs as its own process, in the background, as it would for a user; the CLI launches them, waits until
+they answer, and talks to them over HTTP. Their output and the record of what's running go to `.stgadgets/dev/`
+(git-ignored). Run it from inside the repository.
+
+It works the same on macOS, Windows and Linux. On Windows it starts each part through `cmd.exe` rather than
+`/bin/sh`, which can't pass on an argument containing `"` or `%`, so it refuses one (in a recording's path, say).
 
 ```sh
 stgadgets dev start --overlay                     # live from RetroArch, with the overlay
@@ -192,9 +195,9 @@ stgadgets dev stop
 | Option (start, restart) | |
 |---|---|
 | `--provider`, `--endpoint` | The emulator, as in the server's configuration ([providers.md](providers.md#choosing-a-provider)); default `retroarch`. A replay's recording is relative to the repository |
-| `--overlay` | Also run the macOS overlay, with snapshots on |
+| `--overlay` | Also run the overlay host for this OS (`src/host/macos` or `src/host/windows`), with snapshots on. Linux has no overlay host yet |
 | `--snapshot-port` | The overlay's snapshot port (5198) |
-| `--build-ui` | Run `npm run build` in `src/ui` first, so the server and overlay serve the latest UI |
+| `--build-ui` | Run `npm run build` in `src/ui` first, so the server and overlay serve the latest UI. Without it, `start` still builds the UI if there's no build yet (and runs `npm ci` first if its packages aren't installed), since the server has nothing to serve without one |
 
 When something doesn't start, the command says so with the end of its log.
 

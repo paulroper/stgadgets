@@ -31,14 +31,13 @@ internal sealed record DevStackState(DevOptions Options, int ServerProcessId, Da
 internal sealed record ServerStatus(string State, string? Detail, string? Pack, long Ticks);
 
 /// <summary>
-/// Starts and stops the parts of stgadgets for development: the server (live or replaying) and, on macOS, the overlay
-/// with snapshots on. Each runs as its own process, as it would for a user, with its output in .stgadgets/dev/; this
+/// Starts and stops the parts of stgadgets for development: the server (live or replaying) and, on an OS with an
+/// overlay host (<see cref="OverlayHost.For"/>), the overlay with snapshots on. Each runs as its own process, as it would for a user, with its output in .stgadgets/dev/; this
 /// only launches them and talks to them over HTTP (docs/conventions.md).
 /// </summary>
 internal sealed class DevStack(string repoRoot, TextWriter output)
 {
     public const int ServerPort = 5199;
-    private const string OverlayApp = "Stgadgets.Host.Mac.app";
 
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(2) };
     private static readonly JsonSerializerOptions Json = new(JsonSerializerOptions.Web) { WriteIndented = true };
@@ -76,15 +75,10 @@ internal sealed class DevStack(string repoRoot, TextWriter output)
             throw new UsageException("The dev stack is already running: `stgadgets dev restart`, or `stgadgets dev stop` first");
         if (await StatusAsync(cancellationToken) is not null)
             throw new UsageException($"Something is already serving on port {ServerPort}: stop it first (a server started by hand?)");
-        if (options.Overlay && !OperatingSystem.IsMacOS())
-            throw new UsageException("--overlay needs macOS: it's the only overlay host so far");
+        var host = OverlayFor(options);
         Directory.CreateDirectory(Folder);
 
-        if (buildUi)
-        {
-            output.WriteLine("Building the UI (npm run build in src/ui)…");
-            await RunToEndAsync("npm", ["run", "build"], Path.Combine(repoRoot, "src", "ui"), cancellationToken);
-        }
+        await BuildUiAsync(buildUi, cancellationToken);
 
         output.WriteLine($"Starting the server ({options.Provider}{(options.Endpoint is null ? "" : $": {options.Endpoint}")})…");
         var server = StartLogged("dotnet", ServerArguments(options), ServerLog, environment: []);
@@ -93,17 +87,59 @@ internal sealed class DevStack(string repoRoot, TextWriter output)
         var status = await WaitForServerAsync(server, holding: options.Provider == "replay" && options.Endpoint?.Contains('#') == true, cancellationToken);
         output.WriteLine($"Server: {Describe(status)}. http://127.0.0.1:{ServerPort}, log {ServerLog}");
 
-        if (options.Overlay)
+        if (host is not null)
         {
-            output.WriteLine("Starting the overlay…");
+            output.WriteLine($"Starting the {host.Name} overlay…");
             using var overlay = StartLogged(
-                "dotnet", ["run", "--project", "src/host/macos/Stgadgets.Host.Mac"], OverlayLog,
+                "dotnet", ["run", "--project", host.Project], OverlayLog,
                 new() { ["STGADGETS_SNAPSHOT_PORT"] = options.SnapshotPort.ToString(CultureInfo.InvariantCulture) });
             await WaitForAsync(
                 () => SnapshotAsync(options.SnapshotPort, width: 16, cancellationToken), TimeSpan.FromMinutes(3), "the overlay's snapshots",
                 OverlayLog, cancellationToken);
             output.WriteLine($"Overlay: snapshots at http://127.0.0.1:{options.SnapshotPort}/snapshot, log {OverlayLog}");
         }
+    }
+
+    /// <summary>
+    /// The overlay host these options need, or null without --overlay. Throws if there isn't one, so a restart can
+    /// check before it stops what's running.
+    /// </summary>
+    public OverlayHost? OverlayFor(DevOptions options) => options.Overlay ? FindOverlayHost() : null;
+
+    /// <summary>
+    /// Builds the UI when asked, or when there's no build yet: without one, the server has no layouts to serve and
+    /// the browser and overlay only get a 404. Installs its packages first if they aren't.
+    /// </summary>
+    private async Task BuildUiAsync(bool asked, CancellationToken cancellationToken)
+    {
+        var ui = Path.Combine(repoRoot, "src", "ui");
+        var built = File.Exists(Path.Combine(ui, "dist", "index.html"));
+        if (!asked && built)
+            return;
+
+        if (!Directory.Exists(Path.Combine(ui, "node_modules")))
+        {
+            output.WriteLine("Installing the UI's packages (npm ci in src/ui)…");
+            await RunToEndAsync(Npm(Platforms.Current, "ci"), ui, cancellationToken);
+        }
+        output.WriteLine(built ? "Building the UI (npm run build in src/ui)…" : "There's no UI build yet: building it (npm run build in src/ui)…");
+        await RunToEndAsync(Npm(Platforms.Current, "run", "build"), ui, cancellationToken);
+    }
+
+    /// <summary>
+    /// How to run npm with <paramref name="arguments"/>. On Windows it's npm.cmd or npm.exe, depending on how Node
+    /// was installed, and only the shell finds either by its bare name.
+    /// </summary>
+    public static (string Program, string[] Arguments) Npm(Platform platform, params string[] arguments) =>
+        platform == Platform.Windows ? ("cmd.exe", ["/d", "/c", "npm", .. arguments]) : ("npm", arguments);
+
+    private OverlayHost FindOverlayHost()
+    {
+        if (OverlayHost.For(Platforms.Current) is not { } host)
+            throw new UsageException("--overlay needs macOS or Windows: there's no overlay host for this OS yet");
+        if (!Directory.Exists(Path.Combine(repoRoot, host.Project)))
+            throw new UsageException($"--overlay: there's no {host.Name} overlay host yet ({host.Project})");
+        return host;
     }
 
     public async Task StopAsync()
@@ -116,9 +152,9 @@ internal sealed class DevStack(string repoRoot, TextWriter output)
         }
 
         TryKillTree(state.ServerProcessId);
-        if (state.Options.Overlay)
+        if (state.Options.Overlay && OverlayHost.For(Platforms.Current) is { } host)
         {
-            foreach (var overlay in OverlayProcesses())
+            foreach (var overlay in OverlayProcesses(host))
             {
                 using (overlay)
                     overlay.Kill();
@@ -237,21 +273,61 @@ internal sealed class DevStack(string repoRoot, TextWriter output)
         }
     }
 
-    // Started through the shell so its output goes straight to the log file: the process keeps running after this
-    // command exits, which a pipe to this process wouldn't survive.
     private Process StartLogged(string program, IReadOnlyList<string> arguments, string log, Dictionary<string, string> environment)
     {
-        var start = new ProcessStartInfo("/bin/sh") { WorkingDirectory = repoRoot, UseShellExecute = false };
-        foreach (var argument in (string[])["-c", "exec \"$0\" \"$@\" > \"$STGADGETS_LOG\" 2>&1", program, .. arguments])
-            start.ArgumentList.Add(argument);
+        var start = LoggedStartInfo(program, arguments, Platforms.Current);
+        start.WorkingDirectory = repoRoot;
         start.Environment["STGADGETS_LOG"] = log;
         foreach (var (name, value) in environment)
             start.Environment[name] = value;
-        return Process.Start(start) ?? throw new IOException($"Couldn't start {program}");
+        if (OperatingSystem.IsWindows())
+            StandardHandles.StopInheritance();
+        var process = Process.Start(start) ?? throw new IOException($"Couldn't start {program}");
+        if (start.RedirectStandardOutput)
+        {
+            process.StandardInput.Close();
+            process.StandardOutput.Close();
+            process.StandardError.Close();
+        }
+        return process;
     }
 
-    private static async Task RunToEndAsync(string program, string[] arguments, string directory, CancellationToken cancellationToken)
+    /// <summary>
+    /// Runs <paramref name="program"/> through the OS's shell, with its output going straight to the file named by
+    /// STGADGETS_LOG, so it keeps running after this command exits: a pipe to this process wouldn't survive that.
+    /// </summary>
+    public static ProcessStartInfo LoggedStartInfo(string program, IReadOnlyList<string> arguments, Platform platform)
     {
+        if (platform != Platform.Windows)
+        {
+            var sh = new ProcessStartInfo("/bin/sh") { UseShellExecute = false };
+            foreach (var argument in (string[])["-c", "exec \"$0\" \"$@\" > \"$STGADGETS_LOG\" 2>&1", program, .. arguments])
+                sh.ArgumentList.Add(argument);
+            return sh;
+        }
+
+        // cmd.exe has no way to pass arguments through untouched, as sh's "$@" does. Inside quotes it leaves & | < > alone,
+        // but it still expands %VARIABLES% and can't take a quote, so arguments with those are refused. /d skips any
+        // AutoRun commands; /s takes everything between the outer quotes as the command line, as it is.
+        if (arguments.FirstOrDefault(argument => argument.Contains('"') || argument.Contains('%')) is { } unsafeArgument)
+            throw new UsageException($"Can't pass {unsafeArgument} on Windows: cmd.exe would change it (no \" or % please)");
+        var command = string.Join(' ', ((string[])[program, .. arguments]).Select(argument => $"\"{argument}\""));
+        return new ProcessStartInfo("cmd.exe")
+        {
+            Arguments = $"/d /s /c \"{command} > \"%STGADGETS_LOG%\" 2>&1\"",
+            UseShellExecute = false,
+            CreateNoWindow = true,   // not tied to this command's console, so closing it doesn't stop the server
+            // Not this command's own handles, which it would keep open for as long as it runs (StandardHandles).
+            // StartLogged closes these at once: cmd.exe writes nothing itself, and its command's output goes to the log.
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+    }
+
+    private static async Task RunToEndAsync((string Program, string[] Arguments) command, string directory, CancellationToken cancellationToken)
+    {
+        var (program, arguments) = command;
         var start = new ProcessStartInfo(program) { WorkingDirectory = directory, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var argument in arguments)
             start.ArgumentList.Add(argument);
@@ -276,13 +352,13 @@ internal sealed class DevStack(string repoRoot, TextWriter output)
         }
     }
 
-    // The overlay app's processes, found by path: macOS cuts process names to 16 characters ("Stgadgets.Host.M").
-    private static IEnumerable<Process> OverlayProcesses() => Process.GetProcesses().Where(process =>
+    // The overlay host's processes, found by path: macOS cuts process names to 16 characters ("Stgadgets.Host.M").
+    private static IEnumerable<Process> OverlayProcesses(OverlayHost host) => Process.GetProcesses().Where(process =>
     {
         try
         {
             if (process.ProcessName.StartsWith("Stgadgets.Host", StringComparison.Ordinal)
-                && process.MainModule?.FileName.Contains(OverlayApp, StringComparison.Ordinal) == true)
+                && process.MainModule?.FileName.Contains(host.ExecutableMarker, StringComparison.Ordinal) == true)
             {
                 return true;
             }
@@ -295,6 +371,13 @@ internal sealed class DevStack(string repoRoot, TextWriter output)
         return false;
     });
 
-    private static string Tail(string log, int lines = 20) =>
-        File.Exists(log) ? string.Join('\n', File.ReadLines(log).TakeLast(lines)) : "(no log)";
+    private static string Tail(string log, int lines = 20)
+    {
+        if (!File.Exists(log))
+            return "(no log)";
+
+        // The process may still be writing it, and Windows only lets a file open for writing be read if the reader allows that.
+        using var reader = new StreamReader(new FileStream(log, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete));
+        return string.Join('\n', reader.ReadToEnd().Split('\n').Select(line => line.TrimEnd('\r')).TakeLast(lines));
+    }
 }

@@ -115,7 +115,8 @@ src/
                                      # the overlay and where (OverlayTracker), and the snapshot endpoint
     macos/                           # Stgadgets.Host.Mac.slnx (includes lib/): net10.0-macos, needs Xcode
       Stgadgets.Host.Mac/            # overlay window + menu bar app
-    windows/                         # (later; its solution will include lib/ too)
+    windows/                         # Stgadgets.Host.Windows.slnx (includes lib/): net10.0-windows, WebView2
+      Stgadgets.Host.Windows/        # overlay window (DirectComposition + WebView2) + tray app
     linux/                           # (later; its solution will include lib/ too)
   ui/                                # Vite + React + TypeScript (npm)
     src/sdk/                         # connection, store, hooks, latency (@stgadgets/sdk)
@@ -149,6 +150,6 @@ Packs are data plus optional UI code. The server loads them from `packs/` (confi
 
 ## Open questions
 
-- **Overlay host:** the macOS host works, including in fullscreen ([ADR 0007](decisions/0007-native-overlay-host.md), still proposed until the Windows and Linux hosts confirm it). Whether Avalonia or Photino could replace some of the native code is open.
+- **Overlay host:** the macOS host works, including in fullscreen, and the Windows host works in windowed and borderless fullscreen ([ADR 0007](decisions/0007-native-overlay-host.md), still proposed until the Linux host confirms it). Whether Avalonia or Photino could replace some of the native code is open.
 - **Compositor cost:** whether the overlay adds lag to the emulator in any display mode ([L1](requirements.md#l1-no-added-lag-in-the-game)).
 - **Getting the game picture:** whether calibration is acceptable or we need to detect it automatically.

@@ -32,9 +32,9 @@ internal static class DevCommand
                 "optionally #<marker> to hold there.",
         };
 
-        public Option<bool?> Overlay { get; } = new("--overlay") { Description = "Also run the macOS overlay, with snapshots on." };
+        public Option<bool?> Overlay { get; } = new("--overlay") { Description = "Also run the overlay host for this OS (macOS or Windows), with snapshots on." };
 
-        public Option<bool> BuildUi { get; } = new("--build-ui") { Description = "Build the UI first (npm run build in src/ui)." };
+        public Option<bool> BuildUi { get; } = new("--build-ui") { Description = "Build the UI first (npm run build in src/ui). Without it, the UI is only built if it never has been." };
 
         public Option<int?> SnapshotPort { get; } = new("--snapshot-port") { Description = "The overlay's snapshot port (5198)." };
 
@@ -76,6 +76,7 @@ internal static class DevCommand
         {
             var stack = Stack(result);
             var next = options.Read(result, stack.Load()?.Options);
+            stack.OverlayFor(next);   // refuses an overlay this OS can't run before stopping anything
             await stack.StopAsync();
             await stack.StartAsync(next, result.GetValue(options.BuildUi), cancellationToken);
         }));

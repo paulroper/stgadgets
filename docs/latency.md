@@ -2,6 +2,27 @@
 
 Results for the [latency requirements](requirements.md#latency-highest-priority), newest first.
 
+## 2026-11-08: Windows, presentation mode with and without the overlay (L1)
+
+Does the Windows overlay knock RetroArch off independent flip ([L1](requirements.md#l1-no-added-lag-in-the-game))? Checked with PresentMon 2.6.0 (`--process_name retroarch.exe --timed 10`, no admin rights needed) on Windows 11: RetroArch 1.22.2 with the Vulkan driver (presenting through DXGI) in borderless fullscreen ("Windowed Fullscreen Mode") at 2560×1440, a 144 Hz display, Batrider at 60 fps. Each run was 10 s of play, about 600 presents.
+
+| | Present mode | Present → display p50 / p95 | Between display changes p50 |
+|---|---|---|---|
+| Without the overlay | Hardware: Independent Flip | 1.9 / 2.1 ms | 16.7 ms |
+| With the overlay showing | Composed: Flip | 12.3 / 15.4 ms (two runs) | 14.0 ms |
+| `d3d11` driver, without the overlay | Hardware: Independent Flip | 1.6–1.7 / 2.0–2.1 ms (two runs) | 15.9 ms |
+| `d3d11` driver, with the overlay showing | Composed: Flip | 9.6–11.8 / 12.5–14.1 ms (two runs) | 14.0 ms |
+
+The video driver makes no difference to this: both present through DXGI, and DWM composes either once the overlay is on top. (With `d3d11`, RetroArch's own frame pacing was worse on this PC: p95 28–31 ms between presents against Vulkan's 18 ms, with or without the overlay.)
+
+**❌ The overlay forces DWM composition, adding about 10 ms (0.6 of a frame at 60 fps).** The game still presents at 60 fps; each frame just reaches the screen later, on the compositor's 144 Hz schedule rather than directly. Windowed play is always composed, so the overlay costs nothing extra there. A capture started straight after the overlay was stopped also showed `Composed: Flip`: Windows takes a moment to move a game onto independent flip.
+
+**Multiplane overlays aren't available on this PC.** DxDiag reports `MPO MaxPlanes: 1` and `MPO Caps: Not Supported` for its GeForce GTX 1070 (driver 32.0.15.8266). With a single plane, DWM has to compose any window over a fullscreen game, whatever draws it, so no change to the overlay can keep the game on independent flip here. GPUs with overlay planes (recent NVIDIA, AMD and Intel) might give the overlay its own plane (`Hardware Composed: Independent Flip`); whether DWM does that for WebView2's DirectComposition content is untested.
+
+**Accepted for now and documented** ([ADR 0007](decisions/0007-native-overlay-host.md#windows-decision)): windowed play, or a browser on another screen, avoids it.
+
+**Not measured here: input latency before the present.** PresentMon only times present → display. By feel, `d3d11` responds noticeably faster than Vulkan on this PC, probably because only the D3D drivers use `video_waitable_swapchains` and `video_max_frame_latency = 1`, which stop RetroArch queueing frames ahead. That one-frame limit may also explain `d3d11`'s worse frame pacing.
+
 ## 2026-10-20: presentation mode with and without the overlay (L1)
 
 Does the overlay window knock RetroArch off direct-to-display presentation ([L1](requirements.md#l1-no-added-lag-in-the-game))? Checked with the Metal Performance HUD on RetroArch (`open --env MTL_HUD_ENABLED=1 -a RetroArch`). RetroArch's Vulkan driver runs on Metal through MoltenVK, so the HUD shows how its frames are presented.
